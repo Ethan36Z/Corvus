@@ -1,6 +1,8 @@
-# Small-VRAM Personal Companion
+# Corvus
 
-A research project exploring how much persistent companion intelligence can be achieved on fixed consumer hardware without increasing the base model size.
+**Persistent Personal AI on Consumer Hardware**
+
+Corvus is a small-VRAM personal AI research project exploring how much persistent companion intelligence can be achieved on fixed consumer hardware without increasing the base model size.
 
 ## Research Question
 
