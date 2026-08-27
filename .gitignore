@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Models / large artifacts
+*.gguf
+*.bin
+models/
+
+# Runtime data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Benchmark temporary output
+*.log
+*.tmp
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
