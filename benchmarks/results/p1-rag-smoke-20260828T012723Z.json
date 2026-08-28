@@ -1,0 +1,209 @@
+{
+  "benchmark": "p1-rag-smoke",
+  "created_at": "2026-08-28T01:26:49.763335+00:00",
+  "cases": 5,
+  "no_memory": [
+    {
+      "question": "What is my favorite moon for the Corvus benchmark?",
+      "expected": "Callisto",
+      "answer": "There is no \"Corvus benchmark\" in astronomy, space exploration, or standard scientific literature that evaluates or ranks moons. It appears there may be a misunderstanding or a confusion of terms.\n\nHere are a few possibilities of what you might be referring to:\n\n1.  **Corvus (The Constellation)**: Corvus is a small constellation in the southern sky, often associated with the bird of prey. However, it does not contain any known moons, nor is there a benchmark named after it regarding lunar data.\n2.  **Project Corvus**: This is a fictional or obscure reference that does not correspond to a real-world moon evaluation project.\n3.  **Confusion with another name**: You might be thinking of a different benchmark (such as those used in AI or computing) or a specific mission name that sounds similar.\n\n**Regarding your \"favorite moon\":**\nSince there is no official \"Corvus benchmark\" to determine a favorite, the choice is entirely subjective. Some of the most popular moons in the solar system include:\n*   **Earth's Moon**: Our only natural satellite, essential for life on Earth.\n*   **Europa (Jupiter)**: Famous for its subsurface ocean, making it a prime candidate for",
+      "passed": false,
+      "retrieval_ms": 0.0,
+      "request_ms": 4016.5459910058416,
+      "total_ms": 4016.5459910058416,
+      "retrieved_memories": []
+    },
+    {
+      "question": "Where is the blue box stored for the Corvus benchmark?",
+      "expected": "Cedar Room",
+      "answer": "The **Corvus benchmark** (often associated with the Corvus dataset for evaluating large language models on reasoning, coding, or specific domain tasks) does not have a single, universally fixed file path like a system configuration file. Instead, its storage location depends entirely on **how you obtained the dataset** and **where you are running the evaluation**.\n\nHere are the most common scenarios for where the \"blue box\" (likely referring to a specific data file, artifact, or visualization output) would be stored:\n\n### 1. If you downloaded the dataset manually\nIf you downloaded the Corvus dataset from a repository (e.g., Hugging Face, GitHub, or a specific research paper's supplementary materials), the files are typically stored in your **local working directory** or a designated `data` folder.\n*   **Common paths**:\n    *   `./data/corvus/`\n    *   `./datasets/corvus/`\n    *   The root directory of the cloned repository (e.g., `corvus-benchmark/`).\n*   **The \"Blue Box\"**: If this refers to a specific visualization or a compressed archive (like a `.zip` or `.tar.gz` file) containing the data, it would",
+      "passed": false,
+      "retrieval_ms": 0.0,
+      "request_ms": 3828.300399996806,
+      "total_ms": 3828.300399996806,
+      "retrieved_memories": []
+    },
+    {
+      "question": "What port does Project Lantern use?",
+      "expected": "7319",
+      "answer": "Project Lantern, developed by the Internet Archive, uses **port 80** (HTTP) and **port 443** (HTTPS) to operate.\n\nIt is designed as a transparent proxy that sits between users and the websites they visit. To function effectively without requiring users to install specific software or change their browser settings, Lantern routes traffic through these standard web ports. When you enable Lantern, it intercepts your internet requests, encrypts them, and forwards them through a network of volunteer relays before reaching the destination site, all while appearing as normal web traffic on ports 80 and 443.\n\n**Answer:** Project Lantern uses **port 80** and **port 443**.",
+      "passed": false,
+      "retrieval_ms": 0.0,
+      "request_ms": 2281.9294260116294,
+      "total_ms": 2281.9294260116294,
+      "retrieved_memories": []
+    },
+    {
+      "question": "What is my test drink for the Corvus benchmark?",
+      "expected": "jasmine tea",
+      "answer": "The **Corvus benchmark** (often associated with evaluating large language models on complex reasoning, coding, or multi-step tasks) does not have a single, universally standardized \"test drink\" in the way that a chemical solution might be defined in a lab.\n\nHowever, in the context of AI benchmarking and community challenges (such as those hosted by platforms like **LMSYS**, **Hugging Face**, or specific research groups), the term \"test drink\" is likely a metaphor or a specific reference to one of the following:\n\n1.  **A Metaphor for \"Poisoned\" or Adversarial Inputs**: In some benchmarking contexts, a \"test drink\" refers to a specific, tricky prompt designed to test if the model hallucinates, breaks, or fails under pressure. If you are looking for a specific adversarial prompt used in a recent Corvus challenge, it would be a carefully crafted text input meant to expose weaknesses.\n2.  **A Specific Challenge Prompt**: If this refers to a specific coding or logic puzzle within the Corvus suite where the \"drink\" is the subject of the problem (e.g., \"Calculate the ingredients for a specific cocktail based on obscure rules\"), the \"test drink\" would be the specific",
+      "passed": false,
+      "retrieval_ms": 0.0,
+      "request_ms": 3913.2908720057458,
+      "total_ms": 3913.2908720057458,
+      "retrieved_memories": []
+    },
+    {
+      "question": "What is the raven's nickname for the Corvus benchmark?",
+      "expected": "Ember",
+      "answer": "The raven's nickname for the **Corvus** benchmark is **\"The Raven's Test\"** (or sometimes simply **\"The Raven\"**).\n\nThis benchmark is named after the genus *Corvus*, which includes crows and ravens. In the context of AI and large language model evaluation, it is designed to test a model's ability to understand complex reasoning, logic, and world knowledge, drawing a parallel to the high intelligence famously attributed to corvids in nature. The name \"The Raven's Test\" is used metaphorically to imply that only a model with exceptional cognitive capabilities can \"pass\" the scrutiny of this intelligent bird.",
+      "passed": false,
+      "retrieval_ms": 0.0,
+      "request_ms": 2006.2706699827686,
+      "total_ms": 2006.2706699827686,
+      "retrieved_memories": []
+    }
+  ],
+  "vanilla_rag": [
+    {
+      "question": "What is my favorite moon for the Corvus benchmark?",
+      "expected": "Callisto",
+      "answer": "Your favorite moon for the Corvus benchmark is **Callisto**.",
+      "passed": true,
+      "retrieval_ms": 3344.435991020873,
+      "request_ms": 388.8027520151809,
+      "total_ms": 3733.3134910441004,
+      "retrieved_memories": [
+        {
+          "id": 5,
+          "role": "user",
+          "content": "For the Corvus benchmark, my favorite moon is Callisto.",
+          "score": 0.8722898364067078
+        },
+        {
+          "id": 9,
+          "role": "user",
+          "content": "For the Corvus benchmark, the raven's nickname is Ember.",
+          "score": 0.6796447038650513
+        },
+        {
+          "id": 8,
+          "role": "user",
+          "content": "For the Corvus benchmark, my test drink is jasmine tea.",
+          "score": 0.6745418310165405
+        }
+      ]
+    },
+    {
+      "question": "Where is the blue box stored for the Corvus benchmark?",
+      "expected": "Cedar Room",
+      "answer": "The blue box for the Corvus benchmark is stored in the **Cedar Room**.",
+      "passed": true,
+      "retrieval_ms": 3013.640397985,
+      "request_ms": 482.11069899844006,
+      "total_ms": 3495.8175570354797,
+      "retrieved_memories": [
+        {
+          "id": 6,
+          "role": "user",
+          "content": "For the Corvus benchmark, the blue box is stored in Cedar Room.",
+          "score": 0.8854679465293884
+        },
+        {
+          "id": 7,
+          "role": "user",
+          "content": "For the Corvus benchmark, Project Lantern uses port 7319.",
+          "score": 0.6957582235336304
+        },
+        {
+          "id": 1,
+          "role": "user",
+          "content": "Corvus persistence test: remember this after the process exits.",
+          "score": 0.6852595806121826
+        }
+      ]
+    },
+    {
+      "question": "What port does Project Lantern use?",
+      "expected": "7319",
+      "answer": "Project Lantern uses port **7319** for the Corvus benchmark.",
+      "passed": true,
+      "retrieval_ms": 2745.1144410297275,
+      "request_ms": 475.22202698746696,
+      "total_ms": 3220.4012449947186,
+      "retrieved_memories": [
+        {
+          "id": 7,
+          "role": "user",
+          "content": "For the Corvus benchmark, Project Lantern uses port 7319.",
+          "score": 0.8395941257476807
+        },
+        {
+          "id": 6,
+          "role": "user",
+          "content": "For the Corvus benchmark, the blue box is stored in Cedar Room.",
+          "score": 0.5052422285079956
+        },
+        {
+          "id": 9,
+          "role": "user",
+          "content": "For the Corvus benchmark, the raven's nickname is Ember.",
+          "score": 0.49255862832069397
+        }
+      ]
+    },
+    {
+      "question": "What is my test drink for the Corvus benchmark?",
+      "expected": "jasmine tea",
+      "answer": "Your test drink for the Corvus benchmark is **jasmine tea**.",
+      "passed": true,
+      "retrieval_ms": 2995.648837008048,
+      "request_ms": 435.95499196089804,
+      "total_ms": 3431.6688060062006,
+      "retrieved_memories": [
+        {
+          "id": 8,
+          "role": "user",
+          "content": "For the Corvus benchmark, my test drink is jasmine tea.",
+          "score": 0.8699755668640137
+        },
+        {
+          "id": 1,
+          "role": "user",
+          "content": "Corvus persistence test: remember this after the process exits.",
+          "score": 0.7154917120933533
+        },
+        {
+          "id": 9,
+          "role": "user",
+          "content": "For the Corvus benchmark, the raven's nickname is Ember.",
+          "score": 0.6484140157699585
+        }
+      ]
+    },
+    {
+      "question": "What is the raven's nickname for the Corvus benchmark?",
+      "expected": "Ember",
+      "answer": "The raven's nickname for the Corvus benchmark is **Ember**.",
+      "passed": true,
+      "retrieval_ms": 3015.6985530047677,
+      "request_ms": 454.85765201738104,
+      "total_ms": 3470.619328028988,
+      "retrieved_memories": [
+        {
+          "id": 9,
+          "role": "user",
+          "content": "For the Corvus benchmark, the raven's nickname is Ember.",
+          "score": 0.8616666793823242
+        },
+        {
+          "id": 3,
+          "role": "user",
+          "content": "My favorite test animal is the raven.",
+          "score": 0.707061767578125
+        },
+        {
+          "id": 4,
+          "role": "assistant",
+          "content": "Understood. Your favorite test animal is the raven.",
+          "score": 0.7049015760421753
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "no_memory_score": 0,
+    "vanilla_rag_score": 5,
+    "total_cases": 5
+  }
+}
