@@ -1,0 +1,14 @@
+semantic_paraphrase
+  Dense: 1
+  Sparse: 1
+  Hybrid: 1
+
+exact_identifier
+  Dense: 1
+  Sparse: 1
+  Hybrid: 1
+
+mixed_evidence
+  Dense: 1
+  Sparse: 2
+  Hybrid: 1
