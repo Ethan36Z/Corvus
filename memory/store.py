@@ -7,7 +7,9 @@ DB_PATH = Path(__file__).resolve().parent.parent / "data" / "corvus.db"
 
 def connect():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 
 def init_db():
@@ -20,6 +22,71 @@ def init_db():
                 role TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assertions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject TEXT NOT NULL,
+                predicate TEXT NOT NULL,
+                object TEXT NOT NULL,
+
+                provenance TEXT NOT NULL,
+                authority TEXT NOT NULL,
+                modality TEXT,
+
+                temporal_kind TEXT NOT NULL DEFAULT 'UNKNOWN',
+                time_start TEXT,
+                time_end TEXT,
+                temporal_granularity TEXT,
+
+                recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                superseded_at TEXT,
+                superseded_by_assertion_id INTEGER,
+
+                FOREIGN KEY (superseded_by_assertion_id)
+                    REFERENCES assertions(id)
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assertion_message_basis (
+                assertion_id INTEGER NOT NULL,
+                message_id INTEGER NOT NULL,
+
+                PRIMARY KEY (assertion_id, message_id),
+
+                FOREIGN KEY (assertion_id)
+                    REFERENCES assertions(id)
+                    ON DELETE CASCADE,
+
+                FOREIGN KEY (message_id)
+                    REFERENCES messages(id)
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS assertion_assertion_basis (
+                assertion_id INTEGER NOT NULL,
+                basis_assertion_id INTEGER NOT NULL,
+
+                PRIMARY KEY (assertion_id, basis_assertion_id),
+
+                CHECK (assertion_id != basis_assertion_id),
+
+                FOREIGN KEY (assertion_id)
+                    REFERENCES assertions(id)
+                    ON DELETE CASCADE,
+
+                FOREIGN KEY (basis_assertion_id)
+                    REFERENCES assertions(id)
             )
             """
         )
