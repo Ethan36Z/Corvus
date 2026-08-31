@@ -28,3 +28,7 @@ data/
 .vscode/
 .idea/
 .DS_Store
+
+# Third-party research tools
+tools/heideltime/
+tools/ltms/
