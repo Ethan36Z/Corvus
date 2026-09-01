@@ -1,0 +1,41 @@
+services:
+  corvus-llama:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda12-b10630
+    container_name: corvus-llama
+
+    ports:
+      - "127.0.0.1:8095:8080"
+
+    volumes:
+      - /home/ethan/srv/shared/models/qwen3.5-9b:/models:ro
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    command:
+      - -m
+      - /models/Qwen_Qwen3.5-9B-Q5_K_M.gguf
+      - --alias
+      - corvus
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -c
+      - "8192"
+      - -ngl
+      - "99"
+      - -t
+      - "8"
+      - -b
+      - "512"
+      - -ub
+      - "512"
+      - --parallel
+      - "1"
+      - --no-cache-prompt
