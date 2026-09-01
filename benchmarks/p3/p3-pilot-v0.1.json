@@ -1,0 +1,368 @@
+{
+  "benchmark_id": "p3-pilot-v0.1",
+  "phase": "Phase 3 \u2014 Relation Intelligence & Gate",
+  "status": "FROZEN_PILOT",
+  "case_count": 12,
+  "primary_candidate_unit": "assertion",
+  "epistemic_requirements": [
+    "NO_RELATION_NEEDED",
+    "STRUCTURED_RESOLUTION",
+    "RELATION_JUDGMENT_NEEDED",
+    "INSUFFICIENT_EVIDENCE"
+  ],
+  "cases": [
+    {
+      "case_id": "C01",
+      "phenomenon": "coreference_identity",
+      "difficulty_mode": "clear_positive",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina is my sister."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Lina lives in Portland."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E1",
+          "text": "My sister just started a new job."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": [
+          "A2"
+        ]
+      }
+    },
+    {
+      "case_id": "C02",
+      "phenomenon": "coreference_identity",
+      "difficulty_mode": "ambiguous",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina is my sister."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Lina is my coworker."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E2",
+          "text": "Lina got promoted."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "T01",
+      "phenomenon": "temporal_relation",
+      "difficulty_mode": "structured_clear",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Application J17 was submitted.",
+            "event_id": "application_J17_submission",
+            "event_time": "2026-05-04"
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E3",
+          "text": "The interview for application J17 happened on May 10.",
+          "event_id": "application_J17_interview",
+          "event_time": "2026-05-10"
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "BEFORE"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "T02",
+      "phenomenon": "temporal_relation",
+      "difficulty_mode": "ambiguous",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The package was mailed on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E4",
+          "text": "It arrived around that time."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "S01",
+      "phenomenon": "state_evolution",
+      "difficulty_mode": "clear_positive",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I live in Los Angeles."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E5",
+          "text": "I moved to Seattle last week."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "S02",
+      "phenomenon": "state_evolution",
+      "difficulty_mode": "hard_negative",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I live in Los Angeles."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E6",
+          "text": "I'm flying to Seattle tomorrow for a two-day conference."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "K01",
+      "phenomenon": "correction_contradiction",
+      "difficulty_mode": "clear_positive",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My birthday is May 3."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E7",
+          "text": "I told you the wrong date earlier. My birthday is actually May 8."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "K02",
+      "phenomenon": "correction_contradiction",
+      "difficulty_mode": "ambiguous",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My birthday is May 3."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E8",
+          "text": "I usually celebrate around May 8."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CA01",
+      "phenomenon": "causal_relation",
+      "difficulty_mode": "clear_positive",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My laptop shut down during my presentation."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E9",
+          "text": "That happened because the battery failed."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CA02",
+      "phenomenon": "causal_relation",
+      "difficulty_mode": "hard_negative",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "It rained all afternoon."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E10",
+          "text": "I missed the bus that afternoon."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "E01",
+      "phenomenon": "support_evidence_relation",
+      "difficulty_mode": "clear_positive",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The user may prefer decaf coffee.",
+            "authority": "MODEL_INFERRED"
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E11",
+          "text": "I only drink decaf now.",
+          "authority": "USER_EXPLICIT"
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "E02",
+      "phenomenon": "support_evidence_relation",
+      "difficulty_mode": "hard_negative",
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The user prefers decaf coffee."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E12",
+          "text": "The cafe near work has really good decaf."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    }
+  ]
+}
