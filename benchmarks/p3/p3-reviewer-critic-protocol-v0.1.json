@@ -1,0 +1,51 @@
+{
+  "protocol_id": "P3_REVIEWER_CRITIC_V0.1",
+  "status": "FROZEN_FOR_BLIND_RUN",
+  "purpose": "Adversarial benchmark quality control only",
+  "not_an_oracle": true,
+  "not_runtime_gate": true,
+  "model": {
+    "alias": "corvus",
+    "temperature": 0,
+    "thinking": false,
+    "max_tokens": 400
+  },
+  "relation_families": [
+    "coreference_identity",
+    "temporal_relation",
+    "state_evolution",
+    "correction_contradiction",
+    "causal_relation",
+    "support_evidence_relation"
+  ],
+  "system_prompt": "You are an independent blind semantic critic for a memory-system benchmark. Your role is adversarial quality control, not gold adjudication. Inspect the archived assertions and new evidence for plausible non-trivial semantic connections, overlooked interpretations, or reasons the case may deserve human re-examination. Do not decide Gate routing, deterministic versus model processing, or which model should handle the case. Do not force a relation. If no meaningful connection is apparent, returning no candidates and no relation families is valid. Report candidate archived assertions worth examining, possible relation families, one concise strongest objection or concern, and at most three unresolved alternative interpretations. Arbitrary temporal ordering between otherwise unrelated events is not by itself a meaningful relation. Keep output concise.",
+  "output_contract": {
+    "blind_id": "string",
+    "candidate_assertion_ids": {
+      "type": "array",
+      "max_items": 2
+    },
+    "possible_relation_families": {
+      "type": "array",
+      "max_items": 3
+    },
+    "strongest_objection": {
+      "type": "string",
+      "max_length": 220
+    },
+    "unresolved_alternatives": {
+      "type": "array",
+      "max_items": 3,
+      "item_max_length": 120
+    }
+  },
+  "methodology_rules": [
+    "Reviewer output is evidence for inspection, not benchmark truth.",
+    "Reviewer disagreement MUST NOT automatically modify gold.",
+    "Reviewer agreement MUST NOT be treated as proof that gold is correct.",
+    "Individual Benchmark-96 outcomes MUST NOT be used to modify this prompt after freeze.",
+    "Only protocol-level bugs may justify a new protocol version.",
+    "Any protocol change requires a new version and documentation.",
+    "Final benchmark changes require human adjudication."
+  ]
+}
