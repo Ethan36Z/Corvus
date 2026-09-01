@@ -1,6 +1,5 @@
 import re
-from calendar import monthrange
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from dateparser.search import search_dates
 
@@ -9,15 +8,46 @@ YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
 
 
 def year_bounds(year: int):
+    """Return the canonical half-open interval for a calendar year."""
     return (
         datetime(year, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-        datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+        datetime(year + 1, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
     )
 
 
+def month_bounds(year: int, month: int):
+    """Return the canonical half-open interval for a calendar month."""
+    if not 1 <= month <= 12:
+        raise ValueError("month must be in 1..12")
+
+    start = datetime(year, month, 1, 0, 0, 0, tzinfo=timezone.utc)
+
+    if month == 12:
+        end = datetime(year + 1, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    else:
+        end = datetime(year, month + 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+
+    return start, end
+
+
+def day_bounds(year: int, month: int, day: int):
+    """Return the canonical half-open interval for a calendar day."""
+    start = datetime(year, month, day, 0, 0, 0, tzinfo=timezone.utc)
+    return start, start + timedelta(days=1)
+
+
 def instant_bounds(value: datetime):
+    """
+    Return the canonical point encoding for an instant.
+
+    Equal endpoints here represent a temporal POINT sentinel, not a
+    half-open duration interval. Callers must use granularity=INSTANT
+    to distinguish point semantics from interval semantics.
+    """
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
+    else:
+        value = value.astimezone(timezone.utc)
 
     return value, value
 
