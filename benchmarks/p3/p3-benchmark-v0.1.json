@@ -1,0 +1,1182 @@
+{
+  "benchmark_id": "p3-benchmark-v0.1",
+  "phase": "Phase 3 \u2014 Relation Intelligence & Gate",
+  "status": "DRAFT",
+  "target_case_count": 96,
+  "primary_candidate_unit": "assertion",
+  "epistemic_requirements": [
+    "NO_RELATION_NEEDED",
+    "STRUCTURED_RESOLUTION",
+    "RELATION_JUDGMENT_NEEDED",
+    "INSUFFICIENT_EVIDENCE"
+  ],
+  "cases": [
+    {
+      "case_id": "C-P1",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina is my sister."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-P1",
+          "text": "My sister just started a new job."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-P2",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel is my manager."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-P2",
+          "text": "My manager approved my vacation."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-P3",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya called me this morning."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-P3",
+          "text": "She said the meeting was canceled."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-P4",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Mei Chen is my dentist."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-P4",
+          "text": "Dr. Chen scheduled another appointment."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-I1",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina is my only sister."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-I1",
+          "text": "The only sister I have is moving next month."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-I2",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Alexander Chen goes by Alex."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-I2",
+          "text": "Alex accepted the offer."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-I3",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Priya became the project lead for Orion."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-I3",
+          "text": "The Orion lead approved the release."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-I4",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Marcus presented the Falcon demo yesterday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-I4",
+          "text": "The person who presented Falcon emailed me afterward."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "coreference_identity",
+            "relation_label": null
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-N1",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina Zhang is my sister."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-N1",
+          "text": "Lina Gomez from accounting got promoted."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "C-N2",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel is my manager."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-N2",
+          "text": "A manager from another department contacted me."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "C-N3",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Mei Chen is my dentist."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-N3",
+          "text": "I watched an interview with physicist Wei Chen."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "C-N4",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya called me.",
+            "entity": "Maya",
+            "pronouns": "she/her"
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Priya sent me an email afterward.",
+            "entity": "Priya",
+            "pronouns": "she/her"
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-N4",
+          "text": "He attached the contract."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1",
+          "A2"
+        ]
+      }
+    },
+    {
+      "case_id": "C-A1",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina Zhang is my sister."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Lina Gomez is my coworker."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-A1",
+          "text": "Lina got promoted."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-A2",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya was at the interview.",
+            "entity": "Maya",
+            "pronouns": "she/her"
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Priya was at the interview.",
+            "entity": "Priya",
+            "pronouns": "she/her"
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-A2",
+          "text": "She said it went well."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-A3",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Alexander Chen goes by Alex."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Alex Rivera is my neighbor."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-A3",
+          "text": "Alex bought a new car."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "C-A4",
+      "phenomenon": "coreference_identity",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel is one of my project managers."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "Priya is another one of my project managers."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-C-A4",
+          "text": "My manager recommended a course."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "T-P1",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I submitted the application on May 4, 2026.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-05-04T00:00:00+00:00",
+              "time_end": "2026-05-05T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-P1",
+          "text": "The interview happened on May 10, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-05-10T00:00:00+00:00",
+            "time_end": "2026-05-11T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "BEFORE"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "BEFORE",
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-P2",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My Seattle trip ran from July 1 through July 7, 2026.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-07-01T00:00:00+00:00",
+              "time_end": "2026-07-08T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-P2",
+          "text": "The conference ran from July 3 through July 4, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-07-03T00:00:00+00:00",
+            "time_end": "2026-07-05T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "CONTAINS"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "CONTAINS",
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-P3",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The maintenance window ran from September 1 through September 3.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-09-01T00:00:00+00:00",
+              "time_end": "2026-09-04T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-P3",
+          "text": "The outage ran from September 3 through September 4.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-03T00:00:00+00:00",
+            "time_end": "2026-09-05T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "OVERLAPS"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "OVERLAPS",
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-P4",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The first workshop ran from September 1 through September 2.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-09-01T00:00:00+00:00",
+              "time_end": "2026-09-03T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-P4",
+          "text": "The second workshop began September 3 and ran through September 4.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-03T00:00:00+00:00",
+            "time_end": "2026-09-05T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "MEETS"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "MEETS",
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-I1",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The interview happened on May 10, 2026.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-05-10T00:00:00+00:00",
+              "time_end": "2026-05-11T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-I1",
+          "text": "Two days after the interview, they sent the offer.",
+          "resolved_temporal_anchor_id": "A1"
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "BEFORE"
+          }
+        ],
+        "epistemic_requirement": "STRUCTURED_RESOLUTION",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "BEFORE",
+          "representation_status": "RELATIVE_CONSTRAINT",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-I2",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The release review happened Monday afternoon."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-I2",
+          "text": "The following morning, deployment started."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "BEFORE"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "BEFORE",
+          "representation_status": "RELATIVE_CONSTRAINT",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-I3",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I started the new job on September 8."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-I3",
+          "text": "Before I started the new job, I finished the course."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "AFTER"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "AFTER",
+          "representation_status": "RELATIVE_CONSTRAINT",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-I4",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My Seattle trip lasted from July 1 through July 7."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-I4",
+          "text": "During my Seattle trip, I attended the conference."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "temporal_relation",
+            "relation_label": "CONTAINS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": "CONTAINS",
+          "representation_status": "RELATIVE_CONSTRAINT",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-N1",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My dentist appointment was on September 7.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-09-07T00:00:00+00:00",
+              "time_end": "2026-09-08T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-N1",
+          "text": "I bought groceries on September 7.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-07T00:00:00+00:00",
+            "time_end": "2026-09-08T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-N2",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My job interview was on May 10.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-05-10T00:00:00+00:00",
+              "time_end": "2026-05-11T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-N2",
+          "text": "My vacation started on May 12, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-05-12T00:00:00+00:00",
+            "time_end": "2026-05-13T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-N3",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The Orion deployment happened on September 4, 2026.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-09-04T00:00:00+00:00",
+              "time_end": "2026-09-05T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-N3",
+          "text": "My friend arrived on September 4, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-04T00:00:00+00:00",
+            "time_end": "2026-09-05T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-N4",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I submitted Project Falcon on June 3.",
+            "temporal": {
+              "temporal_kind": "EVENT_OCCURRENCE",
+              "granularity": "DAY",
+              "time_start": "2026-06-03T00:00:00+00:00",
+              "time_end": "2026-06-04T00:00:00+00:00"
+            }
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-N4",
+          "text": "My dental cleaning was on June 4, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-06-04T00:00:00+00:00",
+            "time_end": "2026-06-05T00:00:00+00:00"
+          }
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "NORMALIZED_INTERVAL",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-A1",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The review happened on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-A1",
+          "text": "The deployment happened around Monday."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "UNKNOWN",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-A2",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The interview happened on Wednesday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-A2",
+          "text": "They contacted me sometime that week."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "UNKNOWN",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-A3",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The conference ran from May 9 through May 11."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-A3",
+          "text": "I was in San Francisco for a few days sometime around that week."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "UNKNOWN",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    },
+    {
+      "case_id": "T-A4",
+      "phenomenon": "temporal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The review happened on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-T-A4",
+          "text": "The deployment was either just before or just after the review; I don't remember which."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": [],
+        "temporal_gold": {
+          "relation_orientation": "archive_assertion_to_new_evidence",
+          "derived_relation": null,
+          "representation_status": "RELATIVE_CONSTRAINT",
+          "materialization": "OUT_OF_SCOPE"
+        }
+      }
+    }
+  ],
+  "temporal_contract": {
+    "version": "v0.2",
+    "calendar_interval_semantics": "HALF_OPEN",
+    "instant_semantics": "POINT_SENTINEL",
+    "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY",
+    "materialization_policy": "OUT_OF_SCOPE"
+  }
+}
