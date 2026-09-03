@@ -1,0 +1,1409 @@
+{
+  "benchmark": "Corvus P3 Benchmark v0.1",
+  "purpose": "BLIND_ADVERSARIAL_SEMANTIC_REVIEW",
+  "instructions": [
+    "Judge each case without access to its original family, mode, or gold.",
+    "Identify any non-trivial relation-worthy archive assertion.",
+    "State which relation family or families may matter.",
+    "Distinguish deterministic resolution from judgment.",
+    "Abstain when evidence is insufficient.",
+    "Do not assume every computable temporal ordering is relation-worthy."
+  ],
+  "cases": [
+    {
+      "blind_id": "B001",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Lina is my sister."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-P1",
+        "text": "My sister just started a new job."
+      }
+    },
+    {
+      "blind_id": "B002",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel is my manager."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-P2",
+        "text": "My manager approved my vacation."
+      }
+    },
+    {
+      "blind_id": "B003",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya called me this morning."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-P3",
+        "text": "She said the meeting was canceled."
+      }
+    },
+    {
+      "blind_id": "B004",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Mei Chen is my dentist."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-P4",
+        "text": "Dr. Chen scheduled another appointment."
+      }
+    },
+    {
+      "blind_id": "B005",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Lina is my only sister."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-I1",
+        "text": "The only sister I have is moving next month."
+      }
+    },
+    {
+      "blind_id": "B006",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Alexander Chen goes by Alex."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-I2",
+        "text": "Alex accepted the offer."
+      }
+    },
+    {
+      "blind_id": "B007",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Priya became the project lead for Orion."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-I3",
+        "text": "The Orion lead approved the release."
+      }
+    },
+    {
+      "blind_id": "B008",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Marcus presented the Falcon demo yesterday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-I4",
+        "text": "The person who presented Falcon emailed me afterward."
+      }
+    },
+    {
+      "blind_id": "B009",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Lina Zhang is my sister."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-N1",
+        "text": "Lina Gomez from accounting got promoted."
+      }
+    },
+    {
+      "blind_id": "B010",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel is my manager."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-N2",
+        "text": "A manager from another department contacted me."
+      }
+    },
+    {
+      "blind_id": "B011",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Mei Chen is my dentist."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-N3",
+        "text": "I watched an interview with physicist Wei Chen."
+      }
+    },
+    {
+      "blind_id": "B012",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya called me.",
+          "entity": "Maya",
+          "pronouns": "she/her"
+        },
+        {
+          "assertion_id": "A2",
+          "text": "Priya sent me an email afterward.",
+          "entity": "Priya",
+          "pronouns": "she/her"
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-N4",
+        "text": "He attached the contract."
+      }
+    },
+    {
+      "blind_id": "B013",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Lina Zhang is my sister."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "Lina Gomez is my coworker."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-A1",
+        "text": "Lina got promoted."
+      }
+    },
+    {
+      "blind_id": "B014",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya was at the interview.",
+          "entity": "Maya",
+          "pronouns": "she/her"
+        },
+        {
+          "assertion_id": "A2",
+          "text": "Priya was at the interview.",
+          "entity": "Priya",
+          "pronouns": "she/her"
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-A2",
+        "text": "She said it went well."
+      }
+    },
+    {
+      "blind_id": "B015",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Alexander Chen goes by Alex."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "Alex Rivera is my neighbor."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-A3",
+        "text": "Alex bought a new car."
+      }
+    },
+    {
+      "blind_id": "B016",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel is one of my project managers."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "Priya is another one of my project managers."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-C-A4",
+        "text": "My manager recommended a course."
+      }
+    },
+    {
+      "blind_id": "B017",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I submitted the application on May 4, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-05-04T00:00:00+00:00",
+            "time_end": "2026-05-05T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-P1",
+        "text": "The interview happened on May 10, 2026.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-05-10T00:00:00+00:00",
+          "time_end": "2026-05-11T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B018",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My Seattle trip ran from July 1 through July 7, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-07-01T00:00:00+00:00",
+            "time_end": "2026-07-08T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-P2",
+        "text": "The conference ran from July 3 through July 4, 2026.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-07-03T00:00:00+00:00",
+          "time_end": "2026-07-05T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B019",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The maintenance window ran from September 1 through September 3.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-01T00:00:00+00:00",
+            "time_end": "2026-09-04T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-P3",
+        "text": "The outage ran from September 3 through September 4.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-09-03T00:00:00+00:00",
+          "time_end": "2026-09-05T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B020",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The first workshop ran from September 1 through September 2.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-01T00:00:00+00:00",
+            "time_end": "2026-09-03T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-P4",
+        "text": "The second workshop began September 3 and ran through September 4.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-09-03T00:00:00+00:00",
+          "time_end": "2026-09-05T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B021",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The interview happened on May 10, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-05-10T00:00:00+00:00",
+            "time_end": "2026-05-11T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-I1",
+        "text": "Two days after the interview, they sent the offer.",
+        "resolved_temporal_anchor_id": "A1"
+      }
+    },
+    {
+      "blind_id": "B022",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The release review happened Monday afternoon."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-I2",
+        "text": "The following morning, deployment started."
+      }
+    },
+    {
+      "blind_id": "B023",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I started the new job on September 8."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-I3",
+        "text": "Before I started the new job, I finished the course."
+      }
+    },
+    {
+      "blind_id": "B024",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My Seattle trip lasted from July 1 through July 7."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-I4",
+        "text": "During my Seattle trip, I attended the conference."
+      }
+    },
+    {
+      "blind_id": "B025",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My dentist appointment was on September 7.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-07T00:00:00+00:00",
+            "time_end": "2026-09-08T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-N1",
+        "text": "I bought groceries on September 7.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-09-07T00:00:00+00:00",
+          "time_end": "2026-09-08T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B026",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My job interview was on May 10.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-05-10T00:00:00+00:00",
+            "time_end": "2026-05-11T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-N2",
+        "text": "My vacation started on May 12, 2026.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-05-12T00:00:00+00:00",
+          "time_end": "2026-05-13T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B027",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The Orion deployment happened on September 4, 2026.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-09-04T00:00:00+00:00",
+            "time_end": "2026-09-05T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-N3",
+        "text": "My friend arrived on September 4, 2026.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-09-04T00:00:00+00:00",
+          "time_end": "2026-09-05T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B028",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I submitted Project Falcon on June 3.",
+          "temporal": {
+            "temporal_kind": "EVENT_OCCURRENCE",
+            "granularity": "DAY",
+            "time_start": "2026-06-03T00:00:00+00:00",
+            "time_end": "2026-06-04T00:00:00+00:00"
+          }
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-N4",
+        "text": "My dental cleaning was on June 4, 2026.",
+        "temporal": {
+          "temporal_kind": "EVENT_OCCURRENCE",
+          "granularity": "DAY",
+          "time_start": "2026-06-04T00:00:00+00:00",
+          "time_end": "2026-06-05T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "blind_id": "B029",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The review happened on Monday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-A1",
+        "text": "The deployment happened around Monday."
+      }
+    },
+    {
+      "blind_id": "B030",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The interview happened on Wednesday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-A2",
+        "text": "They contacted me sometime that week."
+      }
+    },
+    {
+      "blind_id": "B031",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The conference ran from May 9 through May 11."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-A3",
+        "text": "I was in San Francisco for a few days sometime around that week."
+      }
+    },
+    {
+      "blind_id": "B032",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The review happened on Monday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-T-A4",
+        "text": "The deployment was either just before or just after the review; I don't remember which."
+      }
+    },
+    {
+      "blind_id": "B033",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I lived in Seattle through 2025."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-P1",
+        "text": "I moved to Portland in 2026 and live there now."
+      }
+    },
+    {
+      "blind_id": "B034",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya worked at Acme through 2025."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-P2",
+        "text": "Maya left Acme and joined Nova in 2026."
+      }
+    },
+    {
+      "blind_id": "B035",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "In 2025, my preferred code editor was VS Code."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-P3",
+        "text": "These days I prefer Zed as my code editor."
+      }
+    },
+    {
+      "blind_id": "B036",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Project Orion was in private beta earlier this year."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-P4",
+        "text": "Orion has now launched publicly."
+      }
+    },
+    {
+      "blind_id": "B037",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Firefox is my default browser."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-I1",
+        "text": "Brave has been my default browser since June."
+      }
+    },
+    {
+      "blind_id": "B038",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Lina is on the Orion team."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-I2",
+        "text": "Lina transferred to the Falcon team this spring."
+      }
+    },
+    {
+      "blind_id": "B039",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel is the backend team lead."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-I3",
+        "text": "Priya took over the backend team lead role in August."
+      }
+    },
+    {
+      "blind_id": "B040",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I usually commute to work by bus."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-I4",
+        "text": "Since moving closer to work, I walk there every day."
+      }
+    },
+    {
+      "blind_id": "B041",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel works at Acme."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-N1",
+        "text": "Priya now works at Nova."
+      }
+    },
+    {
+      "blind_id": "B042",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Daniel lives in Los Angeles."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-N2",
+        "text": "Daniel was promoted to engineering manager."
+      }
+    },
+    {
+      "blind_id": "B043",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I live in Los Angeles."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-N3",
+        "text": "I'm staying in San Francisco for a conference this week."
+      }
+    },
+    {
+      "blind_id": "B044",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I lived in Boston in 2020."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-N4",
+        "text": "I visited Boston again last weekend."
+      }
+    },
+    {
+      "blind_id": "B045",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I live in Los Angeles."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-A1",
+        "text": "Actually, I'm in Seattle now."
+      }
+    },
+    {
+      "blind_id": "B046",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya works at Acme."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-A2",
+        "text": "Maya appears to have joined Nova, but I don't know whether she has left Acme."
+      }
+    },
+    {
+      "blind_id": "B047",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Project Orion is in private beta."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-A3",
+        "text": "Orion may already be public, but I might have misunderstood its status earlier."
+      }
+    },
+    {
+      "blind_id": "B048",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I prefer tea to coffee."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SE-A4",
+        "text": "Coffee has been my go-to drink lately."
+      }
+    },
+    {
+      "blind_id": "B049",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My appointment is on Wednesday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-P1",
+        "text": "I was wrong earlier. My appointment is actually on Thursday."
+      }
+    },
+    {
+      "blind_id": "B050",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I paid $45 for the repair."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-P2",
+        "text": "Correction: the repair cost $54, not $45."
+      }
+    },
+    {
+      "blind_id": "B051",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "At 10:00 AM, the server was online."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-P3",
+        "text": "At 10:00 AM, the server was offline."
+      }
+    },
+    {
+      "blind_id": "B052",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The package delivered today is red."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-P4",
+        "text": "The package delivered today is blue, not red."
+      }
+    },
+    {
+      "blind_id": "B053",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The office is in Boston."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-I1",
+        "text": "Not Boston \u2014 the office is in Cambridge."
+      }
+    },
+    {
+      "blind_id": "B054",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The meeting starts at 3 PM."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-I2",
+        "text": "The meeting is at 4 PM; the 3 PM time I had earlier was for the wrong event."
+      }
+    },
+    {
+      "blind_id": "B055",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "At noon, Room 204 was empty."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-I3",
+        "text": "At noon, Maya and Daniel were both inside Room 204."
+      }
+    },
+    {
+      "blind_id": "B056",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I have no siblings."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-I4",
+        "text": "My sister Lina is visiting me tomorrow."
+      }
+    },
+    {
+      "blind_id": "B057",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya's laptop is silver."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-N1",
+        "text": "Daniel's laptop is black."
+      }
+    },
+    {
+      "blind_id": "B058",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya works at Acme."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-N2",
+        "text": "Maya lives in Pasadena."
+      }
+    },
+    {
+      "blind_id": "B059",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I use dark mode on my laptop."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-N3",
+        "text": "I use light mode on my phone."
+      }
+    },
+    {
+      "blind_id": "B060",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I drink coffee at work in the morning."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-N4",
+        "text": "I avoid coffee after 6 PM."
+      }
+    },
+    {
+      "blind_id": "B061",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My appointment is on Monday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-A1",
+        "text": "It's Tuesday now, but I can't remember whether the appointment was rescheduled or I had the original date wrong."
+      }
+    },
+    {
+      "blind_id": "B062",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The interview is on Monday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-A2",
+        "text": "I think it might be Tuesday instead of Monday, but I'm not sure."
+      }
+    },
+    {
+      "blind_id": "B063",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya works at Acme."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-A3",
+        "text": "Someone told me Maya works at Nova, but I haven't confirmed it."
+      }
+    },
+    {
+      "blind_id": "B064",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I paid $40 for the ticket."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CC-A4",
+        "text": "I can't remember whether I paid $40 or $50."
+      }
+    },
+    {
+      "blind_id": "B065",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Heavy rain soaked the ground around the house all night."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-P1",
+        "text": "The heavy rain caused water to flood the basement."
+      }
+    },
+    {
+      "blind_id": "B066",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The API certificate had expired."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-P2",
+        "text": "Requests were rejected because the certificate had expired."
+      }
+    },
+    {
+      "blind_id": "B067",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Security approval was required before the release could proceed."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-P3",
+        "text": "The release was allowed to proceed once security approval was granted."
+      }
+    },
+    {
+      "blind_id": "B068",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I switched off the circuit breaker for the living room."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-P4",
+        "text": "The living-room lights went out because the breaker was switched off."
+      }
+    },
+    {
+      "blind_id": "B069",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The application could not start because a required dependency was missing."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-I1",
+        "text": "After I installed that missing dependency, the application launched normally."
+      }
+    },
+    {
+      "blind_id": "B070",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The account had to be verified before private files could be opened."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-I2",
+        "text": "Once the account was verified, access to the private files became available."
+      }
+    },
+    {
+      "blind_id": "B071",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Dust was blocking the computer's exhaust vent and preventing hot air from escaping."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-I3",
+        "text": "After I cleared the blocked vent, airflow returned and the computer temperature dropped substantially."
+      }
+    },
+    {
+      "blind_id": "B072",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Payment was required before the hotel reservation could be confirmed."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-I4",
+        "text": "The reservation became confirmed after the required payment was completed."
+      }
+    },
+    {
+      "blind_id": "B073",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I submitted my job application on Monday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-N1",
+        "text": "My printer stopped working on Tuesday."
+      }
+    },
+    {
+      "blind_id": "B074",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My laptop battery is fully charged."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-N2",
+        "text": "My bicycle tire pressure is low."
+      }
+    },
+    {
+      "blind_id": "B075",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Coffee-shop cold-drink sales increased during the heat wave."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-N3",
+        "text": "Ice-cream sales also increased during the same heat wave."
+      }
+    },
+    {
+      "blind_id": "B076",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I watered the plants in the afternoon."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-N4",
+        "text": "I reviewed a pull request later that afternoon."
+      }
+    },
+    {
+      "blind_id": "B077",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I installed a software update this morning."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-A1",
+        "text": "The application crashed shortly after the update."
+      }
+    },
+    {
+      "blind_id": "B078",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "I drank a strong coffee in the afternoon."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-A2",
+        "text": "I developed a headache later that afternoon."
+      }
+    },
+    {
+      "blind_id": "B079",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Traffic to the server dropped sharply."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "The server was restarted at about the same time."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-A3",
+        "text": "The server recovered immediately afterward."
+      }
+    },
+    {
+      "blind_id": "B080",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The product page was redesigned."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "A large promotion campaign launched the same day."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-CAU-A4",
+        "text": "Sales increased soon afterward."
+      }
+    },
+    {
+      "blind_id": "B081",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The repair receipt lists a total charge of $54."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-P1",
+        "text": "The repair cost $54."
+      }
+    },
+    {
+      "blind_id": "B082",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The complete test report shows 128 tests passed and 0 failed."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-P2",
+        "text": "The full test suite passed."
+      }
+    },
+    {
+      "blind_id": "B083",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My signed offer letter lists September 14 as my start date."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-P3",
+        "text": "My scheduled job start date is September 14."
+      }
+    },
+    {
+      "blind_id": "B084",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The calibrated room sensor recorded 28\u00b0C at noon."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-P4",
+        "text": "The room temperature at noon was 28\u00b0C."
+      }
+    },
+    {
+      "blind_id": "B085",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The carrier tracking record shows the package as delivered at 2:14 PM."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-I1",
+        "text": "The package has arrived."
+      }
+    },
+    {
+      "blind_id": "B086",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My bank statement shows a $120 payment to the electric company matching the $120 electric bill due that month."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-I2",
+        "text": "I paid the electric bill."
+      }
+    },
+    {
+      "blind_id": "B087",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The hotel's confirmation email lists reservation H27 as confirmed."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "The booking agency portal independently lists reservation H27 as confirmed."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-I3",
+        "text": "My hotel reservation H27 is confirmed."
+      }
+    },
+    {
+      "blind_id": "B088",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "My parking receipt shows entry at LAX at 8:42 AM."
+        },
+        {
+          "assertion_id": "A2",
+          "text": "My boarding record shows an LAX departure later that morning."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-I4",
+        "text": "I was at LAX that morning."
+      }
+    },
+    {
+      "blind_id": "B089",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The laptop manual says the battery can last up to 10 hours."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-N1",
+        "text": "My laptop battery lasted 10 hours yesterday."
+      }
+    },
+    {
+      "blind_id": "B090",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The meeting agenda included a vote on the budget."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-N2",
+        "text": "The budget was approved."
+      }
+    },
+    {
+      "blind_id": "B091",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Maya is a manager who is authorized to approve expenses."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-N3",
+        "text": "Maya approved this expense."
+      }
+    },
+    {
+      "blind_id": "B092",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The Orion project documentation discusses database migration."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-N4",
+        "text": "The Orion database migration succeeded last night."
+      }
+    },
+    {
+      "blind_id": "B093",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "A partial test report shows 20 tests passed."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-A1",
+        "text": "All tests passed."
+      }
+    },
+    {
+      "blind_id": "B094",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The store page showed the item as in stock yesterday."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-A2",
+        "text": "The item is in stock now."
+      }
+    },
+    {
+      "blind_id": "B095",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "Tracking for order 104 shows that a shipping label was created."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-A3",
+        "text": "Order 104 has shipped."
+      }
+    },
+    {
+      "blind_id": "B096",
+      "archive_assertions": [
+        {
+          "assertion_id": "A1",
+          "text": "The service returned one successful health check at 1:05 PM."
+        }
+      ],
+      "new_evidence": {
+        "evidence_id": "E-SUP-A4",
+        "text": "The service was healthy throughout the afternoon."
+      }
+    }
+  ]
+}

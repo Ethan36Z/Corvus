@@ -1,0 +1,1805 @@
+{
+  "run_id": "P3_REVIEWER_CRITIC_V0.1_FIXED_BLIND_RUN",
+  "protocol_id": "P3_REVIEWER_CRITIC_V0.1",
+  "protocol_sha256": "ea3dbffb199e06847bec9f06df2cb8247fa1ffef3d95ec2e9a2ef80e164b6df3",
+  "blind_input_sha256": "25c2f95c170e8ee2030bd22f8320d7a24948b4960b40312cb9a5d9d2c34e9e52",
+  "model": {
+    "alias": "corvus",
+    "temperature": 0,
+    "thinking": false,
+    "max_tokens": 400
+  },
+  "started_at_utc": "2026-09-01T23:14:00.010073+00:00",
+  "results": [
+    {
+      "blind_id": "B001",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence describes a generic event ('just started a new job') without specifying which sister, creating a non-trivial ambiguity regarding whether the 'my' in the evidence refers to the same speaker as the 'my' in",
+      "unresolved_alternatives": [
+        "The speaker has multiple sisters, and the new job belongs to a different sister than Lina.",
+        "The term 'my sister' in the evidence is used generically to refer to a group, while A1 specifies a single individual.",
+        "The evidence implies a temporal sequence where Lina's job start is the specific event being reported, but the text lacks"
+      ],
+      "latency_seconds": 3.295,
+      "prompt_tokens": 224,
+      "completion_tokens": 175
+    },
+    {
+      "blind_id": "B002",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The approval of a vacation by a manager does not semantically necessitate that the specific manager who approved it is the same individual referred to as 'my manager' in assertion A1; the approval could have been granted",
+      "unresolved_alternatives": [
+        "The 'manager' in A1 is a distinct role from the approver in E-C-P2 (e.g., functional vs. administrative manager).",
+        "The approval in E-C-P2 was granted by a superior above the 'manager' defined in A1.",
+        "The text in E-C-P2 implies a generic managerial function rather than a specific identity link to A1."
+      ],
+      "latency_seconds": 3.808,
+      "prompt_tokens": 221,
+      "completion_tokens": 204
+    },
+    {
+      "blind_id": "B003",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence lacks an explicit subject; without confirmation that 'She' refers to 'Maya', a direct semantic link to A1 is speculative.",
+      "unresolved_alternatives": [
+        "The speaker in E-C-P3 is a third party relaying information about Maya's meeting.",
+        "The meeting cancellation is an unrelated event occurring on the same day.",
+        "The pronoun 'She' refers to a different individual entirely."
+      ],
+      "latency_seconds": 2.62,
+      "prompt_tokens": 224,
+      "completion_tokens": 133
+    },
+    {
+      "blind_id": "B004",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The evidence 'Dr. Chen' is a generic professional title that does not definitively confirm identity with 'Mei Chen' without explicit linking or shared context, making the connection speculative.",
+      "unresolved_alternatives": [
+        "Dr. Chen is a different dentist than Mei Chen.",
+        "Mei Chen is not a dentist but holds a different role (e.g., receptionist) and the appointment was scheduled by a doctor.",
+        "The text implies a relationship but lacks the semantic bridge to confirm 'Dr.' refers to 'Mei'."
+      ],
+      "latency_seconds": 3.489,
+      "prompt_tokens": 224,
+      "completion_tokens": 192
+    },
+    {
+      "blind_id": "B005",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence describes a future event (moving next month) regarding the sister, whereas the archived assertion is a static identity claim; the temporal gap prevents establishing a direct causal or state-change link, ",
+      "unresolved_alternatives": [
+        "The assertion implies the sister currently resides with the speaker, while the evidence implies she is leaving, creating",
+        "The phrase 'only sister' in the evidence might be interpreted as 'only remaining sister' if a sibling died, though the",
+        "The evidence could be a hypothetical scenario unrelated to the actual existence of the sister mentioned in the assertion"
+      ],
+      "latency_seconds": 3.147,
+      "prompt_tokens": 227,
+      "completion_tokens": 163
+    },
+    {
+      "blind_id": "B006",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The name 'Alex' in the new evidence is a common nickname that may refer to any individual named Alex, not necessarily Alexander Chen; without explicit linkage, assuming identity is a logical leap.",
+      "unresolved_alternatives": [
+        "Alex is a different person entirely.",
+        "Alexander Chen uses 'Alex' only in specific contexts not mentioned here.",
+        "The evidence implies a group of Alexes, and Chen is one of them."
+      ],
+      "latency_seconds": 2.906,
+      "prompt_tokens": 221,
+      "completion_tokens": 161
+    },
+    {
+      "blind_id": "B007",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The text 'The Orion lead' is ambiguous; it could refer to a different individual than Priya, or 'Orion' could denote a department rather than the specific project named in A1, breaking the identity link.",
+      "unresolved_alternatives": [
+        "Priya is the lead, but the approval was delegated to a subordinate.",
+        "The 'Orion lead' refers to a different project with the same name.",
+        "The approval occurred prior to Priya assuming the lead role, making the event order non-causal."
+      ],
+      "latency_seconds": 3.414,
+      "prompt_tokens": 226,
+      "completion_tokens": 183
+    },
+    {
+      "blind_id": "B008",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The phrase 'afterward' is ambiguous regarding the specific event it modifies; it could refer to the presentation itself, the demo completion, or an unstated intermediate step, making a definitive causal or temporal link,",
+      "unresolved_alternatives": [
+        "The email was sent immediately after the presentation concluded.",
+        "The email was sent after a separate, unmentioned follow-up meeting.",
+        "The email was sent days later, unrelated to the immediate timing of the demo."
+      ],
+      "latency_seconds": 3.192,
+      "prompt_tokens": 226,
+      "completion_tokens": 176
+    },
+    {
+      "blind_id": "B009",
+      "candidate_assertion_ids": [],
+      "possible_relation_families": [],
+      "strongest_objection": "The surname 'Zhang' in the archived assertion and 'Gomez' in the new evidence are linguistically distinct and non-interchangeable; without explicit evidence of a name change, alias, or shared identity, no semantic link (",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.923,
+      "prompt_tokens": 225,
+      "completion_tokens": 89
+    },
+    {
+      "blind_id": "B010",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence specifies a manager from 'another department,' which semantically contradicts the identity claim in A1 that 'Daniel' is 'my' manager, unless Daniel holds a dual role or the 'my' in A1 refers to a past/ir",
+      "unresolved_alternatives": [
+        "Daniel is the manager of the 'other department' mentioned in the evidence.",
+        "The 'my' in A1 refers to a different context (e.g., a previous job) than the current evidence.",
+        "The contact was made on behalf of Daniel, not as Daniel himself."
+      ],
+      "latency_seconds": 3.033,
+      "prompt_tokens": 223,
+      "completion_tokens": 164
+    },
+    {
+      "blind_id": "B011",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The shared surname 'Chen' is statistically common and insufficient to establish a non-trivial semantic link between a dentist and a physicist without explicit textual evidence of identity or relationship.",
+      "unresolved_alternatives": [
+        "The two individuals are distinct people sharing a common surname.",
+        "The speaker is conflating two different people named Chen.",
+        "The interview with the physicist inadvertently mentions the dentist, creating an unrecorded link."
+      ],
+      "latency_seconds": 2.612,
+      "prompt_tokens": 226,
+      "completion_tokens": 133
+    },
+    {
+      "blind_id": "B012",
+      "candidate_assertion_ids": [],
+      "possible_relation_families": [],
+      "strongest_objection": "The new evidence introduces a male subject ('He') and a specific action ('attached the contract') that share no semantic overlap, entity identity, or plausible causal/temporal linkage with the female subjects (Maya, Priy",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.819,
+      "prompt_tokens": 271,
+      "completion_tokens": 86
+    },
+    {
+      "blind_id": "B013",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The name 'Lina' in the new evidence is ambiguous; it could refer to either Lina Zhang or Lina Gomez, or a third party entirely, making any semantic link to the specific archived assertions speculative without disambiguar",
+      "unresolved_alternatives": [
+        "The promotion belongs to Lina Zhang (A1).",
+        "The promotion belongs to Lina Gomez (A2).",
+        "The promotion belongs to a different 'Lina' unrelated to the archive."
+      ],
+      "latency_seconds": 2.996,
+      "prompt_tokens": 244,
+      "completion_tokens": 152
+    },
+    {
+      "blind_id": "B014",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The pronoun 'She' in the new evidence lacks explicit antecedent resolution within the provided text; assuming it refers to a specific individual (Maya or Priya) rather than a generic third party or the speaker themselves",
+      "unresolved_alternatives": [
+        "'She' refers to Maya, implying she evaluated the interview positively.",
+        "'She' refers to Priya, implying she evaluated the interview positively.",
+        "'She' refers to a third party not listed in the archive assertions who was also present at the interview."
+      ],
+      "latency_seconds": 3.044,
+      "prompt_tokens": 273,
+      "completion_tokens": 161
+    },
+    {
+      "blind_id": "B015",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The name 'Alex' in the new evidence is ambiguous; it could refer to either Alexander Chen or Alex Rivera, making a definitive link to a specific archived assertion impossible without external disambiguation.",
+      "unresolved_alternatives": [
+        "The 'Alex' in the new evidence refers to Alexander Chen (A1).",
+        "The 'Alex' in the new evidence refers to Alex Rivera (A2).",
+        "The 'Alex' in the new evidence refers to a third, unmentioned individual entirely."
+      ],
+      "latency_seconds": 2.854,
+      "prompt_tokens": 242,
+      "completion_tokens": 152
+    },
+    {
+      "blind_id": "B016",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence lacks a specific subject; without knowing who 'My manager' refers to, no logical link can be established between the recommendation and the specific project managers Daniel or Priya.",
+      "unresolved_alternatives": [
+        "The 'manager' mentioned in the evidence is Daniel or Priya, and the recommendation is a professional development task.",
+        "The 'manager' is a third party (e.g., a senior executive) who recommended the course to Daniel or Priya.",
+        "The 'manager' is the user themselves, and the statement is a self-referential note unrelated to the project managers' bi"
+      ],
+      "latency_seconds": 3.266,
+      "prompt_tokens": 248,
+      "completion_tokens": 174
+    },
+    {
+      "blind_id": "B017",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "Temporal precedence of application over interview is a trivial sequence common to all hiring workflows and does not inherently imply a specific causal link or unique semantic connection without additional context.",
+      "unresolved_alternatives": [
+        "The interview date is unrelated to the application date and represents a separate event in a different timeline.",
+        "The application date is incorrect, and the interview occurred prior to the stated submission.",
+        "The 'application' refers to a secondary step (e.g., visa or background check) rather than the initial submission."
+      ],
+      "latency_seconds": 3.287,
+      "prompt_tokens": 410,
+      "completion_tokens": 178
+    },
+    {
+      "blind_id": "B018",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The temporal overlap between the Seattle trip (July 1–7) and the conference (July 3–4) is insufficient to establish a non-trivial semantic connection without explicit evidence linking the two events (e.g., the conference",
+      "unresolved_alternatives": [
+        "The conference is a separate event unrelated to the Seattle trip, occurring coincidentally within the same timeframe.",
+        "The user attended the conference remotely or in a different location, making the temporal overlap irrelevant to the trip",
+        "The 'Seattle trip' is a broader itinerary that includes the conference as a sub-event, but the current assertion lacks a"
+      ],
+      "latency_seconds": 3.932,
+      "prompt_tokens": 417,
+      "completion_tokens": 207
+    },
+    {
+      "blind_id": "B019",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The temporal boundaries of the maintenance window (ending Sept 4) and the outage (starting Sept 3) overlap significantly, yet the semantic link between a scheduled maintenance event and an unplanned outage is not definit",
+      "unresolved_alternatives": [
+        "The outage occurred independently of the maintenance window, merely coinciding in time.",
+        "The maintenance window was extended or delayed, causing the outage to begin before the window ended.",
+        "The outage was the direct result of the maintenance activities, but the specific timing implies a failure during the 'c'"
+      ],
+      "latency_seconds": 3.584,
+      "prompt_tokens": 405,
+      "completion_tokens": 187
+    },
+    {
+      "blind_id": "B020",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The temporal overlap between the end of the first workshop (Sept 3) and the start of the second (Sept 3) is ambiguous; without explicit confirmation of sequential scheduling or shared resources, this could be a coincidnt",
+      "unresolved_alternatives": [
+        "The workshops are distinct, unrelated events occurring on the same day.",
+        "The second workshop is a continuation or resumption of the first.",
+        "The timestamps represent administrative boundaries rather than actual activity periods."
+      ],
+      "latency_seconds": 3.276,
+      "prompt_tokens": 407,
+      "completion_tokens": 168
+    },
+    {
+      "blind_id": "B021",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation"
+      ],
+      "strongest_objection": "The phrase 'Two days after' is ambiguous regarding the counting method (inclusive vs. exclusive) and the specific start time of the 'offer' event, making the precise temporal gap indeterminate without further granularity",
+      "unresolved_alternatives": [
+        "The offer was sent on May 12, 2026 (exclusive counting).",
+        "The offer was sent on May 11, 2026 (inclusive counting).",
+        "The 'two days' refers to a business-day count rather than calendar days."
+      ],
+      "latency_seconds": 2.784,
+      "prompt_tokens": 331,
+      "completion_tokens": 149
+    },
+    {
+      "blind_id": "B022",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The phrase 'The following morning' is a generic temporal marker that does not strictly define a 24-hour interval or a specific causal link; the deployment could have started immediately after the Monday afternoon review,",
+      "unresolved_alternatives": [
+        "The review concluded late Monday, and deployment began Tuesday morning.",
+        "The review occurred Monday afternoon, but deployment was delayed until the subsequent morning (Tuesday).",
+        "The 'following morning' refers to a non-sequential day due to an intervening event not mentioned in the text."
+      ],
+      "latency_seconds": 3.176,
+      "prompt_tokens": 224,
+      "completion_tokens": 172
+    },
+    {
+      "blind_id": "B023",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The phrase 'Before I started' establishes a strict temporal sequence but does not inherently imply a causal link (i.e., finishing the course caused the job start); inferring causality requires external context not found.",
+      "unresolved_alternatives": [
+        "The course completion was a mandatory prerequisite for the job start.",
+        "The course completion was a voluntary activity unrelated to the job start.",
+        "The statement implies a sequence of events without specifying the nature of the connection between them."
+      ],
+      "latency_seconds": 3.297,
+      "prompt_tokens": 232,
+      "completion_tokens": 178
+    },
+    {
+      "blind_id": "B024",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The new evidence lacks specific temporal anchors (e.g., dates or times) for the conference, making it impossible to verify if the event occurred within the specific July 1–7 window defined in A1 without external calendar",
+      "unresolved_alternatives": [
+        "The conference occurred outside the July 1–7 window, rendering the connection false.",
+        "The phrase 'my Seattle trip' in the new evidence refers to a different, unnamed trip distinct from the one in A1.",
+        "The conference was a recurring annual event where the specific instance mentioned could have happened in a different, un"
+      ],
+      "latency_seconds": 3.921,
+      "prompt_tokens": 233,
+      "completion_tokens": 206
+    },
+    {
+      "blind_id": "B025",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation"
+      ],
+      "strongest_objection": "Co-occurrence of two distinct daily events on the same date does not inherently imply a causal, sequential, or explanatory link; the temporal overlap is trivial and likely coincidental without further context.",
+      "unresolved_alternatives": [
+        "The grocery purchase was a prerequisite for the dental visit (e.g., bringing food for a procedure).",
+        "The dental appointment was rescheduled to coincide with the grocery run for logistical convenience.",
+        "Both events are part of a larger, unrecorded daily routine or errand chain."
+      ],
+      "latency_seconds": 2.77,
+      "prompt_tokens": 397,
+      "completion_tokens": 145
+    },
+    {
+      "blind_id": "B026",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "Temporal adjacency between an interview and a vacation start does not inherently imply a causal link (e.g., vacation taken to recover from interview stress) or a specific semantic dependency; the connection relies solely",
+      "unresolved_alternatives": [
+        "The vacation was pre-planned and unrelated to the interview outcome.",
+        "The interview was a scheduled event that coincidentally occurred immediately before the vacation.",
+        "The user is implying a causal relationship (e.g., 'I got the job and went on vacation' or 'I failed and needed a break')"
+      ],
+      "latency_seconds": 3.353,
+      "prompt_tokens": 405,
+      "completion_tokens": 184
+    },
+    {
+      "blind_id": "B027",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The shared timestamp (September 4, 2026) is insufficient to establish a semantic link between a corporate deployment and a personal arrival without explicit contextual bridging; temporal coincidence alone does not imply,",
+      "unresolved_alternatives": [
+        "The friend's arrival was a scheduled component of the Orion deployment logistics.",
+        "The friend arrived independently on the same day, creating a false correlation.",
+        "The 'Orion deployment' refers to a personal project unrelated to the corporate entity, making the events coincidental."
+      ],
+      "latency_seconds": 3.403,
+      "prompt_tokens": 409,
+      "completion_tokens": 181
+    },
+    {
+      "blind_id": "B028",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The temporal overlap between the submission event (ending June 4) and the dental appointment (starting June 4) is insufficient to establish a non-trivial semantic connection without explicit contextual evidence linking a",
+      "unresolved_alternatives": [
+        "The dental appointment was a scheduled routine unrelated to the project submission.",
+        "The dental appointment was a consequence of stress or fatigue caused by the project submission.",
+        "The dental appointment was a distraction or interruption during the finalization of the project submission."
+      ],
+      "latency_seconds": 3.235,
+      "prompt_tokens": 404,
+      "completion_tokens": 170
+    },
+    {
+      "blind_id": "B029",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The term 'around' introduces significant temporal ambiguity that prevents a definitive link to the specific event 'happened on Monday' without external context regarding the duration or precision of the deployment window",
+      "unresolved_alternatives": [
+        "The deployment window was narrow enough to coincide exactly with the Monday review.",
+        "The deployment occurred on a different day, and the mention of Monday is coincidental or refers to a different aspect of",
+        "The review and deployment are part of a single, multi-day process where 'Monday' serves as a general anchor point for a"
+      ],
+      "latency_seconds": 3.398,
+      "prompt_tokens": 222,
+      "completion_tokens": 188
+    },
+    {
+      "blind_id": "B030",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation"
+      ],
+      "strongest_objection": "The phrase 'that week' is semantically ambiguous regarding the specific day; it could refer to the entire week containing Wednesday or a subsequent week, making a precise temporal link unverifiable without external date-",
+      "unresolved_alternatives": [
+        "'That week' refers to the specific week containing Wednesday, implying contact occurred on Wednesday or another day of 2",
+        "'That week' refers to the following week, severing the direct temporal link to Wednesday",
+        "The speaker uses 'that week' as a vague temporal marker with no strict chronological constraint relative to the named 3]"
+      ],
+      "latency_seconds": 3.208,
+      "prompt_tokens": 223,
+      "completion_tokens": 159
+    },
+    {
+      "blind_id": "B031",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The phrase 'sometime around that week' is semantically vague and lacks specific temporal granularity to definitively link the speaker's presence in San Francisco to the specific dates of May 9–11 without external context",
+      "unresolved_alternatives": [
+        "The speaker arrived in San Francisco before May 9 and left after May 11, making the events disjoint.",
+        "The speaker was in San Francisco during a different week entirely, and 'that week' refers to a previously mentioned but佚"
+      ],
+      "latency_seconds": 3.284,
+      "prompt_tokens": 237,
+      "completion_tokens": 177
+    },
+    {
+      "blind_id": "B032",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The new evidence explicitly states uncertainty regarding the specific temporal ordering ('either just before or just after'), rendering any definitive temporal or causal link between the review and the deployment sememnt",
+      "unresolved_alternatives": [
+        "The deployment occurred immediately prior to the review.",
+        "The deployment occurred immediately following the review.",
+        "The speaker's inability to distinguish the order implies the events were so proximate that their sequence is functionals"
+      ],
+      "latency_seconds": 3.093,
+      "prompt_tokens": 234,
+      "completion_tokens": 162
+    },
+    {
+      "blind_id": "B033",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The assertion 'I lived in Seattle through 2025' is semantically compatible with moving to Portland in 2026; the new evidence does not contradict the past state but rather describes a subsequent transition, making a non-d",
+      "unresolved_alternatives": [
+        "The phrase 'through 2025' implies residence ceased exactly at the start of 2026, aligning perfectly with the move date.",
+        "The phrase 'through 2025' implies residence continued into early 2026, creating a minor temporal overlap before the move",
+        "The assertion refers to a specific period of employment or residency distinct from the general relocation event."
+      ],
+      "latency_seconds": 4.181,
+      "prompt_tokens": 237,
+      "completion_tokens": 227
+    },
+    {
+      "blind_id": "B034",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The assertion 'through 2025' is semantically compatible with leaving in 2026; the new evidence does not contradict the original claim but rather extends the timeline, making a direct conflict unlikely without additional,",
+      "unresolved_alternatives": [
+        "The phrase 'through 2025' implies employment ceased exactly at the end of 2025, which aligns perfectly with a 2026 start",
+        "The phrase 'through 2025' implies employment continued into 2026, creating a minor temporal tension with a 2026 start",
+        "The new evidence is a separate, unrelated event occurring after the period covered by the assertion"
+      ],
+      "latency_seconds": 4.174,
+      "prompt_tokens": 239,
+      "completion_tokens": 225
+    },
+    {
+      "blind_id": "B035",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The assertion specifies a fixed year (2025), whereas the evidence uses the vague temporal marker 'These days,' creating a potential mismatch in the timeframe being described without explicit confirmation that 'these days",
+      "unresolved_alternatives": [
+        "The user's preference shifted from VS Code to Zed sometime after 2025.",
+        "The user's preference shifted from VS Code to Zed sometime before 2025, making the 2025 claim outdated.",
+        "The user maintains multiple preferred editors depending on the specific project or context."
+      ],
+      "latency_seconds": 3.502,
+      "prompt_tokens": 237,
+      "completion_tokens": 189
+    },
+    {
+      "blind_id": "B036",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The term 'earlier this year' is temporally ambiguous without a defined reference frame for 'now,' making the specific transition point between private beta and public launch unverifiable from the text alone.",
+      "unresolved_alternatives": [
+        "The public launch occurred immediately after the beta period ended.",
+        "The public launch occurred significantly later than the beta period ended.",
+        "The 'public launch' refers to a marketing event rather than a functional availability change."
+      ],
+      "latency_seconds": 2.919,
+      "prompt_tokens": 228,
+      "completion_tokens": 165
+    },
+    {
+      "blind_id": "B037",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "causal_relation"
+      ],
+      "strongest_objection": "The assertion 'Firefox is my default browser' lacks a temporal qualifier (e.g., 'was', 'still is'), creating ambiguity regarding whether the statement reflects a past state or a current one that has since been superseded",
+      "unresolved_alternatives": [
+        "The user updated their default browser to Brave in June, rendering A1 factually incorrect as of today.",
+        "The user maintains Firefox as a secondary default for specific contexts (e.g., development) while using Brave for daily.",
+        "The user is describing a historical fact without implying it is their current state."
+      ],
+      "latency_seconds": 3.841,
+      "prompt_tokens": 227,
+      "completion_tokens": 203
+    },
+    {
+      "blind_id": "B038",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "causal_relation"
+      ],
+      "strongest_objection": "The assertion 'Lina is on the Orion team' lacks a temporal qualifier (e.g., 'was', 'is currently'), creating ambiguity regarding whether the statement describes a past state or a present one that has since been supersed.",
+      "unresolved_alternatives": [
+        "The assertion describes Lina's current status, making the new evidence a direct contradiction.",
+        "The assertion describes Lina's status at an unspecified past time, making the new evidence a consistent sequence of team",
+        "The assertion describes a concurrent or overlapping period where Lina was briefly on both teams before the transfer."
+      ],
+      "latency_seconds": 3.922,
+      "prompt_tokens": 229,
+      "completion_tokens": 205
+    },
+    {
+      "blind_id": "B039",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence states Priya took over the role in August, which directly contradicts the archived assertion that Daniel is the current backend team lead unless Daniel's tenure ended prior to August or the assertion is,",
+      "unresolved_alternatives": [
+        "Daniel is the backend team lead as of a date before August, and the assertion lacks a temporal qualifier.",
+        "The 'backend team lead' role was split or redefined between Daniel and Priya, making both statements partially true in a",
+        "The new evidence refers to a temporary acting capacity for Priya, while Daniel remains the permanent lead."
+      ],
+      "latency_seconds": 3.798,
+      "prompt_tokens": 230,
+      "completion_tokens": 200
+    },
+    {
+      "blind_id": "B040",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The assertion describes a habitual past state ('usually'), while the evidence describes a current state resulting from a specific change ('Since moving...'); the temporal shift renders a direct factual contradiction or a",
+      "unresolved_alternatives": [
+        "The 'usual' habit has been completely replaced by the new routine, making the original assertion factually outdated but "
+      ],
+      "latency_seconds": 3.104,
+      "prompt_tokens": 231,
+      "completion_tokens": 152
+    },
+    {
+      "blind_id": "B041",
+      "candidate_assertion_ids": [],
+      "possible_relation_families": [],
+      "strongest_objection": "The entities (Daniel vs. Priya) and organizations (Acme vs. Nova) are entirely disjoint; no semantic bridge exists between the two assertions.",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.714,
+      "prompt_tokens": 224,
+      "completion_tokens": 84
+    },
+    {
+      "blind_id": "B042",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The promotion event lacks explicit semantic linkage to the location; assuming a connection between 'living in Los Angeles' and 'becoming an engineering manager' requires external world knowledge not present in the text,犯",
+      "unresolved_alternatives": [
+        "The promotion occurred remotely or in a different city, making the location irrelevant.",
+        "The promotion is unrelated to Daniel's residence, serving only as a biographical update.",
+        "The text implies a corporate relocation that is unstated but contextually inferred."
+      ],
+      "latency_seconds": 3.271,
+      "prompt_tokens": 224,
+      "completion_tokens": 183
+    },
+    {
+      "blind_id": "B043",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The assertion 'I live in Los Angeles' describes a permanent residence, while the evidence 'I'm staying in San Francisco' describes a temporary location; these are distinct states of being that do not inherently conflict,",
+      "unresolved_alternatives": [
+        "The speaker relocated from LA to SF recently and has not updated their self-description.",
+        "The speaker maintains a primary residence in LA but is currently visiting SF.",
+        "The speaker is confused about their current location or is lying."
+      ],
+      "latency_seconds": 3.373,
+      "prompt_tokens": 229,
+      "completion_tokens": 173
+    },
+    {
+      "blind_id": "B044",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The new evidence describes a recent visit ('last weekend') which is temporally distinct from the past residence ('2020'); without explicit semantic markers linking the two events (e.g., 'because I lived there' or 'the *I",
+      "unresolved_alternatives": [
+        "The recent visit was a return trip motivated by the prior residence.",
+        "The mention of 2020 is an isolated fact with no causal or motivational link to the recent visit.",
+        "The user is conflating the location of residence with the location of a recent visit without distinguishing the temporal"
+      ],
+      "latency_seconds": 3.812,
+      "prompt_tokens": 229,
+      "completion_tokens": 203
+    },
+    {
+      "blind_id": "B045",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The assertion 'I live in Los Angeles' describes a permanent residence, whereas the evidence 'I'm in Seattle now' describes a temporary location; a change in current location does not semantically invalidate a claim about",
+      "unresolved_alternatives": [
+        "The speaker moved their permanent residence from Los Angeles to Seattle.",
+        "The speaker is currently visiting Seattle but still considers Los Angeles their home.",
+        "The speaker is lying about their current location or their permanent residence."
+      ],
+      "latency_seconds": 2.794,
+      "prompt_tokens": 225,
+      "completion_tokens": 141
+    },
+    {
+      "blind_id": "B046",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The new evidence explicitly frames the employment status at Acme as uncertain ('I don't know'), rendering any definitive semantic link between the past assertion and current state unverifiable without external resolution",
+      "unresolved_alternatives": [
+        "Maya has left Acme and joined Nova (state evolution)",
+        "Maya has joined Nova while retaining employment at Acme (co-employment)",
+        "The appearance of joining Nova is an illusion or error, and she remains solely at Acme"
+      ],
+      "latency_seconds": 3.413,
+      "prompt_tokens": 238,
+      "completion_tokens": 180
+    },
+    {
+      "blind_id": "B047",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The new evidence is explicitly hedged with 'may' and 'might have misunderstood,' rendering it insufficient to definitively contradict the archived assertion of private beta status without external verification.",
+      "unresolved_alternatives": [
+        "The project status remains ambiguous, and the archived assertion could still be accurate.",
+        "The speaker's uncertainty reflects a lack of definitive knowledge rather than a factual correction.",
+        "The timeline of the project's transition from private to public is unclear and requires further data."
+      ],
+      "latency_seconds": 3.425,
+      "prompt_tokens": 234,
+      "completion_tokens": 184
+    },
+    {
+      "blind_id": "B048",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "causal_relation"
+      ],
+      "strongest_objection": "The preference stated in A1 ('I prefer tea') is a stable trait, whereas the evidence in E-SE-A4 ('Coffee has been my go-to') describes a transient behavioral state; these are not mutually exclusive and do not inherently,",
+      "unresolved_alternatives": [
+        "The user's stated preference is outdated or overridden by current habit.",
+        "The 'go-to' drink is a situational default rather than a reflection of true preference.",
+        "The evidence implies a recent shift in preference that contradicts the archived assertion."
+      ],
+      "latency_seconds": 3.677,
+      "prompt_tokens": 226,
+      "completion_tokens": 196
+    },
+    {
+      "blind_id": "B049",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence explicitly retracts the previous assertion, rendering the original claim factually false within the current context rather than establishing a distinct semantic link.",
+      "unresolved_alternatives": [
+        "The user is testing the system's ability to handle self-correction without external verification.",
+        "The 'Wednesday' claim was a hypothetical scenario, not a factual statement.",
+        "The temporal shift implies a change in schedule due to an unmentioned external event."
+      ],
+      "latency_seconds": 2.431,
+      "prompt_tokens": 229,
+      "completion_tokens": 130
+    },
+    {
+      "blind_id": "B050",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "support_evidence_relation"
+      ],
+      "strongest_objection": "The new evidence explicitly negates the numerical value of the archived assertion, rendering the original factually incorrect rather than semantically connected via a neutral relation.",
+      "unresolved_alternatives": [
+        "The $45 figure represented an initial estimate that was later revised to $54.",
+        "The $45 figure referred to a partial payment or a different repair scope not fully detailed in the correction.",
+        "The correction contains a clerical error and the original $45 figure was accurate."
+      ],
+      "latency_seconds": 3.37,
+      "prompt_tokens": 234,
+      "completion_tokens": 180
+    },
+    {
+      "blind_id": "B051",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The assertions describe mutually exclusive states (online vs. offline) at the identical timestamp, suggesting a direct contradiction rather than a meaningful semantic connection or state evolution; this likely indicates ",
+      "unresolved_alternatives": [
+        "The 'server' in A1 refers to a specific application instance, while 'server' in E-CC-P3 refers to the underlying host, a",
+        "The timestamps in A1 and E-CC-P3 are rounded to the nearest hour, masking a rapid state transition occurring within that",
+        "One assertion describes the intended state, while the other describes the actual observed state, indicating a system"
+      ],
+      "latency_seconds": 4.035,
+      "prompt_tokens": 239,
+      "completion_tokens": 212
+    },
+    {
+      "blind_id": "B052",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence explicitly negates the color attribute of the same subject within the same temporal frame, rendering the archived assertion factually incorrect rather than semantically connected via a complex inference.",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.771,
+      "prompt_tokens": 228,
+      "completion_tokens": 86
+    },
+    {
+      "blind_id": "B053",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The evidence explicitly negates the location stated in the assertion ('Not Boston'), creating a direct factual contradiction that requires immediate verification of the source reliability or the specific context (e.g., a",
+      "unresolved_alternatives": [
+        "The assertion refers to a historical location while the evidence describes the current one.",
+        "The assertion refers to a specific department or satellite office, whereas the evidence refers to the headquarters.",
+        "The evidence contains a typo or misinterpretation of the original location name."
+      ],
+      "latency_seconds": 3.388,
+      "prompt_tokens": 226,
+      "completion_tokens": 187
+    },
+    {
+      "blind_id": "B054",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence explicitly retracts the temporal claim of the archived assertion by attributing the 3 PM time to a different event, rendering the original assertion factually incorrect rather than merely temporally mis-",
+      "unresolved_alternatives": [
+        "The 3 PM time was a placeholder that was never intended to be the final scheduled time.",
+        "The user is conflating two separate meetings occurring on the same day.",
+        "The 'wrong event' refers to a different calendar entry entirely, leaving the status of the actual meeting ambiguous."
+      ],
+      "latency_seconds": 3.046,
+      "prompt_tokens": 241,
+      "completion_tokens": 154
+    },
+    {
+      "blind_id": "B055",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The assertion 'Room 204 was empty' is a state description that may be semantically compatible with the presence of individuals if 'empty' is interpreted strictly as 'free of furniture' or if the individuals are not yet '",
+      "unresolved_alternatives": [
+        "The term 'empty' refers exclusively to the absence of movable objects, not people.",
+        "The individuals Maya and Daniel were not considered 'in' the room at the specific moment of 'noon' due to a timezone or "
+      ],
+      "latency_seconds": 3.621,
+      "prompt_tokens": 237,
+      "completion_tokens": 183
+    },
+    {
+      "blind_id": "B056",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The new evidence explicitly references a 'sister,' which directly contradicts the absolute negation in the archived assertion ('no siblings'), suggesting either a change in family status (e.g., adoption, step-sibling) or",
+      "unresolved_alternatives": [
+        "The term 'sister' is used metaphorically or refers to a non-biological relationship not covered by the original semantic",
+        "The archived assertion was made under a specific constraint (e.g., 'biological siblings only') that the new evidence",
+        "The new evidence contains a hallucination or error regarding the existence of the sister."
+      ],
+      "latency_seconds": 3.896,
+      "prompt_tokens": 225,
+      "completion_tokens": 206
+    },
+    {
+      "blind_id": "B057",
+      "candidate_assertion_ids": [],
+      "possible_relation_families": [],
+      "strongest_objection": "No semantic overlap exists between the subject (Maya vs. Daniel) or the attribute (silver vs. black) to establish a meaningful connection.",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.507,
+      "prompt_tokens": 224,
+      "completion_tokens": 70
+    },
+    {
+      "blind_id": "B058",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [],
+      "strongest_objection": "The new evidence regarding residence (Pasadena) shares no semantic overlap with the archived assertion regarding employment (Acme); location and employer are distinct attributes with no inherent logical connection.",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.652,
+      "prompt_tokens": 224,
+      "completion_tokens": 91
+    },
+    {
+      "blind_id": "B059",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The preference for dark mode on a laptop does not logically preclude the use of light mode on a phone; these are distinct devices with independent settings, making a direct semantic link weak without additional context.",
+      "unresolved_alternatives": [
+        "The user explicitly prefers dark mode for large screens but light mode for mobile devices due to battery or readability.",
+        "The user is in the process of switching their entire ecosystem to light mode, and the laptop setting is outdated.",
+        "The user has specific accessibility needs that vary by device size or usage context."
+      ],
+      "latency_seconds": 3.394,
+      "prompt_tokens": 227,
+      "completion_tokens": 193
+    },
+    {
+      "blind_id": "B060",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The new evidence establishes a boundary condition (post-6 PM) rather than a direct contradiction or logical entailment regarding the morning habit; the temporal gap between 'morning' and 'after 6 PM' leaves a potential 1",
+      "unresolved_alternatives": [
+        "The speaker drinks coffee only in the morning and avoids it entirely after 6 PM.",
+        "The speaker drinks coffee in the morning and potentially in the late afternoon (e.g., 5 PM), but strictly avoids it once",
+        "The 'morning' habit is a generalization that may include late afternoon consumption, which the new evidence explicitly"
+      ],
+      "latency_seconds": 3.62,
+      "prompt_tokens": 228,
+      "completion_tokens": 179
+    },
+    {
+      "blind_id": "B061",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution",
+        "causal_relation"
+      ],
+      "strongest_objection": "The new evidence explicitly expresses uncertainty about the truth of the archived assertion (rescheduling vs. wrong memory) rather than providing definitive contradictory or supporting facts, making a deterministic linkt",
+      "unresolved_alternatives": [
+        "The appointment was indeed on Monday, and the user's current confusion is a false memory of a reschedule.",
+        "The appointment was never on Monday; the user originally misremembered the date entirely.",
+        "The appointment was on Monday, but it was rescheduled to a different day, and the user is unsure of the new date."
+      ],
+      "latency_seconds": 3.378,
+      "prompt_tokens": 241,
+      "completion_tokens": 166
+    },
+    {
+      "blind_id": "B062",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence is explicitly hedged with uncertainty ('I think', 'not sure') and proposes a direct contradiction rather than a confirmed fact, rendering any semantic link to the definitive assertion 'The interview is't",
+      "unresolved_alternatives": [
+        "The speaker is recalling a previous correction that was never finalized.",
+        "The speaker is testing the listener's memory of the original date.",
+        "The uncertainty stems from a time zone ambiguity not mentioned in the text."
+      ],
+      "latency_seconds": 3.342,
+      "prompt_tokens": 233,
+      "completion_tokens": 171
+    },
+    {
+      "blind_id": "B063",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence is explicitly unverified hearsay ('Someone told me...'), whereas the archived assertion is stated as fact; equating them without confirmation risks propagating false information.",
+      "unresolved_alternatives": [
+        "Maya holds dual employment at both Acme and Nova.",
+        "The archived assertion is outdated and no longer true.",
+        "The new evidence refers to a different Maya, creating a false equivalence."
+      ],
+      "latency_seconds": 2.602,
+      "prompt_tokens": 233,
+      "completion_tokens": 131
+    },
+    {
+      "blind_id": "B064",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence explicitly states uncertainty ('can't remember') rather than asserting a specific conflicting fact, making a definitive contradiction or correction impossible to establish without further verification.",
+      "unresolved_alternatives": [
+        "The speaker is recalling a specific past event where the amount was actually $40, and the uncertainty is a current state",
+        "The speaker is recalling a specific past event where the amount was actually $50, and the assertion A1 is an error",
+        "The speaker is recalling a specific past event where the amount was neither $40 nor $50, and both the assertion and the忆"
+      ],
+      "latency_seconds": 3.797,
+      "prompt_tokens": 235,
+      "completion_tokens": 208
+    },
+    {
+      "blind_id": "B065",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The archived assertion describes the duration and location of rain ('all night', 'around the house') but lacks explicit semantic markers regarding the *consequence* of that rain on the basement; the new evidence asserts ",
+      "unresolved_alternatives": [
+        "The rain mentioned in A1 was localized to the perimeter and did not penetrate the foundation, making the flooding in E-1",
+        "The flooding in E-1 was caused by a separate, unmentioned event (e.g., a burst pipe) that coincidentally occurred during"
+      ],
+      "latency_seconds": 3.319,
+      "prompt_tokens": 233,
+      "completion_tokens": 172
+    },
+    {
+      "blind_id": "B066",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence explicitly states the cause of rejection ('because'), whereas the archived assertion only states the state of the certificate; the semantic gap between a static fact and a causal explanation requires re-",
+      "unresolved_alternatives": [
+        "The expiration was coincidental rather than causal, and the rejection stemmed from a different underlying issue.",
+        "The archived assertion is a partial observation of a broader event chain not fully captured by the new evidence.",
+        "The 'expired' status in the archive refers to a different certificate instance than the one causing the rejection."
+      ],
+      "latency_seconds": 3.258,
+      "prompt_tokens": 227,
+      "completion_tokens": 176
+    },
+    {
+      "blind_id": "B067",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence describes the successful outcome of the condition stated in the archive assertion; this is a trivial logical consequence rather than a distinct semantic event or independent fact requiring verification.",
+      "unresolved_alternatives": [
+        "The archive assertion implies a mandatory barrier that was overcome, whereas the new evidence simply confirms the timing",
+        "The archive assertion might imply a failed attempt prior to success, which the new evidence does not explicitly confirm",
+        "The 'release' in the archive assertion could refer to a different entity than the 'release' in the new evidence"
+      ],
+      "latency_seconds": 3.36,
+      "prompt_tokens": 234,
+      "completion_tokens": 183
+    },
+    {
+      "blind_id": "B068",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence explicitly states the lights went out *because* the breaker was switched off, which is a direct causal confirmation of the action in A1 rather than an independent semantic link requiring adversarial re-e",
+      "unresolved_alternatives": [
+        "The 'switching off' action in A1 might refer to a different breaker than the one controlling the lights, despite the phr",
+        "The evidence could be describing a coincidental event unrelated to the specific action mentioned in A1",
+        "The temporal sequence in A1 might be misinterpreted if the breaker was already off before the statement was made"
+      ],
+      "latency_seconds": 3.565,
+      "prompt_tokens": 236,
+      "completion_tokens": 191
+    },
+    {
+      "blind_id": "B069",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence confirms the fix but does not explicitly rule out alternative causes for the initial failure (e.g., a secondary dependency chain issue or a corrupted installation state that was masked by the new package",
+      "unresolved_alternatives": [
+        "The application failed due to a configuration error unrelated to the missing dependency, and the dependency installation"
+      ],
+      "latency_seconds": 2.824,
+      "prompt_tokens": 236,
+      "completion_tokens": 137
+    },
+    {
+      "blind_id": "B070",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence describes a standard procedural sequence (verification enabling access) that is semantically redundant with the archived assertion rather than providing novel, non-trivial information or revealing a flaw",
+      "unresolved_alternatives": [
+        "The archived assertion implies a mandatory barrier, while the new evidence might imply a conditional availability that *"
+      ],
+      "latency_seconds": 2.762,
+      "prompt_tokens": 239,
+      "completion_tokens": 134
+    },
+    {
+      "blind_id": "B071",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence describes a successful remediation of the condition stated in A1; it does not independently verify the initial diagnosis of the blockage or the specific mechanism of heat retention, making the causal 'e'",
+      "unresolved_alternatives": [
+        "The temperature drop was caused by ambient cooling rather than restored airflow.",
+        "The vent was not blocked, but the fan was malfunctioning until cleared.",
+        "The temperature drop is coincidental to the vent clearing."
+      ],
+      "latency_seconds": 3.203,
+      "prompt_tokens": 244,
+      "completion_tokens": 165
+    },
+    {
+      "blind_id": "B072",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence explicitly confirms the condition stated in the archived assertion; this appears to be a deterministic verification rather than a novel semantic connection requiring adversarial scrutiny.",
+      "unresolved_alternatives": [
+        "The 'required payment' in A1 refers to a specific partial deposit, whereas E-CAU-I4 implies full settlement, creating a歧"
+      ],
+      "latency_seconds": 2.848,
+      "prompt_tokens": 234,
+      "completion_tokens": 149
+    },
+    {
+      "blind_id": "B073",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The events are temporally adjacent but semantically disjoint; a printer failure on Tuesday offers no plausible causal mechanism or logical dependency regarding a job application submitted on Monday.",
+      "unresolved_alternatives": [
+        "The printer failure was a direct result of the application submission process (e.g., overheating from high-volume print)",
+        "The printer failure is a coincidental event intended to distract from the application timeline",
+        "The user implies a hidden narrative where the printer failure prevented a follow-up action related to the application"
+      ],
+      "latency_seconds": 3.151,
+      "prompt_tokens": 227,
+      "completion_tokens": 177
+    },
+    {
+      "blind_id": "B074",
+      "candidate_assertion_ids": [],
+      "possible_relation_families": [],
+      "strongest_objection": "The semantic domains (laptop power state vs. bicycle mechanical maintenance) are entirely disjoint with no plausible causal, temporal, or logical connection.",
+      "unresolved_alternatives": [],
+      "latency_seconds": 1.664,
+      "prompt_tokens": 226,
+      "completion_tokens": 81
+    },
+    {
+      "blind_id": "B075",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "correction_contradiction",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The evidence establishes a parallel correlation between two distinct consumer behaviors (ice cream vs. cold drinks) during the same event; it provides no semantic mechanism to explain why one specific beverage category's",
+      "unresolved_alternatives": [
+        "Both categories increased due to a shared, unmentioned third variable (e.g., general summer tourism) rather than the 'ca"
+      ],
+      "latency_seconds": 2.92,
+      "prompt_tokens": 236,
+      "completion_tokens": 151
+    },
+    {
+      "blind_id": "B076",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The phrase 'later that afternoon' is inherently relative and lacks an absolute timestamp; without knowing the specific time of the plant watering, 'later' could refer to any point after the watering, making a definitive ",
+      "unresolved_alternatives": [
+        "The pull request review occurred immediately after watering, implying a tight temporal sequence.",
+        "The pull request review occurred at the very end of the afternoon, implying a long gap between events.",
+        "The term 'afternoon' is used loosely to describe a general work block rather than a precise chronological window."
+      ],
+      "latency_seconds": 2.968,
+      "prompt_tokens": 230,
+      "completion_tokens": 156
+    },
+    {
+      "blind_id": "B077",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The crash could stem from pre-existing instability or a third-party conflict unrelated to the update itself; temporal proximity does not confirm causality.",
+      "unresolved_alternatives": [
+        "The update triggered a latent bug that was previously dormant.",
+        "The crash occurred due to a hardware failure coinciding with the update installation.",
+        "The user misattributed the crash to the update when it was caused by a subsequent action."
+      ],
+      "latency_seconds": 2.898,
+      "prompt_tokens": 228,
+      "completion_tokens": 159
+    },
+    {
+      "blind_id": "B078",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The temporal sequence (coffee then headache) is consistent with coincidence or a third variable (e.g., dehydration, stress, or caffeine withdrawal) rather than direct causation; 'strong' coffee is a vague descriptor that",
+      "unresolved_alternatives": [
+        "The headache was caused by the caffeine content specifically.",
+        "The headache was caused by the acidity of the coffee.",
+        "The headache is unrelated to the coffee and merely occurred later in the same timeframe."
+      ],
+      "latency_seconds": 3.034,
+      "prompt_tokens": 229,
+      "completion_tokens": 166
+    },
+    {
+      "blind_id": "B079",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation"
+      ],
+      "strongest_objection": "The immediate recovery (E-CAU-A3) could indicate a transient network glitch or a self-healing mechanism rather than a direct causal link to the restart (A2), making the restart a coincidental temporal marker rather than,",
+      "unresolved_alternatives": [
+        "The drop (A1) was caused by the restart (A2), and recovery (E-CAU-A3) was a separate event.",
+        "The restart (A2) was a reaction to the drop (A1), but the recovery (E-CAU-A3) was due to an automatic failover unrelated",
+        "The sequence represents three independent events occurring within a narrow time window with no semantic connection."
+      ],
+      "latency_seconds": 3.439,
+      "prompt_tokens": 249,
+      "completion_tokens": 191
+    },
+    {
+      "blind_id": "B080",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The phrase 'soon afterward' is temporally vague and does not establish a specific causal mechanism linking the redesign or promotion to the sales increase; the rise could be coincidental or driven by external market forc",
+      "unresolved_alternatives": [
+        "The sales increase was caused by a third, unmentioned factor occurring between the redesign/promotion and the sales data",
+        "The 'redesign' and 'promotion' were merely concurrent events with no causal link to the sales outcome",
+        "The assertion 'Sales increased soon afterward' is a retrospective interpretation rather than an objective fact"
+      ],
+      "latency_seconds": 3.753,
+      "prompt_tokens": 246,
+      "completion_tokens": 204
+    },
+    {
+      "blind_id": "B081",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "support_evidence_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence is a direct, trivial restatement of the archived assertion with identical semantic content and no added information, making it a candidate for automated deduplication rather than human re-examination.",
+      "unresolved_alternatives": [
+        "The new evidence represents a distinct, independent observation of the same fact made at a different time.",
+        "The new evidence implies a verification process where the cost was confirmed separately from the receipt.",
+        "The new evidence contains an unstated but critical context (e.g., 'after negotiation') that is missing from the archived"
+      ],
+      "latency_seconds": 3.319,
+      "prompt_tokens": 230,
+      "completion_tokens": 186
+    },
+    {
+      "blind_id": "B082",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "support_evidence_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence ('full test suite passed') is semantically identical to the archived assertion ('128 tests passed and 0 failed') without adding new information, making the connection trivial rather than non-trivial.",
+      "unresolved_alternatives": [
+        "The 'full test suite' in new evidence refers to a different, unmentioned set of tests than the 128 listed in the archive",
+        "The archived report is a partial summary, and the new evidence confirms the completeness of the entire suite",
+        "The new evidence implies a specific pass rate threshold was met that the raw count in the archive does not explicitly nu"
+      ],
+      "latency_seconds": 3.651,
+      "prompt_tokens": 233,
+      "completion_tokens": 203
+    },
+    {
+      "blind_id": "B083",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence is a tautological restatement of the archived assertion ('scheduled start date' vs 'start date listed in offer') rather than independent verification or a conflicting fact; it provides no new semantic or",
+      "unresolved_alternatives": [
+        "The 'scheduled' date in new evidence differs from the 'listed' date in the offer due to administrative changes not yet."
+      ],
+      "latency_seconds": 3.0,
+      "prompt_tokens": 236,
+      "completion_tokens": 150
+    },
+    {
+      "blind_id": "B084",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "correction_contradiction"
+      ],
+      "strongest_objection": "The new evidence lacks the specific qualifier 'calibrated' found in the archived assertion, creating an ambiguity regarding whether the new data supersedes the old or merely corroborates it without establishing a source-",
+      "unresolved_alternatives": [
+        "The new evidence is a redundant confirmation of the archived assertion.",
+        "The new evidence implies the archived sensor was uncalibrated and thus inaccurate.",
+        "The new evidence represents a distinct, uncalibrated measurement that conflicts with the calibrated one."
+      ],
+      "latency_seconds": 3.49,
+      "prompt_tokens": 234,
+      "completion_tokens": 183
+    },
+    {
+      "blind_id": "B085",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence 'The package has arrived' is semantically redundant with the archived assertion stating the package was 'delivered'; it lacks the specificity required to challenge or refine the existing timestamped fact",
+      "unresolved_alternatives": [
+        "The new evidence implies a different definition of 'arrived' versus 'delivered' that warrants clarification.",
+        "The new evidence is a generic system status update unrelated to the specific carrier tracking record.",
+        "The new evidence suggests a discrepancy in the delivery location or recipient, though this is not explicitly stated."
+      ],
+      "latency_seconds": 2.982,
+      "prompt_tokens": 233,
+      "completion_tokens": 156
+    },
+    {
+      "blind_id": "B086",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "support_evidence_relation",
+        "temporal_relation"
+      ],
+      "strongest_objection": "The new evidence ('I paid the electric bill') is a generic self-report that lacks the specific granularity (amount, payee, date) present in the archived assertion; the connection relies entirely on the assumption that 'I",
+      "unresolved_alternatives": [
+        "The payment referenced in the new evidence was for a different utility or service, not the electric company.",
+        "The new evidence refers to a payment made in a different month than the one detailed in the archived assertion.",
+        "The archived assertion describes a bill that was paid by a third party or automatically, while the new evidence claims a"
+      ],
+      "latency_seconds": 3.618,
+      "prompt_tokens": 243,
+      "completion_tokens": 194
+    },
+    {
+      "blind_id": "B087",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "causal_relation"
+      ],
+      "strongest_objection": "The new evidence is a first-person subjective claim ('My reservation...') rather than an independent system log or third-party verification, making it semantically weaker than the existing assertions which cite specific,",
+      "unresolved_alternatives": [
+        "The user is reporting a discrepancy between their expectation and the system records (though the text states 'is', not '",
+        "The user is providing a summary of the two existing sources rather than new independent data.",
+        "The new evidence implies a specific context (e.g., a dispute resolution) not present in the archive assertions."
+      ],
+      "latency_seconds": 3.229,
+      "prompt_tokens": 260,
+      "completion_tokens": 165
+    },
+    {
+      "blind_id": "B088",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "coreference_identity"
+      ],
+      "strongest_objection": "The new evidence is a trivial tautology that merely confirms the temporal overlap already explicitly stated in A1 and A2 without adding new semantic constraints or resolving ambiguity.",
+      "unresolved_alternatives": [
+        "The receipt time (8:42 AM) might be an error, and the boarding record is the only accurate timestamp.",
+        "The 'morning' in A2 is vague enough to allow for a significant time gap between entry and departure that the new text 'I"
+      ],
+      "latency_seconds": 3.246,
+      "prompt_tokens": 261,
+      "completion_tokens": 156
+    },
+    {
+      "blind_id": "B089",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "support_evidence_relation"
+      ],
+      "strongest_objection": "The manual's 'up to' claim describes a theoretical maximum under ideal conditions, whereas the new evidence describes a single instance that may have benefited from specific, unmentioned variables (e.g., low brightness, ",
+      "unresolved_alternatives": [
+        "The 10-hour duration represents a statistical average rather than a hard ceiling, making the single data point coincient",
+        "The 'up to' phrasing implies a range where 10 hours is the outlier, not the norm, rendering the evidence statistically t",
+        "The new evidence confirms the lower bound of the manual's claim but does not validate the upper bound if the manual's '1"
+      ],
+      "latency_seconds": 3.702,
+      "prompt_tokens": 236,
+      "completion_tokens": 180
+    },
+    {
+      "blind_id": "B090",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The approval of a budget does not logically necessitate that a vote on it occurred; the budget could have been approved via executive order, retroactive ratification, or default mechanisms without a formal agenda item.",
+      "unresolved_alternatives": [
+        "The budget was approved prior to the meeting, rendering the agenda item moot or ceremonial.",
+        "The 'approval' mentioned in the new evidence refers to a preliminary sign-off distinct from the formal vote described in",
+        "The new evidence describes the outcome of a vote that happened outside the scope of the specific meeting agenda item."
+      ],
+      "latency_seconds": 3.538,
+      "prompt_tokens": 226,
+      "completion_tokens": 196
+    },
+    {
+      "blind_id": "B091",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "causal_relation",
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence confirms an action taken by the subject but does not establish the semantic link between the subject's authorization status and the specific instance of approval; the approval could have occurred via an ",
+      "unresolved_alternatives": [
+        "The approval was performed by Maya acting outside her authorized scope.",
+        "The approval was a procedural formality executed by an automated system using Maya's credentials without her active, non"
+      ],
+      "latency_seconds": 3.305,
+      "prompt_tokens": 229,
+      "completion_tokens": 165
+    },
+    {
+      "blind_id": "B092",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The archive assertion is a generic statement about documentation existence, whereas the new evidence is a specific factual claim about an event outcome; the lack of explicit linkage in the text makes inferring a causal '",
+      "unresolved_alternatives": [
+        "The documentation (A1) was written specifically to describe the migration event mentioned in E-SUP-N4.",
+        "The migration mentioned in E-SUP-N4 is a distinct, unrelated event from the one discussed in the Orion project docs (A1)"
+      ],
+      "latency_seconds": 3.346,
+      "prompt_tokens": 227,
+      "completion_tokens": 170
+    },
+    {
+      "blind_id": "B093",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "correction_contradiction",
+        "support_evidence_relation"
+      ],
+      "strongest_objection": "The new evidence ('All tests passed') directly contradicts the partial nature of the archived assertion ('20 tests passed'), creating ambiguity regarding whether the original report was incomplete, erroneous, or if the '",
+      "unresolved_alternatives": [
+        "The '20 tests passed' refers to a specific subset of tests, while 'All tests passed' refers to the total suite, making A",
+        "The 'All tests passed' is a later update correcting a typo or miscount in the original '20 tests passed' report.",
+        "The 'All tests passed' is a generic template response that does not actually reflect the specific results of the 20-2024"
+      ],
+      "latency_seconds": 3.961,
+      "prompt_tokens": 226,
+      "completion_tokens": 194
+    },
+    {
+      "blind_id": "B094",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence confirms the current state but offers no mechanism to determine if the 'in stock' status from yesterday was accurate, leading, or if the item was temporarily out of stock and restocked; temporal overlap/",
+      "unresolved_alternatives": [
+        "The item was out of stock yesterday and restocked today.",
+        "The item was in stock both days, and the new evidence is redundant confirmation.",
+        "The 'yesterday' status was a display error that has now been corrected."
+      ],
+      "latency_seconds": 2.866,
+      "prompt_tokens": 229,
+      "completion_tokens": 146
+    },
+    {
+      "blind_id": "B095",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "causal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The creation of a shipping label is a preparatory administrative step, whereas 'has shipped' denotes physical dispatch; the evidence does not confirm the label was created *for* this specific shipment event, nor does it证",
+      "unresolved_alternatives": [
+        "The label creation and shipment are coincidental events with no causal link.",
+        "The system recorded the label creation prematurely before the actual shipping event occurred.",
+        "The term 'has shipped' in the new evidence is a status update that implicitly confirms the label creation mentioned in A"
+      ],
+      "latency_seconds": 3.408,
+      "prompt_tokens": 234,
+      "completion_tokens": 187
+    },
+    {
+      "blind_id": "B096",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "possible_relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "strongest_objection": "The new evidence is a broad generalization ('throughout the afternoon') that logically subsumes the specific instance in A1; this does not constitute a non-trivial semantic connection or a contradiction requiring re-exam",
+      "unresolved_alternatives": [
+        "The single health check at 1:05 PM was an anomaly despite the general healthy state.",
+        "The 'afternoon' in the new evidence refers to a different time window than the 1:05 PM check.",
+        "The new evidence is a summary derived from data that includes the specific check in A1, making them redundant ratherthan"
+      ],
+      "latency_seconds": 3.749,
+      "prompt_tokens": 234,
+      "completion_tokens": 203
+    }
+  ],
+  "completed_at_utc": "2026-09-01T23:19:07.674475+00:00"
+}

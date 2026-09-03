@@ -1,6 +1,6 @@
 {
   "benchmark_id": "p3-benchmark-v0.1",
-  "status": "IN_PROGRESS",
+  "status": "FROZEN",
   "target_case_count": 96,
   "slots": [
     {
@@ -199,385 +199,385 @@
       "phenomenon": "state_evolution",
       "decision_mode": "clear_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "clear_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "clear_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "clear_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "indirect_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "indirect_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "indirect_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "indirect_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "hard_negative",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "hard_negative",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "hard_negative",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "hard_negative",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "ambiguous",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "ambiguous",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "ambiguous",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "state_evolution",
       "decision_mode": "ambiguous",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "clear_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "clear_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "clear_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "clear_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "indirect_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "indirect_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "indirect_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "indirect_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "hard_negative",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "hard_negative",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "hard_negative",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "hard_negative",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "ambiguous",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "ambiguous",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "ambiguous",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "correction_contradiction",
       "decision_mode": "ambiguous",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "clear_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "clear_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "clear_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "clear_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "indirect_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "indirect_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "indirect_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "indirect_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "hard_negative",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "hard_negative",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "hard_negative",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "hard_negative",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "ambiguous",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "ambiguous",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "ambiguous",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "causal_relation",
       "decision_mode": "ambiguous",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "clear_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "clear_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "clear_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "clear_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "indirect_positive",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "indirect_positive",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "indirect_positive",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "indirect_positive",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "hard_negative",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "hard_negative",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "hard_negative",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "hard_negative",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "ambiguous",
       "scenario": 1,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "ambiguous",
       "scenario": 2,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "ambiguous",
       "scenario": 3,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     },
     {
       "phenomenon": "support_evidence_relation",
       "decision_mode": "ambiguous",
       "scenario": 4,
-      "status": "UNWRITTEN"
+      "status": "VALIDATED"
     }
   ]
 }

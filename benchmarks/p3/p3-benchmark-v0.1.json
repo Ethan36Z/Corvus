@@ -1,7 +1,7 @@
 {
   "benchmark_id": "p3-benchmark-v0.1",
-  "phase": "Phase 3 \u2014 Relation Intelligence & Gate",
-  "status": "DRAFT",
+  "phase": "Phase 3 — Relation Intelligence & Gate",
+  "status": "FROZEN",
   "target_case_count": 96,
   "primary_candidate_unit": "assertion",
   "epistemic_requirements": [
@@ -1170,6 +1170,1892 @@
           "materialization": "OUT_OF_SCOPE"
         }
       }
+    },
+    {
+      "case_id": "SE-P1",
+      "phenomenon": "state_evolution",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I lived in Seattle through 2025."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-P1",
+          "text": "I moved to Portland in 2026 and live there now."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-P2",
+      "phenomenon": "state_evolution",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya worked at Acme through 2025."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-P2",
+          "text": "Maya left Acme and joined Nova in 2026."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-P3",
+      "phenomenon": "state_evolution",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "In 2025, my preferred code editor was VS Code."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-P3",
+          "text": "These days I prefer Zed as my code editor."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-P4",
+      "phenomenon": "state_evolution",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Project Orion was in private beta earlier this year."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-P4",
+          "text": "Orion has now launched publicly."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-I1",
+      "phenomenon": "state_evolution",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Firefox is my default browser."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-I1",
+          "text": "Brave has been my default browser since June."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-I2",
+      "phenomenon": "state_evolution",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Lina is on the Orion team."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-I2",
+          "text": "Lina transferred to the Falcon team this spring."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-I3",
+      "phenomenon": "state_evolution",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel is the backend team lead."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-I3",
+          "text": "Priya took over the backend team lead role in August."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-I4",
+      "phenomenon": "state_evolution",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I usually commute to work by bus."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-I4",
+          "text": "Since moving closer to work, I walk there every day."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "state_evolution",
+            "relation_label": "EVOLVES_TO"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-N1",
+      "phenomenon": "state_evolution",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel works at Acme."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-N1",
+          "text": "Priya now works at Nova."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SE-N2",
+      "phenomenon": "state_evolution",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Daniel lives in Los Angeles."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-N2",
+          "text": "Daniel was promoted to engineering manager."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SE-N3",
+      "phenomenon": "state_evolution",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I live in Los Angeles."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-N3",
+          "text": "I'm staying in San Francisco for a conference this week."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SE-N4",
+      "phenomenon": "state_evolution",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I lived in Boston in 2020."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-N4",
+          "text": "I visited Boston again last weekend."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SE-A1",
+      "phenomenon": "state_evolution",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I live in Los Angeles."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-A1",
+          "text": "Actually, I'm in Seattle now."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-A2",
+      "phenomenon": "state_evolution",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya works at Acme."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-A2",
+          "text": "Maya appears to have joined Nova, but I don't know whether she has left Acme."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-A3",
+      "phenomenon": "state_evolution",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Project Orion is in private beta."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-A3",
+          "text": "Orion may already be public, but I might have misunderstood its status earlier."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SE-A4",
+      "phenomenon": "state_evolution",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I prefer tea to coffee."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SE-A4",
+          "text": "Coffee has been my go-to drink lately."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-P1",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My appointment is on Wednesday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-P1",
+          "text": "I was wrong earlier. My appointment is actually on Thursday."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CORRECTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-P2",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I paid $45 for the repair."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-P2",
+          "text": "Correction: the repair cost $54, not $45."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CORRECTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-P3",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "At 10:00 AM, the server was online."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-P3",
+          "text": "At 10:00 AM, the server was offline."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CONTRADICTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-P4",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The package delivered today is red."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-P4",
+          "text": "The package delivered today is blue, not red."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CORRECTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-I1",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The office is in Boston."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-I1",
+          "text": "Not Boston — the office is in Cambridge."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CORRECTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-I2",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The meeting starts at 3 PM."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-I2",
+          "text": "The meeting is at 4 PM; the 3 PM time I had earlier was for the wrong event."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CORRECTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-I3",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "At noon, Room 204 was empty."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-I3",
+          "text": "At noon, Maya and Daniel were both inside Room 204."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CONTRADICTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-I4",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I have no siblings."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-I4",
+          "text": "My sister Lina is visiting me tomorrow."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "correction_contradiction",
+            "relation_label": "CONTRADICTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-N1",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya's laptop is silver."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-N1",
+          "text": "Daniel's laptop is black."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CC-N2",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya works at Acme."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-N2",
+          "text": "Maya lives in Pasadena."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CC-N3",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I use dark mode on my laptop."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-N3",
+          "text": "I use light mode on my phone."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CC-N4",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I drink coffee at work in the morning."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-N4",
+          "text": "I avoid coffee after 6 PM."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CC-A1",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My appointment is on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-A1",
+          "text": "It's Tuesday now, but I can't remember whether the appointment was rescheduled or I had the original date wrong."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-A2",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The interview is on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-A2",
+          "text": "I think it might be Tuesday instead of Monday, but I'm not sure."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-A3",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Maya works at Acme."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-A3",
+          "text": "Someone told me Maya works at Nova, but I haven't confirmed it."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CC-A4",
+      "phenomenon": "correction_contradiction",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I paid $40 for the ticket."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CC-A4",
+          "text": "I can't remember whether I paid $40 or $50."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-P1",
+      "phenomenon": "causal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Heavy rain soaked the ground around the house all night."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-P1",
+          "text": "The heavy rain caused water to flood the basement."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "CAUSES"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-P2",
+      "phenomenon": "causal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The API certificate had expired."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-P2",
+          "text": "Requests were rejected because the certificate had expired."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "CAUSES"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-P3",
+      "phenomenon": "causal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Security approval was required before the release could proceed."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-P3",
+          "text": "The release was allowed to proceed once security approval was granted."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "PRECONDITION"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-P4",
+      "phenomenon": "causal_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I switched off the circuit breaker for the living room."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-P4",
+          "text": "The living-room lights went out because the breaker was switched off."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "CAUSES"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-I1",
+      "phenomenon": "causal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The application could not start because a required dependency was missing."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-I1",
+          "text": "After I installed that missing dependency, the application launched normally."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "CAUSES"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-I2",
+      "phenomenon": "causal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The account had to be verified before private files could be opened."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-I2",
+          "text": "Once the account was verified, access to the private files became available."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "PRECONDITION"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-I3",
+      "phenomenon": "causal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Dust was blocking the computer's exhaust vent and preventing hot air from escaping."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-I3",
+          "text": "After I cleared the blocked vent, airflow returned and the computer temperature dropped substantially."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "CAUSES"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-I4",
+      "phenomenon": "causal_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Payment was required before the hotel reservation could be confirmed."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-I4",
+          "text": "The reservation became confirmed after the required payment was completed."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "causal_relation",
+            "relation_label": "PRECONDITION"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-N1",
+      "phenomenon": "causal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I submitted my job application on Monday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-N1",
+          "text": "My printer stopped working on Tuesday."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CAU-N2",
+      "phenomenon": "causal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My laptop battery is fully charged."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-N2",
+          "text": "My bicycle tire pressure is low."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CAU-N3",
+      "phenomenon": "causal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Coffee-shop cold-drink sales increased during the heat wave."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-N3",
+          "text": "Ice-cream sales also increased during the same heat wave."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CAU-N4",
+      "phenomenon": "causal_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I watered the plants."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-N4",
+          "text": "I reviewed a pull request."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "CAU-A1",
+      "phenomenon": "causal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I installed a software update this morning."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-A1",
+          "text": "The application crashed shortly after the update."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-A2",
+      "phenomenon": "causal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "I drank a strong coffee in the afternoon."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-A2",
+          "text": "I developed a headache later that afternoon."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-A3",
+      "phenomenon": "causal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Traffic to the server dropped sharply."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "The server was restarted at about the same time."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-A3",
+          "text": "The server recovered immediately afterward."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "CAU-A4",
+      "phenomenon": "causal_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The product page was redesigned."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "A large promotion campaign launched the same day."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-CAU-A4",
+          "text": "Sales increased soon afterward."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-P1",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The repair receipt lists a total charge of $54."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-P1",
+          "text": "The repair cost $54."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-P2",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The complete test report shows 128 tests passed and 0 failed."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-P2",
+          "text": "The full test suite passed."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-P3",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My signed offer letter lists September 14 as my start date."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-P3",
+          "text": "My scheduled job start date is September 14."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-P4",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "clear_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The calibrated room sensor recorded 28°C at noon."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-P4",
+          "text": "The room temperature at noon was 28°C."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-I1",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The carrier tracking record shows the package as delivered at 2:14 PM."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-I1",
+          "text": "The package has arrived."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-I2",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My bank statement shows a $120 payment to the electric company matching the $120 electric bill due that month."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-I2",
+          "text": "I paid the electric bill."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-I3",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The hotel's confirmation email lists reservation H27 as confirmed."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "The booking agency portal independently lists reservation H27 as confirmed."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-I3",
+          "text": "My hotel reservation H27 is confirmed."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          },
+          {
+            "assertion_id": "A2",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-I4",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "indirect_positive",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "My parking receipt shows entry at LAX at 8:42 AM."
+          },
+          {
+            "assertion_id": "A2",
+            "text": "My boarding record shows an LAX departure later that morning."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-I4",
+          "text": "I was at LAX that morning."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1",
+          "A2"
+        ],
+        "relation_targets": [
+          {
+            "assertion_id": "A1",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          },
+          {
+            "assertion_id": "A2",
+            "relation_family": "support_evidence_relation",
+            "relation_label": "SUPPORTS"
+          }
+        ],
+        "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-N1",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The laptop manual says the battery can last up to 10 hours."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-N1",
+          "text": "My phone battery lasted 10 hours yesterday."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SUP-N2",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The meeting agenda included a vote on the marketing budget."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-N2",
+          "text": "The facilities budget was approved."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SUP-N3",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Nina is authorized to approve travel expenses."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-N3",
+          "text": "Maya approved this equipment expense."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SUP-N4",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "hard_negative",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The Orion project documentation discusses database migration."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-N4",
+          "text": "The Atlas database migration succeeded last night."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [],
+        "relation_targets": [],
+        "epistemic_requirement": "NO_RELATION_NEEDED",
+        "hard_negative_ids": [
+          "A1"
+        ]
+      }
+    },
+    {
+      "case_id": "SUP-A1",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 1,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "A partial test report shows 20 tests passed."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-A1",
+          "text": "All tests passed."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-A2",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 2,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The store page showed the item as in stock yesterday."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-A2",
+          "text": "The item is in stock now."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-A3",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 3,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "Tracking for order 104 shows that a shipping label was created."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-A3",
+          "text": "Order 104 has shipped."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
+    },
+    {
+      "case_id": "SUP-A4",
+      "phenomenon": "support_evidence_relation",
+      "decision_mode": "ambiguous",
+      "scenario": 4,
+      "input": {
+        "archive_assertions": [
+          {
+            "assertion_id": "A1",
+            "text": "The service returned one successful health check at 1:05 PM."
+          }
+        ],
+        "new_evidence": {
+          "evidence_id": "E-SUP-A4",
+          "text": "The service was healthy throughout the afternoon."
+        }
+      },
+      "gold": {
+        "candidate_assertion_ids": [
+          "A1"
+        ],
+        "relation_targets": [],
+        "epistemic_requirement": "INSUFFICIENT_EVIDENCE",
+        "hard_negative_ids": []
+      }
     }
   ],
   "temporal_contract": {
@@ -1178,5 +3064,57 @@
     "instant_semantics": "POINT_SENTINEL",
     "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY",
     "materialization_policy": "OUT_OF_SCOPE"
+  },
+  "state_evolution_contract": {
+    "version": "v0.1",
+    "meaning": "WORLD_STATE_CHANGED_OVER_TIME",
+    "historical_is_not_rejected": true,
+    "supersession_is_not_world_truth": true,
+    "correction_is_separate": true,
+    "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY"
+  },
+  "correction_contradiction_contract": {
+    "version": "v0.1",
+    "correction_meaning": "NEW_EVIDENCE_INVALIDATES_PRIOR_DESCRIPTION_WITHIN_SAME_SCOPE",
+    "contradiction_meaning": "CLAIMS_ARE_INCOMPATIBLE_WITHIN_SAME_SCOPE_WITHOUT_FORCED_WINNER",
+    "state_evolution_is_separate": true,
+    "conditional_scope_is_separate": true,
+    "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY"
+  },
+  "causal_relation_contract": {
+    "version": "v0.1",
+    "cause_meaning": "A_CONTRIBUTES_TO_OR_PRODUCES_B",
+    "precondition_meaning": "A_IS_REQUIRED_FOR_B_TO_PROCEED",
+    "temporal_order_is_not_causality": true,
+    "correlation_is_not_causality": true,
+    "confounded_cases_require_abstention": true,
+    "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY"
+  },
+  "support_evidence_contract": {
+    "version": "v0.1",
+    "meaning": "ARCHIVE_ASSERTION_IS_VALID_JUSTIFICATION_BASIS_FOR_NEW_CLAIM",
+    "support_is_not_authority": true,
+    "support_is_not_provenance": true,
+    "support_is_dynamic_not_persisted_bit": true,
+    "independent_justifications_may_coexist": true,
+    "relation_labels": "BENCHMARK_OPERATIONAL_NOT_PERSISTENT_ONTOLOGY"
+  },
+  "cross_family_scope_contract": {
+    "version": "v0.1",
+    "candidate_scope": "GLOBAL_RELATION_WORTHY",
+    "relation_targets_scope": "PRIMARY_PHENOMENON_ONLY",
+    "epistemic_requirement_scope": "PRIMARY_PHENOMENON",
+    "hard_negative_rule": "NO_NONTRIVIAL_RELATION_WORTHY_LINK_ACROSS_ANY_FAMILY",
+    "incidental_relations_do_not_force_candidate": true,
+    "incidental_examples": [
+      "arbitrary temporal ordering between semantically unrelated events",
+      "trivial identity of an already-canonical same entity"
+    ],
+    "ambiguous_rule": "PRIMARY_PHENOMENON_REQUIRES_ABSTENTION_EVEN_IF_INCIDENTAL_RELATIONS_ARE_DETERMINABLE",
+    "case_design_rule": "SINGLE_PRIMARY_RELATION_WORTHY_FAMILY",
+    "nonprimary_relation_worthy_links": "DISALLOWED_IN_V0.1_CASE_DESIGN",
+    "cross_family_relations_are_not_ignored": true,
+    "gold_candidate_rule": "INCLUDE_OLD_ASSERTION_IF_IGNORING_IT_COULD_MISS_A_NONTRIVIAL_RELATION_OR_REQUIRED_ABSTENTION",
+    "future_extension": "MULTI_RELATION_CASES_MAY_BE_ADDED_IN_A_LATER_BENCHMARK_VERSION_WITH_EXPLICIT_MULTI_FAMILY_GOLD"
   }
 }
