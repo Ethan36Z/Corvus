@@ -146,19 +146,24 @@ def _compose_working_messages(
     recent_messages,
     current_user_content,
 ):
+    system_content = system_prompt
+
+    if historical_evidence:
+        historical_message = _historical_system_message(
+            historical_evidence
+        )
+
+        system_content = (
+            f"{system_prompt}\n\n"
+            f"{historical_message['content']}"
+        )
+
     messages = [
         {
             "role": "system",
-            "content": system_prompt,
+            "content": system_content,
         }
     ]
-
-    if historical_evidence:
-        messages.append(
-            _historical_system_message(
-                historical_evidence
-            )
-        )
 
     messages.extend(
         _to_chat_messages(
@@ -226,18 +231,33 @@ def build_working_context(
 
     historical_evidence = []
 
+    historical_baseline_tokens = count_tokens(
+        _compose_working_messages(
+            system_prompt=system_prompt,
+            historical_evidence=[],
+            recent_messages=[],
+            current_user_content=current_user_content,
+        )
+    )
+
     for row in historical_candidates:
         candidate = [
             *historical_evidence,
             row,
         ]
 
-        candidate_tokens = count_tokens(
-            [
-                _historical_system_message(
-                    candidate
-                )
-            ]
+        candidate_total_tokens = count_tokens(
+            _compose_working_messages(
+                system_prompt=system_prompt,
+                historical_evidence=candidate,
+                recent_messages=[],
+                current_user_content=current_user_content,
+            )
+        )
+
+        candidate_tokens = max(
+            0,
+            candidate_total_tokens - historical_baseline_tokens,
         )
 
         if candidate_tokens > historical_token_budget:

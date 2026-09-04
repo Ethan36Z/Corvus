@@ -69,6 +69,10 @@ def process_turn(
         result["model_status"] = "CONTEXT_INVALID"
         result["error"] = str(exc)
         return result
+    except Exception as exc:
+        result["model_status"] = "CONTEXT_FAILED"
+        result["error"] = str(exc)
+        return result
 
     result["recent_message_ids"] = context[
         "recent_message_ids"
