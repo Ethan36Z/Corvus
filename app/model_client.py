@@ -4,14 +4,17 @@ import urllib.error
 import urllib.request
 
 
+from app.runtime_config import (
+    MAX_GENERATION_TOKENS,
+    MODEL_BASE_URL,
+    MODEL_TIMEOUT_SECONDS,
+    TOKEN_TIMEOUT_SECONDS,
+)
+
+
 MODEL_NAME = "corvus"
-MODEL_BASE_URL = "http://127.0.0.1:8095"
 CHAT_COMPLETIONS_URL = f"{MODEL_BASE_URL}/v1/chat/completions"
 INPUT_TOKENS_URL = f"{CHAT_COMPLETIONS_URL}/input_tokens"
-
-MODEL_TIMEOUT_SECONDS = 60
-TOKEN_TIMEOUT_SECONDS = 30
-MAX_GENERATION_TOKENS = 512
 
 
 class ModelClientError(RuntimeError):

@@ -1,69 +1,10 @@
 import argparse
 
 from app.conversation_runtime import process_turn
-from memory.dense_index import sync_dense_tail_once
+from app.runtime_lifecycle import recover_dense_tail
 
 
 DEFAULT_SESSION_ID = "default"
-STARTUP_RECOVERY_BATCH_SIZE = 64
-STARTUP_RECOVERY_MAX_BATCHES = 8
-
-
-def recover_dense_tail(
-    batch_size=STARTUP_RECOVERY_BATCH_SIZE,
-    max_batches=STARTUP_RECOVERY_MAX_BATCHES,
-    sync_fn=sync_dense_tail_once,
-):
-    """
-    Run bounded startup recovery for derived dense state.
-    """
-    batches = 0
-    indexed = 0
-    progress_after = None
-
-    try:
-        for _ in range(max_batches):
-            result = sync_fn(
-                limit=batch_size
-            )
-
-            progress_after = result[
-                "progress_after"
-            ]
-
-            if not result["message_ids"]:
-                return {
-                    "status": "OK",
-                    "caught_up": True,
-                    "batches": batches,
-                    "indexed": indexed,
-                    "progress_after": progress_after,
-                    "error": None,
-                }
-
-            batches += 1
-            indexed += result["indexed"]
-
-    except Exception as exc:
-        return {
-            "status": "DEGRADED",
-            "caught_up": False,
-            "batches": batches,
-            "indexed": indexed,
-            "progress_after": progress_after,
-            "error": str(exc),
-        }
-
-    return {
-        "status": "BOUNDED",
-        "caught_up": False,
-        "batches": batches,
-        "indexed": indexed,
-        "progress_after": progress_after,
-        "error": None,
-    }
-
-
 def print_recovery_status(result):
     print(
         "Dense recovery:",
