@@ -1,8 +1,76 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from app.model_client import (
+    ModelClientError,
+    check_model_health,
+)
+from app.runtime_lifecycle import recover_dense_tail
 from memory.store import connect
 
-app = FastAPI(title="Corvus Playground API")
+
+@asynccontextmanager
+async def lifespan(app):
+    app.state.startup_recovery = recover_dense_tail()
+    yield
+
+
+app = FastAPI(
+    title="Corvus Playground API",
+    lifespan=lifespan,
+)
+
+
+def build_health_status(
+    app,
+    model_health_fn=check_model_health,
+):
+    recovery = getattr(
+        app.state,
+        "startup_recovery",
+        {
+            "status": "NOT_RUN",
+            "caught_up": False,
+            "batches": 0,
+            "indexed": 0,
+            "progress_after": None,
+            "error": None,
+        },
+    )
+
+    try:
+        model_health_fn()
+    except ModelClientError as exc:
+        model = {
+            "status": exc.code,
+            "error": str(exc),
+        }
+    else:
+        model = {
+            "status": "OK",
+            "error": None,
+        }
+
+    if (
+        model["status"] == "OK"
+        and recovery["status"] == "OK"
+    ):
+        status = "OK"
+    else:
+        status = "DEGRADED"
+
+    return {
+        "status": status,
+        "service": "OK",
+        "model": model,
+        "dense_recovery": recovery,
+    }
+
+
+@app.get("/api/health")
+def get_health():
+    return build_health_status(app)
 
 
 @app.get("/api/evidence")

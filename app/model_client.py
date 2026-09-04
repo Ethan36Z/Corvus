@@ -7,12 +7,14 @@ import urllib.request
 from app.runtime_config import (
     MAX_GENERATION_TOKENS,
     MODEL_BASE_URL,
+    MODEL_HEALTH_TIMEOUT_SECONDS,
     MODEL_TIMEOUT_SECONDS,
     TOKEN_TIMEOUT_SECONDS,
 )
 
 
 MODEL_NAME = "corvus"
+MODEL_HEALTH_URL = f"{MODEL_BASE_URL}/health"
 CHAT_COMPLETIONS_URL = f"{MODEL_BASE_URL}/v1/chat/completions"
 INPUT_TOKENS_URL = f"{CHAT_COMPLETIONS_URL}/input_tokens"
 
@@ -80,6 +82,40 @@ def _post_json(
             "MODEL_RESPONSE_INVALID",
             "model server returned invalid JSON",
         ) from exc
+
+
+def check_model_health(
+    timeout=MODEL_HEALTH_TIMEOUT_SECONDS,
+    opener=urllib.request.urlopen,
+):
+    request = urllib.request.Request(
+        MODEL_HEALTH_URL,
+        method="GET",
+    )
+
+    try:
+        with opener(
+            request,
+            timeout=timeout,
+        ) as response:
+            response.read()
+    except (socket.timeout, TimeoutError) as exc:
+        raise ModelClientError(
+            "MODEL_TIMEOUT",
+            "model health request timed out",
+        ) from exc
+    except urllib.error.HTTPError as exc:
+        raise ModelClientError(
+            "MODEL_HTTP_ERROR",
+            f"model health returned HTTP {exc.code}",
+        ) from exc
+    except urllib.error.URLError as exc:
+        raise ModelClientError(
+            "MODEL_UNAVAILABLE",
+            f"model server unavailable: {exc.reason}",
+        ) from exc
+
+    return True
 
 
 def count_input_tokens(

@@ -37,6 +37,11 @@ TOKEN_TIMEOUT_SECONDS = _positive_int_env(
     30,
 )
 
+MODEL_HEALTH_TIMEOUT_SECONDS = _positive_int_env(
+    "CORVUS_MODEL_HEALTH_TIMEOUT_SECONDS",
+    5,
+)
+
 MAX_GENERATION_TOKENS = _positive_int_env(
     "CORVUS_MAX_GENERATION_TOKENS",
     512,
