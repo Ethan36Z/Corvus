@@ -177,6 +177,91 @@ def load_session(session_id):
     ]
 
 
+
+def load_recent_messages(
+    session_id,
+    limit=64,
+    before_message_id=None,
+):
+    """
+    Load a bounded tail of canonical messages for one session.
+
+    Results are returned in chronological order for direct use when
+    constructing Recent Conversation Context.
+
+    If before_message_id is provided, only messages with smaller canonical
+    IDs are eligible. This lets the runtime commit the current user message
+    first while reconstructing only the prior conversation context.
+    """
+    limit = int(limit)
+
+    if limit <= 0:
+        raise ValueError(
+            "limit must be positive"
+        )
+
+    clauses = [
+        "session_id = ?",
+    ]
+    params = [
+        str(session_id),
+    ]
+
+    if before_message_id is not None:
+        before_message_id = int(
+            before_message_id
+        )
+
+        if before_message_id <= 0:
+            raise ValueError(
+                "before_message_id must be positive"
+            )
+
+        clauses.append(
+            "id < ?"
+        )
+        params.append(
+            before_message_id
+        )
+
+    params.append(
+        limit
+    )
+
+    where_clause = " AND ".join(
+        clauses
+    )
+
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                id,
+                session_id,
+                role,
+                content,
+                created_at
+            FROM messages
+            WHERE {where_clause}
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+
+    rows.reverse()
+
+    return [
+        {
+            "id": row[0],
+            "session_id": row[1],
+            "role": row[2],
+            "content": row[3],
+            "created_at": row[4],
+        }
+        for row in rows
+    ]
+
 def search_messages(query, limit=5):
     pattern = f"%{query}%"
 
