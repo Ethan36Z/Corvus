@@ -26,15 +26,51 @@ def prepare_fts_query(query):
     return " OR ".join(f'"{term}"' for term in terms)
 
 
-def sparse_search(query, limit=5):
+def sparse_search(
+    query,
+    limit=5,
+    session_id=None,
+    role=None,
+):
     fts_query = prepare_fts_query(query)
 
     if not fts_query:
         return []
 
+    clauses = [
+        "messages_fts MATCH ?",
+    ]
+    params = [
+        fts_query,
+    ]
+
+    if session_id is not None:
+        clauses.append(
+            "messages.session_id = ?"
+        )
+        params.append(
+            str(session_id)
+        )
+
+    if role is not None:
+        clauses.append(
+            "messages.role = ?"
+        )
+        params.append(
+            str(role)
+        )
+
+    params.append(
+        int(limit)
+    )
+
+    where_clause = " AND ".join(
+        clauses
+    )
+
     with connect() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT
                 messages.id,
                 messages.session_id,
@@ -45,11 +81,11 @@ def sparse_search(query, limit=5):
             FROM messages_fts
             JOIN messages
                 ON messages.id = messages_fts.rowid
-            WHERE messages_fts MATCH ?
+            WHERE {where_clause}
             ORDER BY score ASC
             LIMIT ?
             """,
-            (fts_query, limit),
+            params,
         ).fetchall()
 
     return [

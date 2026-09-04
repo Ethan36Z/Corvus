@@ -1,4 +1,4 @@
-from memory.semantic_search import semantic_search
+from memory.dense_index import search_dense_messages
 from memory.sparse_search import sparse_search
 
 
@@ -7,24 +7,39 @@ def hybrid_search(
     limit=5,
     candidate_limit=20,
     rrf_k=60,
+    session_id=None,
+    role=None,
 ):
-    dense_results = semantic_search(
+    dense_results = search_dense_messages(
         query,
         limit=candidate_limit,
+        session_id=session_id,
+        role=role,
     )
 
     sparse_results = sparse_search(
         query,
         limit=candidate_limit,
+        session_id=session_id,
+        role=role,
     )
 
     fused = {}
 
     for rank, item in enumerate(dense_results, start=1):
-        message_id = item["id"]
+        message_id = item["message_id"]
+
+        normalized_item = {
+            "id": message_id,
+            "session_id": item["session_id"],
+            "role": item["role"],
+            "content": item["content"],
+            "created_at": item["created_at"],
+            "distance": item["distance"],
+        }
 
         fused[message_id] = {
-            **item,
+            **normalized_item,
             "rrf_score": 0.0,
             "dense_rank": None,
             "sparse_rank": None,
