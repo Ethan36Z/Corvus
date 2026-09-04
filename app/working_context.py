@@ -209,12 +209,20 @@ def build_working_context(
         ),
     }
 
-    historical_candidates = retrieve_historical_evidence(
-        query=current_user_content,
-        exclude_message_ids=excluded_ids,
-        limit=historical_limit,
-        search_fn=search_fn,
-    )
+    retrieval_status = "OK"
+    retrieval_error = None
+
+    try:
+        historical_candidates = retrieve_historical_evidence(
+            query=current_user_content,
+            exclude_message_ids=excluded_ids,
+            limit=historical_limit,
+            search_fn=search_fn,
+        )
+    except Exception as exc:
+        retrieval_status = "DEGRADED"
+        retrieval_error = str(exc)
+        historical_candidates = []
 
     historical_evidence = []
 
@@ -295,4 +303,6 @@ def build_working_context(
             for row in historical_evidence
         ],
         "input_tokens": input_tokens,
+        "retrieval_status": retrieval_status,
+        "retrieval_error": retrieval_error,
     }
