@@ -75,6 +75,11 @@ def build_recent_context(
 
     Selection prefers the newest prior messages, while the returned result
     remains in chronological order for the model.
+
+    The returned context must begin with a user message. While scanning
+    backward, a leading assistant message is held temporarily until its
+    preceding user message is available, so model-native token counting never
+    receives an assistant-only chat shape.
     """
     token_budget = int(token_budget)
     page_size = int(page_size)
@@ -99,13 +104,32 @@ def build_recent_context(
             break
 
         for message in reversed(page):
-            candidate = [message, *selected]
+            candidate = [
+                message,
+                *selected,
+            ]
+
+            # A suffix may temporarily begin with an assistant while we scan
+            # backward. Do not send that illegal partial chat shape to the
+            # model-native tokenizer. Wait for its preceding user message.
+            if candidate[0]["role"] != "user":
+                selected = candidate
+                continue
 
             token_count = count_tokens(
                 _to_chat_messages(candidate)
             )
 
             if token_count > token_budget:
+                # The newest already-validated suffix still fits. If the last
+                # backward step left an unmatched assistant at its front,
+                # discard that assistant rather than return an invalid shape.
+                while (
+                    selected
+                    and selected[0]["role"] != "user"
+                ):
+                    selected.pop(0)
+
                 return selected
 
             selected = candidate
@@ -115,8 +139,13 @@ def build_recent_context(
 
         cursor = page[0]["id"]
 
-    return selected
+    while (
+        selected
+        and selected[0]["role"] != "user"
+    ):
+        selected.pop(0)
 
+    return selected
 
 
 def _historical_system_message(evidence):

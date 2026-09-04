@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -278,6 +278,124 @@ def post_chat(request: ChatRequest):
     return build_chat_response(
         result
     )
+
+
+@app.get("/api/sessions")
+def get_sessions(
+    limit: int = Query(
+        default=50,
+        ge=1,
+        le=100,
+    ),
+):
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                session_id,
+                COUNT(*) AS message_count,
+                MIN(id) AS first_message_id,
+                MAX(id) AS last_message_id,
+                MIN(created_at) AS created_at,
+                MAX(created_at) AS updated_at
+            FROM messages
+            GROUP BY session_id
+            ORDER BY last_message_id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+
+    return [
+        {
+            "session_id": row[0],
+            "message_count": row[1],
+            "first_message_id": row[2],
+            "last_message_id": row[3],
+            "created_at": row[4],
+            "updated_at": row[5],
+        }
+        for row in rows
+    ]
+
+
+@app.get("/api/sessions/{session_id}")
+def get_session(
+    session_id: str,
+    limit: int = Query(
+        default=200,
+        ge=1,
+        le=500,
+    ),
+):
+    session_id = session_id.strip()
+
+    if not session_id:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "session_id must not be empty",
+            },
+        )
+
+    with connect() as conn:
+        total = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM messages
+            WHERE session_id = ?
+            """,
+            (session_id,),
+        ).fetchone()[0]
+
+        if total == 0:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "session_id": session_id,
+                    "error": "session not found",
+                },
+            )
+
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                session_id,
+                role,
+                content,
+                created_at
+            FROM messages
+            WHERE session_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (
+                session_id,
+                limit,
+            ),
+        ).fetchall()
+
+    rows.reverse()
+
+    messages = [
+        {
+            "id": row[0],
+            "session_id": row[1],
+            "role": row[2],
+            "content": row[3],
+            "created_at": row[4],
+        }
+        for row in rows
+    ]
+
+    return {
+        "session_id": session_id,
+        "message_count": total,
+        "returned_count": len(messages),
+        "has_more": total > len(messages),
+        "messages": messages,
+    }
 
 
 @app.get("/api/evidence")
