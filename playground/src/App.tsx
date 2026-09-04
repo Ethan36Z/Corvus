@@ -57,6 +57,28 @@ type ChatResponse = {
 }
 
 
+const WELCOME_PROMPTS = [
+  "What's on your mind?",
+  "How are you doing today?",
+  "What are you thinking about?",
+  "What should we work on?",
+  "Anything you want to talk about?",
+  "Where should we pick up?",
+  "What would you like to explore?",
+  "How can I help today?",
+]
+
+function pickWelcomePrompt(current?: string) {
+  const candidates = current
+    ? WELCOME_PROMPTS.filter((prompt) => prompt !== current)
+    : WELCOME_PROMPTS
+
+  return candidates[
+    Math.floor(Math.random() * candidates.length)
+  ] ?? WELCOME_PROMPTS[0]
+}
+
+
 function App() {
   const [inspectOpen, setInspectOpen] = useState(false)
   const [conversationOpen, setConversationOpen] = useState(false)
@@ -74,6 +96,9 @@ function App() {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
+  const [welcomePrompt, setWelcomePrompt] = useState(
+    () => pickWelcomePrompt(),
+  )
 
 
 
@@ -230,14 +255,30 @@ function App() {
         </div>
 
         <div className="topbar-actions">
-          <span className="status">
-            {healthError
-              ? '● Offline'
-              : health?.status === 'OK'
-                ? '● Local'
-                : health
-                  ? '● Degraded'
-                  : '● Checking'}
+          <span
+            className={`status ${
+              healthError
+                ? 'health-offline'
+                : !health
+                  ? 'health-checking'
+                  : health.status === 'OK'
+                    ? 'health-healthy'
+                    : 'health-degraded'
+            }`}
+            title={
+              healthError
+                ? 'Local · Offline'
+                : !health
+                  ? 'Local · Checking'
+                  : `Local · ${
+                      health.status === 'OK' ? 'Healthy' : 'Degraded'
+                    } · Model ${health.model.status} · Retrieval ${
+                      health.dense_recovery.status
+                    }`
+            }
+          >
+            <span className="status-dot" aria-hidden="true" />
+            <span>Local</span>
           </span>
 
           <button
@@ -299,6 +340,7 @@ function App() {
             type="button"
             className="new-chat-button"
             onClick={() => {
+              setWelcomePrompt((current) => pickWelcomePrompt(current))
               selectSession('')
               if (isCompactLayout()) setConversationOpen(false)
             }}
@@ -330,10 +372,10 @@ function App() {
 
         <section className="chat-panel">
           <div className="messages">
-          {chatMessages.length === 0 ? (
+          {chatMessages.length === 0 && !sending ? (
             <div className="welcome">
               <h2>Corvus</h2>
-              <p>Persistent memory, locally.</p>
+              <p>{welcomePrompt}</p>
             </div>
           ) : (
             <div className="chat-history">
@@ -342,18 +384,33 @@ function App() {
                   className={`chat-message ${message.role}`}
                   key={message.id}
                 >
-                  <span>{message.role === 'user' ? 'You' : 'Corvus'}</span>
-                  <p>{message.content}</p>
+                  <div className="message-body">
+                    <p>{message.content}</p>
+                  </div>
                 </article>
               ))}
+
+              {sending && (
+                <article className="chat-message assistant thinking-message">
+                  <div className="message-body">
+                    <div
+                      className="thinking-indicator"
+                      aria-label="Corvus is thinking"
+                    >
+                      <span>Thinking</span>
+                      <i />
+                    </div>
+                  </div>
+                </article>
+              )}
             </div>
           )}
         </div>
 
         <form className="composer" onSubmit={sendMessage}>
           <textarea
-            rows={2}
-            placeholder={sending ? 'Corvus is thinking…' : 'Message Corvus…'}
+            rows={1}
+            placeholder="Message Corvus…"
             aria-label="Message Corvus"
             value={draft}
             disabled={sending}
@@ -367,10 +424,15 @@ function App() {
           />
           <button
             type="submit"
+            className="send-button"
             disabled={sending || !draft.trim()}
-            aria-label="Send message"
+            aria-label={sending ? 'Sending message' : 'Send message'}
           >
-            {sending ? '…' : '↑'}
+            {sending ? (
+              <span className="send-spinner" />
+            ) : (
+              <span className="send-arrow">↑</span>
+            )}
           </button>
         </form>
         {chatError && (

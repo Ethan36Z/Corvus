@@ -103,8 +103,9 @@
 
 .welcome h2 {
   margin: 0;
-  font-size: 26px;
-  font-weight: 500;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .welcome p {
@@ -510,5 +511,258 @@
     padding: 0 10px 14px;
     color: var(--muted);
     font-size: 12px;
+  }
+}
+
+/* ===== ChatGPT-style conversation polish ===== */
+
+.chat-history {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  align-self: start;
+  justify-self: stretch;
+  padding: 18px 0 30px;
+}
+
+.chat-message {
+  display: flex;
+  width: 100%;
+}
+
+.chat-message.user {
+  justify-content: flex-end;
+}
+
+.chat-message.assistant {
+  justify-content: flex-start;
+}
+
+.message-body {
+  min-width: 0;
+}
+
+.chat-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.chat-message.user .message-body {
+  max-width: 72%;
+  padding: 11px 16px;
+  border-radius: 22px;
+  background: var(--surface-soft);
+}
+
+.chat-message.assistant .message-body {
+  max-width: 88%;
+  padding: 0;
+  background: transparent;
+}
+
+.thinking-message {
+  min-height: 28px;
+}
+
+.thinking-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 14px;
+  user-select: none;
+}
+
+.thinking-indicator span {
+  animation: thinking-text 1.5s ease-in-out infinite;
+}
+
+.thinking-indicator i {
+  width: 6px;
+  height: 6px;
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+  animation: thinking-dot 1.15s ease-in-out infinite;
+}
+
+.composer {
+  min-height: 58px;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 9px 10px 9px 17px;
+  border-radius: 30px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .03),
+    0 6px 24px rgba(0, 0, 0, .025);
+}
+
+.composer textarea {
+  min-height: 38px;
+  max-height: 180px;
+  padding: 9px 2px 7px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.send-button {
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 38px !important;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.send-button:disabled {
+  opacity: .48;
+  cursor: default;
+}
+
+.send-arrow {
+  display: block;
+  font-size: 19px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.send-spinner {
+  width: 16px;
+  height: 16px;
+  display: block;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: send-spin .72s linear infinite;
+}
+
+@keyframes send-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes thinking-text {
+  0%,
+  100% {
+    opacity: .55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes thinking-dot {
+  0%,
+  100% {
+    transform: translateY(1px);
+    opacity: .4;
+  }
+
+  50% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .chat-message.user .message-body {
+    max-width: 84%;
+  }
+
+  .chat-message.assistant .message-body {
+    max-width: 100%;
+  }
+
+  .chat-history {
+    gap: 24px;
+  }
+}
+
+/* ===== Corvus accent experiment ===== */
+
+.corvus-app {
+  --accent: #7479d8;
+  --accent-hover: #676cc8;
+}
+
+.corvus-app[data-theme='light'] {
+  --accent: #5156a6;
+  --accent-hover: #474c96;
+}
+
+.send-button:not(:disabled) {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.send-button:disabled {
+  opacity: .62;
+  background: var(--button);
+  color: var(--button-text);
+}
+
+/* ===== Corvus runtime health indicator ===== */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--faint);
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.health-healthy .status-dot {
+  background: #3fa96a;
+  box-shadow: 0 0 0 2px rgba(63, 169, 106, .10);
+}
+
+.health-degraded .status-dot {
+  background: #c99a38;
+  box-shadow: 0 0 0 2px rgba(201, 154, 56, .10);
+}
+
+.health-offline .status-dot {
+  background: #d65b5b;
+  box-shadow: 0 0 0 2px rgba(214, 91, 91, .10);
+}
+
+.health-checking .status-dot {
+  background: var(--faint);
+  animation: health-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes health-pulse {
+  0%,
+  100% {
+    opacity: .45;
+  }
+
+  50% {
+    opacity: 1;
   }
 }
