@@ -1,8 +1,8 @@
-from pathlib import Path
 import sqlite3
 
+from memory.config import DB_PATH
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "corvus.db"
+
 
 
 def connect():

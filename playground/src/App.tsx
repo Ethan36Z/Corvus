@@ -1,7 +1,19 @@
-import { useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import './App.css'
 
 type Tab = 'evidence' | 'assertions' | 'world'
+
+type Health = {
+  status: string
+  service: string
+  model: {
+    status: string
+    error: string | null
+  }
+  dense_recovery: {
+    status: string
+  }
+}
 
 type Evidence = {
   id: number
@@ -11,29 +23,222 @@ type Evidence = {
   created_at: string
 }
 
+type Session = {
+  session_id: string
+  message_count: number
+  first_message_id: number
+  last_message_id: number
+  created_at: string
+  updated_at: string
+}
+
+type ChatMessage = {
+  id: number
+  session_id: string
+  role: string
+  content: string
+  created_at: string
+}
+
+type SessionDetail = {
+  session_id: string
+  message_count: number
+  returned_count: number
+  has_more: boolean
+  messages: ChatMessage[]
+}
+
+type ChatResponse = {
+  reply: string | null
+  status: {
+    overall: string
+  }
+  error: string | null
+}
+
+
 function App() {
   const [inspectOpen, setInspectOpen] = useState(false)
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [conversationOpen, setConversationOpen] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const hour = new Date().getHours()
+    return hour >= 7 && hour < 19 ? 'light' : 'dark'
+  })
   const [tab, setTab] = useState<Tab>('evidence')
   const [evidence, setEvidence] = useState<Evidence[]>([])
+  const [health, setHealth] = useState<Health | null>(null)
+  const [healthError, setHealthError] = useState(false)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [selectedSession, setSelectedSession] = useState('')
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [draft, setDraft] = useState('')
+  const [sending, setSending] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+
+
+
+  useEffect(() => {
+    async function loadHealth() {
+      try {
+        const response = await fetch('/api/health')
+        if (!response.ok) throw new Error()
+
+        const data: Health = await response.json()
+        setHealth(data)
+        setHealthError(false)
+      } catch {
+        setHealth(null)
+        setHealthError(true)
+      }
+    }
+
+    loadHealth()
+    const timer = window.setInterval(loadHealth, 10000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    async function loadSessions() {
+      try {
+        const response = await fetch('/api/sessions')
+        if (!response.ok) return
+
+        const data: Session[] = await response.json()
+        setSessions(data)
+      } catch {
+        setSessions([])
+      }
+    }
+
+    loadSessions()
+  }, [])
+
+
+  function isCompactLayout() {
+    return window.matchMedia('(max-width: 900px)').matches
+  }
+
+  async function selectSession(sessionId: string) {
+    setSelectedSession(sessionId)
+
+    if (!sessionId) {
+      setChatMessages([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `/api/sessions/${encodeURIComponent(sessionId)}`,
+      )
+
+      if (!response.ok) {
+        setChatMessages([])
+        return
+      }
+
+      const data: SessionDetail = await response.json()
+      setChatMessages(data.messages)
+    } catch {
+      setChatMessages([])
+    }
+  }
+
+  async function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const message = draft.trim()
+    if (!message || sending) return
+
+    const wasNew = !selectedSession
+    const sessionId = selectedSession || `chat-${Date.now()}`
+
+    setSending(true)
+    setChatError(null)
+
+    if (wasNew) setSelectedSession(sessionId)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message,
+        }),
+      })
+
+      const data: ChatResponse = await response.json()
+
+      if (
+        !response.ok ||
+        !data.reply ||
+        data.status?.overall === 'FAILED'
+      ) {
+        throw new Error(data.error || 'Corvus could not complete the turn.')
+      }
+
+      setDraft('')
+
+      await selectSession(sessionId)
+
+      const sessionsResponse = await fetch('/api/sessions')
+      if (sessionsResponse.ok) {
+        const sessionData: Session[] = await sessionsResponse.json()
+        setSessions(sessionData)
+      }
+    } catch (error) {
+      if (wasNew) setSelectedSession('')
+      setChatError(
+        error instanceof Error ? error.message : 'Unable to reach Corvus.',
+      )
+    } finally {
+      setSending(false)
+    }
+  }
 
   async function openInspector() {
     const response = await fetch('/api/evidence')
     const data = await response.json()
     setEvidence(data)
+    if (isCompactLayout()) setConversationOpen(false)
     setInspectOpen(true)
   }
 
   return (
     <main className="corvus-app" data-theme={theme}>
       <header className="topbar">
-        <div>
-          <span className="eyebrow">CORVUS</span>
-          <h1>Memory Playground</h1>
+        <div className="topbar-brand">
+          <button
+            type="button"
+            className="ghost-button sidebar-toggle"
+            aria-label="Open conversations"
+            onClick={() => {
+              if (isCompactLayout()) setInspectOpen(false)
+              setConversationOpen(!conversationOpen)
+            }}
+          >
+            ☰
+          </button>
+
+          <div>
+            <span className="eyebrow">CORVUS</span>
+            <h1>Memory Playground</h1>
+          </div>
         </div>
 
         <div className="topbar-actions">
-          <span className="status">● Local</span>
+          <span className="status">
+            {healthError
+              ? '● Offline'
+              : health?.status === 'OK'
+                ? '● Local'
+                : health
+                  ? '● Degraded'
+                  : '● Checking'}
+          </span>
 
           <button
             type="button"
@@ -48,30 +253,133 @@ function App() {
           <button
             type="button"
             className="ghost-button"
-            onClick={openInspector}
+            onClick={() => {
+              if (inspectOpen) {
+                setInspectOpen(false)
+              } else {
+                openInspector()
+              }
+            }}
           >
             Inspect
           </button>
         </div>
       </header>
 
-      <section className="chat-panel">
-        <div className="messages">
-          <div className="welcome">
-            <h2>Corvus</h2>
-            <p>Persistent memory, locally.</p>
+      {conversationOpen && (
+        <button
+          type="button"
+          className="drawer-backdrop"
+          aria-label="Close conversations"
+          onClick={() => setConversationOpen(false)}
+        />
+      )}
+
+      <div
+        className={`workspace ${
+          conversationOpen ? 'conversation-open' : ''
+        } ${inspectOpen ? 'inspector-open' : ''}`}
+      >
+        <aside
+          className={`conversation-sidebar ${conversationOpen ? 'open' : ''}`}
+        >
+          <div className="conversation-sidebar-header">
+            <span>Conversations</span>
+            <button
+              type="button"
+              className="close-button"
+              aria-label="Close conversations"
+              onClick={() => setConversationOpen(false)}
+            >
+              ×
+            </button>
           </div>
+
+          <button
+            type="button"
+            className="new-chat-button"
+            onClick={() => {
+              selectSession('')
+              if (isCompactLayout()) setConversationOpen(false)
+            }}
+          >
+            + New chat
+          </button>
+
+          <div className="conversation-list">
+            {sessions.map((session) => (
+              <button
+                type="button"
+                key={session.session_id}
+                className={
+                  selectedSession === session.session_id
+                    ? 'conversation-item active'
+                    : 'conversation-item'
+                }
+                onClick={() => {
+                  selectSession(session.session_id)
+                  if (isCompactLayout()) setConversationOpen(false)
+                }}
+              >
+                <span>{session.session_id}</span>
+                <small>{session.message_count} messages</small>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <section className="chat-panel">
+          <div className="messages">
+          {chatMessages.length === 0 ? (
+            <div className="welcome">
+              <h2>Corvus</h2>
+              <p>Persistent memory, locally.</p>
+            </div>
+          ) : (
+            <div className="chat-history">
+              {chatMessages.map((message) => (
+                <article
+                  className={`chat-message ${message.role}`}
+                  key={message.id}
+                >
+                  <span>{message.role === 'user' ? 'You' : 'Corvus'}</span>
+                  <p>{message.content}</p>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
 
-        <form className="composer">
+        <form className="composer" onSubmit={sendMessage}>
           <textarea
             rows={2}
-            placeholder="Message Corvus…"
+            placeholder={sending ? 'Corvus is thinking…' : 'Message Corvus…'}
             aria-label="Message Corvus"
+            value={draft}
+            disabled={sending}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                event.currentTarget.form?.requestSubmit()
+              }
+            }}
           />
-          <button type="submit">↑</button>
+          <button
+            type="submit"
+            disabled={sending || !draft.trim()}
+            aria-label="Send message"
+          >
+            {sending ? '…' : '↑'}
+          </button>
         </form>
-      </section>
+        {chatError && (
+          <p className="chat-error" role="alert">
+            {chatError}
+          </p>
+        )}
+        </section>
+      </div>
 
       {inspectOpen && (
         <button

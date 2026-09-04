@@ -6,12 +6,13 @@ import lancedb
 import pyarrow as pa
 from sentence_transformers import SentenceTransformer
 
+from memory.config import LANCE_DB_PATH
 from memory.store import connect
+
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-LANCE_DB_PATH = PROJECT_ROOT / "data" / "corvus-retrieval.lancedb"
 TABLE_NAME = "evidence_dense_v1"
 
 MODEL_NAME = "Alibaba-NLP/gte-multilingual-base"

@@ -329,3 +329,186 @@
   color: var(--text);
   background: var(--surface-soft);
 }
+
+.session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.session-bar select {
+  max-width: 320px;
+  min-height: 34px;
+  padding: 0 32px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.session-bar select:focus {
+  border-color: var(--faint);
+}
+
+@media (max-width: 700px) {
+  .session-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .session-bar select {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.workspace {
+  min-height: calc(100vh - 64px);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-toggle {
+  padding: 0 9px;
+  font-size: 18px;
+}
+
+.conversation-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  width: min(280px, 88vw);
+  height: 100vh;
+  padding: 24px 12px;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition:
+    transform 320ms cubic-bezier(.22, 1, .36, 1),
+    background-color 260ms ease;
+}
+
+.conversation-sidebar.open {
+  transform: translateX(0);
+}
+
+.new-chat-button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+  transition: background-color 160ms ease;
+}
+
+.new-chat-button:hover {
+  background: var(--surface);
+}
+
+.conversation-list {
+  display: grid;
+  gap: 3px;
+  margin-top: 14px;
+}
+
+.conversation-item {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.conversation-item:hover,
+.conversation-item.active {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.conversation-item span,
+.conversation-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-item span {
+  font-size: 13px;
+}
+
+.conversation-item small {
+  margin-top: 3px;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+@media (max-width: 700px) {
+  .conversation-sidebar {
+    width: min(320px, 92vw);
+  }
+}
+
+/* Desktop: dock panels without blocking the live chat. */
+@media (min-width: 901px) {
+  .drawer-backdrop {
+    display: none;
+  }
+
+  .workspace {
+    padding-left: 0;
+    padding-right: 0;
+    transition:
+      padding-left 320ms cubic-bezier(.22, 1, .36, 1),
+      padding-right 320ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .workspace.conversation-open {
+    padding-left: 280px;
+  }
+
+  .workspace.inspector-open {
+    padding-right: 420px;
+  }
+
+  .conversation-sidebar {
+    top: 64px;
+    width: 280px;
+    height: calc(100vh - 64px);
+  }
+
+  .inspector {
+    top: 64px;
+    width: 420px;
+    height: calc(100vh - 64px);
+  }
+
+  .conversation-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px 14px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+}
