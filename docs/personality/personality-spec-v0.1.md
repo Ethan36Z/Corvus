@@ -1,6 +1,6 @@
 # Corvus Personality Spec v0.1
 
-**Status:** PERS-A design candidate  
+**Status:** ✅ PERS-A SEALED  
 **Scope:** Stable personality baseline  
 **Purpose:** Model-portable behavioral source of truth for Corvus
 
@@ -428,10 +428,12 @@ At that point the personality baseline should be used in real conversation befor
 
 ---
 
-## 14. Next Step
+## 14. Current State / Next Step
 
-Build a minimal PERS-A conformance suite from this specification before implementing the runtime module.
+PERS-A has met its intended stop condition and is sealed as the stable personality baseline.
 
-Prefer established persona-evaluation ideas where they fit, but keep the suite small and focused on Corvus-specific behavioral contracts.
+Runtime integration and the local contract test passed, and representative live Qwen checks covered casual sharing, truth-vs-approval, low-mood interaction, and technical register switching.
 
-Only after the test surface is defined should the current hard-coded `SYSTEM_PROMPT` be replaced by the first Personality Module runtime path.
+The next step is normal Corvus use.
+
+Do not expand the personality system preemptively. Open PERS-B only when repeated real-use evidence identifies a concrete interaction gap worth correcting.
