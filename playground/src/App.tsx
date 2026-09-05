@@ -352,14 +352,24 @@ function App() {
         <div className="topbar-brand">
           <button
             type="button"
-            className="ghost-button sidebar-toggle"
-            aria-label="Open conversations"
+            className={`ghost-button sidebar-toggle menu-toggle ${
+              conversationOpen ? 'open' : ''
+            }`}
+            aria-label={
+              conversationOpen
+                ? 'Close conversations'
+                : 'Open conversations'
+            }
             onClick={() => {
               if (isCompactLayout()) setInspectOpen(false)
               setConversationOpen(!conversationOpen)
             }}
           >
-            ☰
+            <span className="menu-icon" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
           </button>
 
           <div>
@@ -407,7 +417,11 @@ function App() {
 
           <button
             type="button"
-            className="ghost-button"
+            className={`ghost-button inspect-toggle ${
+              inspectOpen ? 'active' : ''
+            }`}
+            aria-label="Toggle memory inspector"
+            title="Memory Inspector"
             onClick={() => {
               if (inspectOpen) {
                 setInspectOpen(false)
@@ -416,7 +430,13 @@ function App() {
               }
             }}
           >
-            Inspect
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M15 4v16" />
+            </svg>
           </button>
         </div>
       </header>
@@ -440,14 +460,6 @@ function App() {
         >
           <div className="conversation-sidebar-header">
             <span>Conversations</span>
-            <button
-              type="button"
-              className="close-button"
-              aria-label="Close conversations"
-              onClick={() => setConversationOpen(false)}
-            >
-              ×
-            </button>
           </div>
 
           <button
@@ -584,14 +596,6 @@ function App() {
             <span className="eyebrow">MEMORY</span>
             <h2>Inspector</h2>
           </div>
-
-          <button
-            type="button"
-            className="close-button"
-            onClick={() => setInspectOpen(false)}
-          >
-            ×
-          </button>
         </header>
 
         <nav className="inspect-tabs">

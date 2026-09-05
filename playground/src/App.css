@@ -1993,3 +1993,91 @@
     width: calc(100% - 24px);
   }
 }
+
+/* ===== Animated topbar panel controls ===== */
+
+.menu-toggle {
+  width: 36px;
+  padding: 0 9px;
+  display: grid;
+  place-items: center;
+}
+
+.menu-icon {
+  position: relative;
+  width: 18px;
+  height: 14px;
+  display: block;
+}
+
+.menu-icon i {
+  position: absolute;
+  left: 0;
+  width: 18px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+  transition:
+    top 220ms cubic-bezier(.22, 1, .36, 1),
+    transform 220ms cubic-bezier(.22, 1, .36, 1),
+    opacity 160ms ease;
+}
+
+.menu-icon i:nth-child(1) {
+  top: 0;
+}
+
+.menu-icon i:nth-child(2) {
+  top: 6px;
+}
+
+.menu-icon i:nth-child(3) {
+  top: 12px;
+}
+
+.menu-toggle.open .menu-icon i:nth-child(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+
+.menu-toggle.open .menu-icon i:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(.45);
+}
+
+.menu-toggle.open .menu-icon i:nth-child(3) {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+
+/* Right-side Memory Inspector icon */
+
+.inspect-toggle {
+  width: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.inspect-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inspect-toggle.active {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+/* Internal close buttons are no longer part of panel navigation. */
+.conversation-sidebar-header,
+.inspector-header {
+  justify-content: flex-start;
+}
