@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import './App.css'
 
 type Tab = 'evidence' | 'assertions' | 'world'
@@ -94,6 +94,8 @@ function App() {
   const [selectedSession, setSelectedSession] = useState('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
+  const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  const [composerExpanded, setComposerExpanded] = useState(false)
   const [sending, setSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
   const [welcomePrompt, setWelcomePrompt] = useState(
@@ -145,6 +147,8 @@ function App() {
   }
 
   async function selectSession(sessionId: string) {
+    setDraft('')
+    setChatError(null)
     setSelectedSession(sessionId)
 
     if (!sessionId) {
@@ -169,6 +173,22 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    const textarea = composerRef.current
+    if (!textarea) return
+
+    textarea.style.height = 'auto'
+
+    const scrollHeight = textarea.scrollHeight
+    const nextHeight = Math.min(scrollHeight, 180)
+
+    textarea.style.height = `${nextHeight}px`
+    textarea.style.overflowY =
+      scrollHeight > 180 ? 'auto' : 'hidden'
+
+    setComposerExpanded(scrollHeight > 44)
+  }, [draft])
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -177,11 +197,32 @@ function App() {
 
     const wasNew = !selectedSession
     const sessionId = selectedSession || `chat-${Date.now()}`
+    const previousMessages = chatMessages
 
+    const optimisticMessage: ChatMessage = {
+      id: -Date.now(),
+      session_id: sessionId,
+      role: 'user',
+      content: message,
+      created_at: new Date().toISOString(),
+    }
+
+    /*
+     * Optimistic UI:
+     * acknowledge the user's send immediately while SQLite remains
+     * the canonical source once the backend turn completes.
+     */
+    setDraft('')
+    setChatMessages([
+      ...previousMessages,
+      optimisticMessage,
+    ])
     setSending(true)
     setChatError(null)
 
-    if (wasNew) setSelectedSession(sessionId)
+    if (wasNew) {
+      setSelectedSession(sessionId)
+    }
 
     try {
       const response = await fetch('/api/chat', {
@@ -202,22 +243,65 @@ function App() {
         !data.reply ||
         data.status?.overall === 'FAILED'
       ) {
-        throw new Error(data.error || 'Corvus could not complete the turn.')
+        throw new Error(
+          data.error || 'Corvus could not complete the turn.',
+        )
       }
 
-      setDraft('')
-
+      /*
+       * Replace the temporary optimistic message with canonical
+       * SQLite-backed session history.
+       */
       await selectSession(sessionId)
 
       const sessionsResponse = await fetch('/api/sessions')
       if (sessionsResponse.ok) {
-        const sessionData: Session[] = await sessionsResponse.json()
+        const sessionData: Session[] =
+          await sessionsResponse.json()
         setSessions(sessionData)
       }
     } catch (error) {
-      if (wasNew) setSelectedSession('')
+      /*
+       * Corvus commits user evidence before model generation.
+       * If the backend received the message but generation failed,
+       * preserve whatever SQLite actually contains.
+       */
+      let canonicalRecovered = false
+
+      try {
+        const historyResponse = await fetch(
+          `/api/sessions/${encodeURIComponent(sessionId)}`,
+        )
+
+        if (historyResponse.ok) {
+          const history: SessionDetail =
+            await historyResponse.json()
+
+          setSelectedSession(sessionId)
+          setChatMessages(history.messages)
+          canonicalRecovered = true
+        }
+      } catch {
+        // Fall through to local rollback below.
+      }
+
+      /*
+       * If no canonical session exists, the send likely never reached
+       * Corvus. Restore the draft so the user can retry safely.
+       */
+      if (!canonicalRecovered) {
+        setChatMessages(previousMessages)
+        setDraft(message)
+
+        if (wasNew) {
+          setSelectedSession('')
+        }
+      }
+
       setChatError(
-        error instanceof Error ? error.message : 'Unable to reach Corvus.',
+        error instanceof Error
+          ? error.message
+          : 'Unable to reach Corvus.',
       )
     } finally {
       setSending(false)
@@ -407,8 +491,20 @@ function App() {
           )}
         </div>
 
-        <form className="composer" onSubmit={sendMessage}>
+        <form
+          className={`composer ${
+            chatMessages.length === 0
+              ? 'composer-new'
+              : 'composer-established'
+          } ${
+            composerExpanded
+              ? 'composer-expanded'
+              : 'composer-single'
+          }`}
+          onSubmit={sendMessage}
+        >
           <textarea
+            ref={composerRef}
             rows={1}
             placeholder="Message Corvus…"
             aria-label="Message Corvus"

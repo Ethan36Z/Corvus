@@ -766,3 +766,1230 @@
     opacity: 1;
   }
 }
+
+/* ===== Fixed chat shell + clearer user bubbles ===== */
+
+/*
+ * The browser page itself should not scroll.
+ * Each Corvus workspace region owns its own scrolling.
+ */
+.corvus-app {
+  --user-bubble: #292a3d;
+
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.corvus-app[data-theme='light'] {
+  --user-bubble: #e9e9f1;
+}
+
+/* Keep the global header permanently visible. */
+.topbar {
+  position: relative;
+  z-index: 40;
+  flex: 0 0 64px;
+  background: var(--bg);
+}
+
+/* Everything below the 64px topbar lives inside a fixed-height workspace. */
+.workspace {
+  height: calc(100vh - 64px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*
+ * Center chat is a vertical application region:
+ * messages scroll, composer does not.
+ */
+.chat-panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 32px;
+  padding-bottom: 24px;
+}
+
+.messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  display: grid;
+  place-items: initial;
+
+  padding: 16px 2px 28px;
+
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+/* Empty conversation stays visually centered. */
+.welcome {
+  align-self: center;
+  justify-self: center;
+}
+
+/* Existing conversation starts from the top of the scrolling region. */
+.chat-history {
+  align-self: start;
+  justify-self: stretch;
+}
+
+/* Composer remains at the bottom of the center column. */
+.composer {
+  flex: 0 0 auto;
+}
+
+/* User messages get slightly stronger separation from the page. */
+.chat-message.user .message-body {
+  background: var(--user-bubble);
+}
+
+/*
+ * Left sidebar:
+ * header and New Chat stay visible while the conversation list scrolls.
+ */
+.conversation-sidebar {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-sidebar-header,
+.new-chat-button {
+  flex: 0 0 auto;
+}
+
+.conversation-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/*
+ * Inspector:
+ * its header and tabs stay visible;
+ * only inspector contents scroll.
+ */
+.inspector {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector-header,
+.inspect-tabs {
+  flex: 0 0 auto;
+}
+
+.inspector-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* Compact layouts retain the same shell behavior. */
+@media (max-width: 700px) {
+  .chat-panel {
+    height: 100%;
+    padding-top: 20px;
+    padding-bottom: 16px;
+  }
+
+  .messages {
+    min-height: 0;
+  }
+}
+
+/* ===== GPT-style workspace scrolling + composer sizing ===== */
+
+.corvus-app {
+  --scrollbar-thumb: rgba(255, 255, 255, .18);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, .28);
+}
+
+.corvus-app[data-theme='light'] {
+  --scrollbar-thumb: rgba(40, 40, 45, .20);
+  --scrollbar-thumb-hover: rgba(40, 40, 45, .32);
+}
+
+/*
+ * Let the center workspace own the scroll width.
+ * Content itself remains centered and narrow.
+ */
+.chat-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.messages {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.chat-history {
+  width: min(760px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*
+ * Composer is intentionally a little wider than assistant text,
+ * similar to modern chat interfaces.
+ */
+.composer {
+  width: min(860px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.composer textarea {
+  height: auto;
+  min-height: 38px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+/*
+ * Prevent the left grid from stretching a handful of conversations
+ * over the entire sidebar height.
+ */
+.conversation-list {
+  align-content: start;
+  grid-auto-rows: max-content;
+}
+
+/* Thin, quiet scrollbars for all three independent regions. */
+.messages,
+.conversation-list,
+.inspector-content,
+.composer textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.messages::-webkit-scrollbar,
+.conversation-list::-webkit-scrollbar,
+.inspector-content::-webkit-scrollbar,
+.composer textarea::-webkit-scrollbar {
+  width: 7px;
+}
+
+.messages::-webkit-scrollbar-track,
+.conversation-list::-webkit-scrollbar-track,
+.inspector-content::-webkit-scrollbar-track,
+.composer textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb,
+.conversation-list::-webkit-scrollbar-thumb,
+.inspector-content::-webkit-scrollbar-thumb,
+.composer textarea::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+.messages::-webkit-scrollbar-thumb:hover,
+.conversation-list::-webkit-scrollbar-thumb:hover,
+.inspector-content::-webkit-scrollbar-thumb:hover,
+.composer textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+@media (max-width: 700px) {
+  .chat-history {
+    width: calc(100% - 24px);
+  }
+
+  .composer {
+    width: calc(100% - 24px);
+  }
+}
+
+/* ===== GPT-style composer scrollbar placement ===== */
+
+/*
+ * Let the textarea own the full composer width.
+ * The send button floats above it near the bottom-right,
+ * leaving the textarea scrollbar at the true far-right edge.
+ */
+.composer {
+  position: relative;
+  display: block;
+  padding: 9px 8px 9px 17px;
+}
+
+.composer textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  /*
+   * Space for the floating send button.
+   * The scrollbar itself remains at the textarea's far-right edge.
+   */
+  padding-right: 64px;
+  padding-bottom: 8px;
+}
+
+.send-button {
+  position: absolute;
+  right: 22px;
+  bottom: 10px;
+  z-index: 2;
+}
+
+/*
+ * Put the textarea scrollbar on the extreme edge of the composer.
+ * Keep it subtle like the surrounding workspace scrollbar.
+ */
+.composer textarea::-webkit-scrollbar {
+  width: 7px;
+}
+
+.composer textarea::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+.composer textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 700px) {
+  .send-button {
+    right: 18px;
+  }
+
+  .composer textarea {
+    padding-right: 60px;
+  }
+}
+
+/* ===== Composer conversation-state sizing ===== */
+
+/*
+ * Fresh conversation:
+ * light and compact invitation to begin.
+ */
+.composer-new {
+  min-height: 58px;
+}
+
+.composer-new textarea {
+  min-height: 38px;
+}
+
+/*
+ * Established conversation:
+ * slightly more writing room by default.
+ */
+.composer-established {
+  min-height: 72px;
+  padding-top: 13px;
+  padding-bottom: 10px;
+}
+
+.composer-established textarea {
+  min-height: 52px;
+}
+
+/*
+ * The existing autosize logic can continue growing the textarea
+ * until its 180px cap, after which the textarea scrolls internally.
+ */
+.composer-new textarea,
+.composer-established textarea {
+  transition:
+    min-height 180ms ease,
+    height 120ms ease;
+}
+
+@media (max-width: 700px) {
+  .composer-established {
+    min-height: 68px;
+  }
+
+  .composer-established textarea {
+    min-height: 48px;
+  }
+}
+
+/* ===== Final unified chat geometry polish ===== */
+
+.corvus-app {
+  --chat-radius: 18px;
+}
+
+/*
+ * Keep chat-panel full workspace width.
+ * This preserves the center scrollbar at the far-right edge
+ * of the available chat region.
+ */
+.chat-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+/* Conversation text remains centered and narrower. */
+.chat-history {
+  width: min(760px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*
+ * One bubble only:
+ * message-body owns background, padding and radius.
+ */
+.chat-message.user .message-body {
+  max-width: 76%;
+  padding: 10px 15px;
+  border-radius: var(--chat-radius);
+  background: var(--user-bubble);
+}
+
+.chat-message.user p {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/*
+ * Composer is deliberately wider than the conversation text,
+ * but still centered in the workspace.
+ */
+.composer {
+  position: relative;
+  width: min(900px, calc(100% - 40px));
+  box-sizing: border-box;
+  margin: 10px auto 0;
+  padding: 13px 14px 13px 18px;
+  border-radius: var(--chat-radius);
+  overflow: visible;
+}
+
+/* Fresh chat remains slightly more compact. */
+.composer-new {
+  min-height: 62px;
+}
+
+.composer-new textarea {
+  min-height: 36px;
+}
+
+/* Existing conversation gets more comfortable writing space. */
+.composer-established {
+  min-height: 78px;
+}
+
+.composer-established textarea {
+  min-height: 50px;
+}
+
+.composer textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  /*
+   * Text avoids the floating send button.
+   * The textarea itself still reaches the far-right edge,
+   * so its scrollbar stays to the RIGHT of the button.
+   */
+  padding: 4px 66px 4px 0;
+
+  max-height: 180px;
+  overflow-y: auto;
+  line-height: 1.55;
+}
+
+/*
+ * Smaller send button.
+ * It sits left of the textarea's far-right scrollbar.
+ */
+.send-button {
+  position: absolute;
+  right: 22px;
+  bottom: 12px;
+
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px;
+  min-height: 30px;
+  flex: 0 0 30px !important;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border-radius: 50%;
+  font-size: 14px;
+  z-index: 2;
+}
+
+.send-arrow {
+  font-size: 16px;
+}
+
+/*
+ * Keep a visible gap between the scrollbar
+ * and the floating send button.
+ */
+.composer textarea::-webkit-scrollbar {
+  width: 7px;
+}
+
+.composer textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.composer textarea::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+@media (max-width: 700px) {
+  .chat-history {
+    width: calc(100% - 24px);
+  }
+
+  .composer {
+    width: calc(100% - 24px);
+  }
+
+  .chat-message.user .message-body {
+    max-width: 84%;
+  }
+
+  .send-button {
+    right: 20px;
+  }
+}
+
+
+/* ===== Composer micro polish v3 ===== */
+
+.corvus-app {
+  --composer-radius: 24px;
+  --send-size: 28px;
+}
+
+/* Keep the topbar fixed feel, and let the middle chat region own scrolling. */
+.workspace {
+  height: calc(100vh - 64px);
+}
+
+.chat-panel {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding-top: 20px;
+  padding-bottom: 16px;
+}
+
+.messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 0;
+}
+
+/* Narrower content column like GPT. */
+.chat-history {
+  width: min(760px, calc(100% - 40px));
+  margin-left: auto;
+  margin-right: auto;
+  padding: 18px 0 140px;
+  box-sizing: border-box;
+}
+
+/* User bubble: single layer only, unified rounded-rect look. */
+.chat-message.user .message-body {
+  max-width: 76%;
+  padding: 11px 16px;
+  border-radius: var(--composer-radius);
+}
+
+.chat-message.user p {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Composer sits visually over the bottom like GPT. */
+.composer {
+  position: sticky;
+  bottom: 14px;
+  z-index: 10;
+  box-sizing: border-box;
+  margin: -10px auto 0;
+  border-radius: var(--composer-radius);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+/* Soft transition so the conversation feels like it continues behind the composer. */
+.composer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -32px;
+  height: 32px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--bg) 92%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+/* New chat: thinner and narrower. */
+.composer-new {
+  width: min(780px, calc(100% - 40px));
+  min-height: 58px;
+  padding: 10px 14px 10px 16px;
+}
+
+/* Existing chat: wider and more comfortable. */
+.composer-established {
+  width: min(920px, calc(100% - 40px));
+  min-height: 74px;
+  padding: 13px 16px 13px 18px;
+}
+
+.composer-new textarea {
+  min-height: 24px;
+}
+
+.composer-established textarea {
+  min-height: 42px;
+}
+
+.composer textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  outline: 0;
+  resize: none;
+  line-height: 1.55;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+
+  /*
+   * Leave more room so the scrollbar is clearly separated
+   * from the send button.
+   */
+  padding: 4px 94px 4px 0;
+}
+
+/* Put scrollbar farther right but visually cleaner. */
+.composer textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.composer textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.composer textarea::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+}
+
+/*
+ * Send button:
+ * - smaller
+ * - fixed to the lower-right
+ * - equal inset from right/bottom so it matches the rounded rectangle better
+ */
+.send-button {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+
+  width: var(--send-size) !important;
+  height: var(--send-size) !important;
+  min-width: var(--send-size);
+  min-height: var(--send-size);
+  flex: 0 0 var(--send-size) !important;
+
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.send-arrow {
+  font-size: 14px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 700px) {
+  .chat-history {
+    width: calc(100% - 24px);
+    padding-bottom: 128px;
+  }
+
+  .composer-new,
+  .composer-established {
+    width: calc(100% - 24px);
+  }
+
+  .composer-established {
+    min-height: 70px;
+  }
+
+  .chat-message.user .message-body {
+    max-width: 84%;
+  }
+
+  .send-button {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .composer textarea {
+    padding-right: 88px;
+  }
+}
+
+
+/* ===== Composer scrollbar + draft UX cleanup ===== */
+
+/*
+ * Do not reserve scrollbar space when the textarea does not overflow.
+ * JS switches overflow-y to auto only after the 180px height cap.
+ */
+.composer textarea {
+  scrollbar-gutter: auto;
+}
+
+/*
+ * Chrome / Chromium:
+ * visually stop the scrollbar above the bottom-right send control.
+ */
+.composer textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.composer textarea::-webkit-scrollbar-track {
+  margin-top: 4px;
+  margin-bottom: 46px;
+  background: transparent;
+}
+
+.composer textarea::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+}
+
+.composer textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ===== Composer geometry final polish ===== */
+
+/*
+ * New conversation:
+ * narrow, light, capsule-shaped like a clean prompt bar.
+ */
+.composer-new {
+  width: min(740px, calc(100% - 40px));
+  min-height: 52px;
+  padding: 8px 12px 8px 16px;
+  border-radius: 999px;
+}
+
+.composer-new textarea {
+  min-height: 28px;
+}
+
+/*
+ * Established conversation:
+ * wider working area with a conventional rounded rectangle.
+ * Leaves room for future voice / attachment controls without
+ * changing the current layout.
+ */
+.composer-established {
+  width: min(980px, calc(100% - 40px));
+  min-height: 76px;
+  padding: 13px 14px 13px 18px;
+  border-radius: 22px;
+}
+
+.composer-established textarea {
+  min-height: 44px;
+}
+
+/*
+ * Send control sits a little closer to the lower-right corner.
+ */
+.send-button {
+  right: 9px !important;
+  bottom: 9px !important;
+}
+
+/*
+ * Keep overflowing-text scrollbar clearly above the send control.
+ */
+.composer textarea::-webkit-scrollbar-track {
+  margin-top: 4px;
+  margin-bottom: 52px;
+}
+
+@media (max-width: 700px) {
+  .composer-new,
+  .composer-established {
+    width: calc(100% - 24px);
+  }
+
+  .composer-established {
+    min-height: 72px;
+  }
+
+  .send-button {
+    right: 8px !important;
+    bottom: 8px !important;
+  }
+}
+
+/* ===== Final send-button inset alignment ===== */
+
+/* shared geometry */
+.composer {
+  position: relative;
+}
+
+.composer-new,
+.composer-established {
+  --send-size: 28px;
+  --send-gap: 12px;
+  --send-right-space: calc(var(--send-size) + var(--send-gap) + 18px);
+}
+
+/*
+ * New chat:
+ * capsule shape, send button keeps equal inset from rounded edge.
+ */
+.composer-new {
+  --composer-inset: 12px;
+  padding:
+    var(--composer-inset)
+    calc(var(--send-right-space) + var(--composer-inset))
+    var(--composer-inset)
+    16px;
+  border-radius: 999px;
+}
+
+.composer-new .send-button {
+  width: var(--send-size);
+  height: var(--send-size);
+  right: var(--composer-inset) !important;
+  bottom: var(--composer-inset) !important;
+}
+
+/*
+ * Established chat:
+ * wider rounded-rectangle, same inset logic.
+ */
+.composer-established {
+  --composer-inset: 14px;
+  padding:
+    var(--composer-inset)
+    calc(var(--send-right-space) + var(--composer-inset))
+    var(--composer-inset)
+    18px;
+  border-radius: 22px;
+}
+
+.composer-established .send-button {
+  width: var(--send-size);
+  height: var(--send-size);
+  right: var(--composer-inset) !important;
+  bottom: var(--composer-inset) !important;
+}
+
+/* textarea should never run under the send button */
+.composer textarea {
+  padding-right: 6px;
+}
+
+/* scrollbar sits above the button instead of colliding with it */
+.composer textarea::-webkit-scrollbar-track {
+  margin-top: 6px;
+  margin-bottom: 44px;
+}
+
+@media (max-width: 700px) {
+  .composer-new,
+  .composer-established {
+    --send-size: 26px;
+    --send-gap: 10px;
+    --send-right-space: calc(var(--send-size) + var(--send-gap) + 16px);
+  }
+
+  .composer-new {
+    --composer-inset: 10px;
+  }
+
+  .composer-established {
+    --composer-inset: 12px;
+  }
+}
+
+/* ===== True capsule send-button geometry ===== */
+
+/*
+ * Single-line new chat:
+ * the circular button is vertically centered inside the capsule.
+ */
+.composer-new.composer-single .send-button {
+  top: 50% !important;
+  right: 12px !important;
+  bottom: auto !important;
+  transform: translateY(-50%);
+}
+
+/*
+ * Once the composer grows into a multiline rounded rectangle,
+ * the button settles into the bottom-right corner.
+ */
+.composer-new.composer-expanded .send-button {
+  top: auto !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  transform: none;
+}
+
+/* Established conversations already use the writing-box geometry. */
+.composer-established .send-button {
+  top: auto !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  transform: none;
+}
+
+/*
+ * Preserve positioning when hovering:
+ * don't let the old hover translate disturb the geometry.
+ */
+.composer-new.composer-single .send-button:hover:not(:disabled) {
+  transform: translateY(-50%);
+}
+
+.composer-new.composer-expanded .send-button:hover:not(:disabled),
+.composer-established .send-button:hover:not(:disabled) {
+  transform: none;
+}
+
+/* ===== Composer input zone + future controls footer ===== */
+
+/*
+ * NEW CHAT / SINGLE LINE
+ *
+ * Keep the lightweight capsule:
+ * textarea and send button live on one horizontal row.
+ */
+.composer-new.composer-single {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-rows: auto;
+  align-items: center;
+  column-gap: 10px;
+
+  min-height: 52px;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+}
+
+.composer-new.composer-single textarea {
+  grid-column: 1;
+  grid-row: 1;
+
+  width: 100%;
+  min-height: 28px;
+  padding: 0 !important;
+  overflow-y: hidden !important;
+}
+
+.composer-new.composer-single .send-button {
+  position: static !important;
+
+  grid-column: 2;
+  grid-row: 1;
+
+  justify-self: end;
+  align-self: center;
+
+  width: 28px !important;
+  height: 28px !important;
+
+  transform: none !important;
+}
+
+
+/*
+ * ESTABLISHED CHAT
+ * OR NEW CHAT AFTER IT EXPANDS
+ *
+ * Row 1 = textarea
+ * Row 2 = reserved controls footer
+ *
+ * This keeps ALL text and textarea scrolling above the send button.
+ */
+.composer-established,
+.composer-new.composer-expanded {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-rows: minmax(0, auto) 30px;
+
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: end;
+
+  padding: 14px 12px 10px 18px;
+  border-radius: 22px;
+}
+
+
+/*
+ * Textarea owns only the upper input zone.
+ * It spans the full composer width, so its scrollbar sits
+ * directly ABOVE the future controls area.
+ */
+.composer-established textarea,
+.composer-new.composer-expanded textarea {
+  grid-column: 1 / -1;
+  grid-row: 1;
+
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 0 6px 0 0 !important;
+
+  max-height: 180px;
+}
+
+
+/*
+ * Bottom-right send control.
+ *
+ * The entire space to its left is intentionally empty today.
+ * Later it can contain:
+ * + / file / microphone / voice / other controls.
+ */
+.composer-established .send-button,
+.composer-new.composer-expanded .send-button {
+  position: static !important;
+
+  grid-column: 2;
+  grid-row: 2;
+
+  justify-self: end;
+  align-self: end;
+
+  width: 28px !important;
+  height: 28px !important;
+
+  transform: none !important;
+}
+
+
+/*
+ * No fake scrollbar exclusion zone is needed anymore.
+ * The textarea physically ends above the controls footer.
+ */
+.composer textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.composer textarea::-webkit-scrollbar-track {
+  margin: 4px 0 !important;
+  background: transparent;
+}
+
+.composer textarea::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+}
+
+
+/* Established conversations stay intentionally wider. */
+.composer-established {
+  width: min(980px, calc(100% - 40px));
+}
+
+
+/* Expanded new chat transitions from capsule to writing box. */
+.composer-new.composer-expanded {
+  width: min(820px, calc(100% - 40px));
+}
+
+
+@media (max-width: 700px) {
+  .composer-established,
+  .composer-new.composer-expanded,
+  .composer-new.composer-single {
+    width: calc(100% - 24px);
+  }
+}
+
+/* ===== Selection boundaries ===== */
+
+/*
+ * Navigation is interactive UI, not document text.
+ * Prevent drag-selection from spilling into the conversation sidebar.
+ */
+.conversation-sidebar,
+.conversation-sidebar * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Header controls are UI as well. */
+.topbar,
+.topbar * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * Conversation content remains explicitly selectable.
+ */
+.chat-history,
+.chat-history * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Composer text must remain editable/selectable. */
+.composer textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ===== New-chat capsule precision geometry ===== */
+
+/*
+ * Exact geometry:
+ *
+ * capsule height = 48px
+ * send button    = 26px
+ * edge inset     = (48 - 26) / 2 = 11px
+ *
+ * Therefore the button has the same visual distance
+ * from top, bottom, and right edges.
+ */
+.composer-new.composer-single {
+  --capsule-height: 48px;
+  --capsule-inset: 11px;
+  --capsule-send-size: 26px;
+
+  width: min(680px, calc(100% - 40px));
+  height: var(--capsule-height);
+  min-height: var(--capsule-height);
+
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) var(--capsule-send-size);
+  grid-template-rows: 1fr;
+
+  align-items: center;
+  column-gap: 10px;
+
+  box-sizing: border-box;
+
+  padding:
+    0
+    var(--capsule-inset)
+    0
+    16px;
+
+  border-radius: 999px;
+}
+
+/*
+ * Keep the single-line textarea itself vertically centered.
+ * Once it becomes multiline, composer-expanded rules take over.
+ */
+.composer-new.composer-single textarea {
+  grid-column: 1;
+  grid-row: 1;
+
+  align-self: center;
+
+  width: 100%;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+
+  margin: 0;
+  padding: 1px 0 0 !important;
+
+  line-height: 22px;
+  overflow: hidden !important;
+}
+
+/*
+ * Exact equal-edge placement.
+ */
+.composer-new.composer-single .send-button {
+  position: static !important;
+
+  grid-column: 2;
+  grid-row: 1;
+
+  justify-self: end;
+  align-self: center;
+
+  width: var(--capsule-send-size) !important;
+  height: var(--capsule-send-size) !important;
+  min-width: var(--capsule-send-size);
+  min-height: var(--capsule-send-size);
+
+  margin: 0;
+  padding: 0;
+
+  transform: none !important;
+}
+
+/* Don't let hover geometry shift the button. */
+.composer-new.composer-single .send-button:hover:not(:disabled) {
+  transform: none !important;
+}
+
+@media (max-width: 700px) {
+  .composer-new.composer-single {
+    width: calc(100% - 24px);
+  }
+}
