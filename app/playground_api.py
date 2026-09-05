@@ -280,6 +280,20 @@ def post_chat(request: ChatRequest):
     )
 
 
+def build_session_title(content, max_length=36):
+    normalized = " ".join(
+        (content or "").split()
+    )
+
+    if not normalized:
+        return "New conversation"
+
+    if len(normalized) <= max_length:
+        return normalized
+
+    return normalized[:max_length].rstrip() + "…"
+
+
 @app.get("/api/sessions")
 def get_sessions(
     limit: int = Query(
@@ -292,14 +306,23 @@ def get_sessions(
         rows = conn.execute(
             """
             SELECT
-                session_id,
+                m.session_id,
                 COUNT(*) AS message_count,
-                MIN(id) AS first_message_id,
-                MAX(id) AS last_message_id,
-                MIN(created_at) AS created_at,
-                MAX(created_at) AS updated_at
-            FROM messages
-            GROUP BY session_id
+                MIN(m.id) AS first_message_id,
+                MAX(m.id) AS last_message_id,
+                MIN(m.created_at) AS created_at,
+                MAX(m.created_at) AS updated_at,
+                (
+                    SELECT first_user.content
+                    FROM messages AS first_user
+                    WHERE
+                        first_user.session_id = m.session_id
+                        AND first_user.role = 'user'
+                    ORDER BY first_user.id ASC
+                    LIMIT 1
+                ) AS title_source
+            FROM messages AS m
+            GROUP BY m.session_id
             ORDER BY last_message_id DESC
             LIMIT ?
             """,
@@ -314,6 +337,7 @@ def get_sessions(
             "last_message_id": row[3],
             "created_at": row[4],
             "updated_at": row[5],
+            "title": build_session_title(row[6]),
         }
         for row in rows
     ]

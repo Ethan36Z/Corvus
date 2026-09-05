@@ -25,6 +25,7 @@ type Evidence = {
 
 type Session = {
   session_id: string
+  title: string
   message_count: number
   first_message_id: number
   last_message_id: number
@@ -476,7 +477,7 @@ function App() {
                   if (isCompactLayout()) setConversationOpen(false)
                 }}
               >
-                <span>{session.session_id}</span>
+                <span title={session.title}>{session.title}</span>
                 <small>{session.message_count} messages</small>
               </button>
             ))}
