@@ -1,0 +1,578 @@
+{
+  "reviewer": "Reviewer A",
+  "protocol_version": "FINAL_V0.1",
+  "model": "Qwen3.5-9B-Q5_K_M",
+  "model_alias": "corvus",
+  "temperature": 0,
+  "thinking": false,
+  "structured_output": "JSON_SCHEMA",
+  "protocol": "BLIND_ADVERSARIAL_SEMANTIC_REVIEW",
+  "results": [
+    {
+      "blind_id": "B001",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'My sister,' which semantically corefers with the entity 'Lina' in assertion A1. While the text does not explicitly state 'Lina is my sister' in the new evidence, the context implies a shared referent. Determining if this is a definitive identity match or a potential ambiguity requires semantic judgment.",
+      "latency_seconds": 2.275,
+      "completion_tokens": 135,
+      "prompt_tokens": 320
+    },
+    {
+      "blind_id": "B002",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "causal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the manager approved the vacation. While A1 identifies 'Daniel' as the manager, the text does not explicitly link Daniel to the approval action. However, pragmatically, the approval implies the existence of a manager performing that role. Establishing that Daniel is the specific manager who performed the approval requires inferring a causal or agentive link between the identity assertion and the event description, which is non-trivial but plausible.",
+      "latency_seconds": 2.523,
+      "completion_tokens": 154,
+      "prompt_tokens": 317
+    },
+    {
+      "blind_id": "B003",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence ('meeting canceled') provides context for the archived assertion ('Maya called me'). While not a direct contradiction, the cancellation likely explains the call's purpose or timing, suggesting a temporal or causal link requiring semantic judgment to confirm.",
+      "latency_seconds": 2.076,
+      "completion_tokens": 121,
+      "prompt_tokens": 320
+    },
+    {
+      "blind_id": "B004",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'Dr. Chen', while the archived assertion identifies 'Mei Chen' as the dentist. A non-trivial coreference relation exists if 'Dr. Chen' refers to 'Mei Chen'. However, the text does not explicitly confirm this identity, requiring semantic judgment to determine if they are the same person or distinct individuals.",
+      "latency_seconds": 2.334,
+      "completion_tokens": 138,
+      "prompt_tokens": 320
+    },
+    {
+      "blind_id": "B005",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity",
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence explicitly references 'The only sister I have,' which directly corefers with the subject of assertion A1 ('Lina'). Additionally, the evidence introduces a future temporal event ('moving next month') concerning this specific individual, establishing a temporal relation to the state described in A1. Semantic judgment is required to confirm the identity link and integrate the temporal update.",
+      "latency_seconds": 2.363,
+      "completion_tokens": 144,
+      "prompt_tokens": 323
+    },
+    {
+      "blind_id": "B006",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'Alex', while the archived assertion defines 'Alexander Chen' as 'Alex'. A coreference relation exists where 'Alex' in the new evidence likely refers to 'Alexander Chen' from the archive. However, semantic judgment is required to confirm this identity link is intended rather than coincidental, as the new evidence does not explicitly state the subject's full name.",
+      "latency_seconds": 2.415,
+      "completion_tokens": 144,
+      "prompt_tokens": 317
+    },
+    {
+      "blind_id": "B007",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'The Orion lead,' which likely refers to Priya based on assertion A1. Establishing this coreference is necessary to determine if the approval action in the new evidence relates to the role change described in the archive. Semantic judgment is required to confirm the identity link.",
+      "latency_seconds": 2.148,
+      "completion_tokens": 126,
+      "prompt_tokens": 322
+    },
+    {
+      "blind_id": "B008",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "support_evidence_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states that the Falcon presenter emailed afterward. This supports Assertion A1 by confirming the existence of a presenter and an event occurring recently ('yesterday' aligns with 'afterward' in a typical work context), though it does not definitively prove the specific identity of Marcus or the exact timing without further confirmation. The relation is supportive but requires semantic judgment to weigh the strength of the temporal link.",
+      "latency_seconds": 2.44,
+      "completion_tokens": 149,
+      "prompt_tokens": 322
+    },
+    {
+      "blind_id": "B009",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence concerns Lina Gomez's promotion, while the archived assertion identifies Lina Zhang as the speaker's sister. These refer to different individuals with no overlapping semantic content or logical connection. No relation exists.",
+      "latency_seconds": 1.688,
+      "completion_tokens": 98,
+      "prompt_tokens": 321
+    },
+    {
+      "blind_id": "B010",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'a manager,' which could refer to the same individual as 'Daniel' in assertion A1. However, the evidence specifies this manager is from 'another department,' while A1 implies Daniel is the user's direct manager. This creates a potential conflict or requires clarification on whether the user has multiple managers or if the roles differ. Semantic judgment is needed to determine if these are contradictory or distinct entities.",
+      "latency_seconds": 2.529,
+      "completion_tokens": 152,
+      "prompt_tokens": 319
+    },
+    {
+      "blind_id": "B011",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence introduces 'Wei Chen', while the archived assertion mentions 'Mei Chen'. Both share the surname 'Chen', creating a potential coreference identity conflict or clarification need. Determining if these are the same person or distinct individuals requires semantic judgment beyond simple string matching, as the first name differs. This warrants investigation into whether the evidence contradicts or clarifies the identity asserted in A1.",
+      "latency_seconds": 2.662,
+      "completion_tokens": 161,
+      "prompt_tokens": 322
+    },
+    {
+      "blind_id": "B012",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence 'He attached the contract' introduces a male subject ('He') and a specific action ('attached the contract'). The archived assertions involve 'Maya' and 'Priya' (female subjects) and actions of calling and sending emails. There is no explicit link, coreference, or causal connection between the new evidence and the archived assertions. The gender mismatch and lack of shared context preclude a non-trivial semantic relation.",
+      "latency_seconds": 2.389,
+      "completion_tokens": 144,
+      "prompt_tokens": 367
+    },
+    {
+      "blind_id": "B013",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence 'Lina got promoted' introduces a potential coreference conflict. If 'Lina' in the evidence refers to 'Lina Zhang' (A1), a promotion is plausible. However, if it refers to 'Lina Gomez' (A2), the relationship changes. Without explicit disambiguation, we cannot determine if the evidence supports, contradicts, or is unrelated to the specific archived assertions regarding identity. Semantic judgment is required to resolve the reference.",
+      "latency_seconds": 2.795,
+      "completion_tokens": 169,
+      "prompt_tokens": 340
+    },
+    {
+      "blind_id": "B014",
+      "candidate_assertion_ids": [
+        "A1",
+        "A2"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence 'She said it went well' contains a pronoun 'She' that requires resolution. It could refer to either Maya (A1) or Priya (A2). Determining which specific individual the pronoun refers to is necessary to establish a coreference identity relation, but the text alone is ambiguous.",
+      "latency_seconds": 2.353,
+      "completion_tokens": 137,
+      "prompt_tokens": 369
+    },
+    {
+      "blind_id": "B015",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence states 'Alex' bought a car. The archive mentions 'Alexander Chen' (who goes by Alex) and 'Alex Rivera'. Without explicit confirmation that the 'Alex' in the new evidence is either Alexander Chen or Alex Rivera, no coreference or other non-trivial relation can be safely established. The semantic link is uncertain.",
+      "latency_seconds": 2.096,
+      "completion_tokens": 125,
+      "prompt_tokens": 338
+    },
+    {
+      "blind_id": "B016",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence states that 'My manager recommended a course.' This does not explicitly identify who the manager is, nor does it confirm if Daniel or Priya are the specific managers being referred to. Without explicit linkage or context connecting the new evidence to the specific individuals in the archive, no non-trivial semantic relation (such as coreference or causal link) can be safely established. The evidence is too vague to resolve the identity of the manager relative to the archived assertions.",
+      "latency_seconds": 2.46,
+      "completion_tokens": 150,
+      "prompt_tokens": 344
+    },
+    {
+      "blind_id": "B017",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "Assertion A1 states an application submission on May 4, 2026. New evidence E-T-P1 places an interview on May 10, 2026. These events share a clear temporal sequence (submission preceding interview), establishing a non-trivial temporal relation that warrants consideration for the benchmark's timeline reconstruction.",
+      "latency_seconds": 2.325,
+      "completion_tokens": 134,
+      "prompt_tokens": 506
+    },
+    {
+      "blind_id": "B018",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence establishes a conference occurring July 3\u20134, 2026. The archived assertion describes a Seattle trip from July 1\u20137, 2026. These events overlap temporally, suggesting a potential causal or contextual relationship (e.g., attending the conference during the trip) that requires semantic judgment to resolve.",
+      "latency_seconds": 2.484,
+      "completion_tokens": 136,
+      "prompt_tokens": 513
+    },
+    {
+      "blind_id": "B019",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the outage ran from September 3 through September 4, overlapping with the maintenance window (Sept 1-3) defined in A1. This overlap suggests a potential causal or temporal dependency where the outage occurred during the scheduled maintenance, requiring semantic judgment to determine if this contradicts the original scope or indicates a specific event sequence.",
+      "latency_seconds": 2.623,
+      "completion_tokens": 148,
+      "prompt_tokens": 501
+    },
+    {
+      "blind_id": "B020",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the second workshop began on September 3, which immediately follows the end of the first workshop (September 2) described in A1. This establishes a direct sequential temporal relation between the two events, indicating a continuous schedule without overlap.",
+      "latency_seconds": 2.358,
+      "completion_tokens": 129,
+      "prompt_tokens": 503
+    },
+    {
+      "blind_id": "B021",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence explicitly anchors to the interview (A1) and introduces a subsequent event ('sent the offer') occurring two days later. This establishes a clear temporal sequence (Event A -> Event B) requiring semantic judgment to formalize the 'after' relationship and calculate the specific date of the offer.",
+      "latency_seconds": 2.525,
+      "completion_tokens": 140,
+      "prompt_tokens": 427
+    },
+    {
+      "blind_id": "B022",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states deployment started 'the following morning' relative to an unstated reference point. While A1 places the review on 'Monday afternoon,' the evidence does not explicitly link the review to the deployment start time. However, the phrase 'the following morning' strongly implies a sequence where the review (Monday afternoon) precedes the deployment (Tuesday morning). This suggests a temporal succession relation, but the exact reference anchor in the evidence is ambiguous, requiring semantic judgment to confirm the link.",
+      "latency_seconds": 2.858,
+      "completion_tokens": 166,
+      "prompt_tokens": 320
+    },
+    {
+      "blind_id": "B023",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence establishes that finishing the course occurred before starting the new job. This creates a temporal sequence relative to the start date mentioned in assertion A1 (September 8). While the exact date of finishing the course is unknown, a non-trivial temporal relation exists between the two events.",
+      "latency_seconds": 2.091,
+      "completion_tokens": 124,
+      "prompt_tokens": 328
+    },
+    {
+      "blind_id": "B024",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the conference occurred 'during' the Seattle trip. This establishes a temporal inclusion relation between the event in E-T-I4 and the timeframe defined in A1. Semantic judgment is required to confirm the specific overlap without further details on the conference dates.",
+      "latency_seconds": 2.029,
+      "completion_tokens": 119,
+      "prompt_tokens": 329
+    },
+    {
+      "blind_id": "B025",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states a grocery purchase occurred on September 7, while the archived assertion places a dentist appointment on the same day. This creates a potential temporal overlap or sequence of events on 2026-09-07. Determining if these events conflict, coexist, or imply a specific order requires semantic judgment beyond simple timestamp matching, as the granularity is identical (day-level).",
+      "latency_seconds": 2.605,
+      "completion_tokens": 153,
+      "prompt_tokens": 493
+    },
+    {
+      "blind_id": "B026",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The archived assertion states the interview occurred on May 10, while new evidence places the vacation start on May 12. These events are temporally adjacent, suggesting a potential sequence (interview followed by vacation) or a constraint on availability. Semantic judgment is required to determine if this temporal ordering implies a causal link or simply a chronological record.",
+      "latency_seconds": 2.456,
+      "completion_tokens": 136,
+      "prompt_tokens": 501
+    },
+    {
+      "blind_id": "B027",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states a friend arrived on September 4, 2026, which shares the exact same timestamp as the Orion deployment in assertion A1. While they are distinct events, their simultaneous occurrence establishes a non-trivial temporal relation (co-occurrence) that warrants consideration for benchmarking context or potential causal links.",
+      "latency_seconds": 2.622,
+      "completion_tokens": 145,
+      "prompt_tokens": 505
+    },
+    {
+      "blind_id": "B028",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "Assertion A1 states Project Falcon was submitted on June 3, ending June 4. New evidence E-T-N4 places a dental cleaning on June 4. These events share a temporal boundary, suggesting a potential sequence or overlap worth considering for scheduling or memory consistency, requiring semantic judgment to determine if they are distinct or related.",
+      "latency_seconds": 2.57,
+      "completion_tokens": 144,
+      "prompt_tokens": 500
+    },
+    {
+      "blind_id": "B029",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states deployment occurred 'around Monday,' while the archived assertion claims the review happened 'on Monday.' These events are distinct but share a specific temporal anchor. Determining if 'around Monday' implies overlap, proximity, or a different day requires semantic judgment beyond simple time ordering.",
+      "latency_seconds": 2.173,
+      "completion_tokens": 123,
+      "prompt_tokens": 318
+    },
+    {
+      "blind_id": "B030",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states contact occurred 'that week,' which temporally encompasses the specific day 'Wednesday' mentioned in A1. While not a direct contradiction or identity, there is a non-trivial temporal inclusion relation worth considering to refine the timeline precision.",
+      "latency_seconds": 2.046,
+      "completion_tokens": 118,
+      "prompt_tokens": 319
+    },
+    {
+      "blind_id": "B031",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence places the speaker in San Francisco 'around that week,' which temporally overlaps with the conference dates (May 9-11) defined in A1. This suggests a potential temporal relation where the speaker's presence coincides with the event, though the exact alignment remains uncertain without further detail.",
+      "latency_seconds": 2.137,
+      "completion_tokens": 128,
+      "prompt_tokens": 333
+    },
+    {
+      "blind_id": "B032",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence establishes a temporal link between the deployment and the review mentioned in A1. However, the specific direction (before or after) is uncertain, requiring semantic judgment to resolve the exact sequence.",
+      "latency_seconds": 1.904,
+      "completion_tokens": 108,
+      "prompt_tokens": 330
+    },
+    {
+      "blind_id": "B033",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the subject moved to Portland in 2026 and lives there now. This implies the state of living in Seattle ended prior to 2026. This creates a temporal and state-evolution relation with the archived assertion that the subject lived in Seattle through 2025, suggesting the residence in Seattle concluded before the 2026 move. Semantic judgment is required to confirm the exact boundary of the Seattle residence relative to the 2026 move.",
+      "latency_seconds": 2.806,
+      "completion_tokens": 172,
+      "prompt_tokens": 333
+    },
+    {
+      "blind_id": "B034",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states Maya left Acme in 2026. This creates a temporal and state evolution relation with the archived assertion that she worked there 'through 2025'. While consistent, the exact end date of her employment at Acme is not explicitly defined by the new evidence, requiring semantic judgment to determine if 'through 2025' implies she stayed until the end of that year or simply that her tenure extended into it. The relation is non-trivial as it tracks the evolution of her employment status.",
+      "latency_seconds": 2.915,
+      "completion_tokens": 180,
+      "prompt_tokens": 335
+    },
+    {
+      "blind_id": "B035",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "state_evolution",
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states a current preference for Zed, while the archived assertion claims a 2025 preference for VS Code. This suggests a potential shift in preference over time (state_evolution) or a contradiction depending on the current date relative to 2025. Semantic judgment is required to determine if 'These days' implies a change from the 2025 state or if the timelines conflict.",
+      "latency_seconds": 2.674,
+      "completion_tokens": 156,
+      "prompt_tokens": 333
+    },
+    {
+      "blind_id": "B036",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states Orion has launched publicly, implying a transition from the private beta state mentioned in A1. This indicates a state evolution and a temporal sequence where the public launch follows the earlier beta period. Semantic judgment is required to confirm the specific nature of this transition.",
+      "latency_seconds": 2.091,
+      "completion_tokens": 125,
+      "prompt_tokens": 324
+    },
+    {
+      "blind_id": "B037",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "correction_contradiction",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states Brave has been the default since June, directly contradicting the archived assertion that Firefox is the default. This indicates a state evolution or a correction of the previous belief regarding the user's browser preference.",
+      "latency_seconds": 1.955,
+      "completion_tokens": 116,
+      "prompt_tokens": 323
+    },
+    {
+      "blind_id": "B038",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "correction_contradiction",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states Lina transferred to the Falcon team this spring, which directly contradicts the archived assertion that she is on the Orion team. This represents a state evolution or correction requiring semantic judgment to determine if the original assertion is now false or if the transfer is recent enough to coexist. The relation is non-trivial and significant.",
+      "latency_seconds": 2.318,
+      "completion_tokens": 141,
+      "prompt_tokens": 325
+    },
+    {
+      "blind_id": "B039",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "correction_contradiction",
+        "state_evolution"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "Assertion A1 states Daniel is the backend team lead. New evidence E-SE-I3 states Priya took over that role in August. This implies a potential state evolution (role transfer) or a contradiction if Daniel is still the lead. Semantic judgment is required to determine if Daniel was the lead prior to August or if the roles are mutually exclusive now.",
+      "latency_seconds": 2.405,
+      "completion_tokens": 146,
+      "prompt_tokens": 326
+    },
+    {
+      "blind_id": "B040",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "state_evolution",
+        "correction_contradiction"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states the subject now walks to work due to moving closer, directly contradicting the archived assertion that they usually commute by bus. This represents a clear state evolution from bus commuting to walking, potentially invalidating the previous habit. Semantic judgment is required to confirm if 'usually' is fully negated by the new permanent state.",
+      "latency_seconds": 2.324,
+      "completion_tokens": 140,
+      "prompt_tokens": 327
+    },
+    {
+      "blind_id": "B041",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence concerns Priya's employment at Nova, while the archived assertion concerns Daniel's employment at Acme. These involve different subjects and locations with no overlapping entities or implied causal/temporal links. No non-trivial semantic relation exists.",
+      "latency_seconds": 1.79,
+      "completion_tokens": 104,
+      "prompt_tokens": 320
+    }
+  ]
+}

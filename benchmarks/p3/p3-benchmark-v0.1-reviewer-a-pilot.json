@@ -1,0 +1,172 @@
+{
+  "reviewer": "Reviewer A",
+  "model": "Qwen3.5-9B-Q5_K_M",
+  "model_alias": "corvus",
+  "temperature": 0,
+  "thinking": false,
+  "protocol": "BLIND_ADVERSARIAL_SEMANTIC_REVIEW",
+  "results": [
+    {
+      "blind_id": "B001",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'My sister,' which likely refers to the same individual as 'Lina' in assertion A1. Establishing this coreference is necessary to integrate the new event (starting a job) with the existing identity claim.",
+      "latency_seconds": 2.19,
+      "completion_tokens": 126,
+      "prompt_tokens": 273
+    },
+    {
+      "blind_id": "B002",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "causal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence states 'My manager approved my vacation,' implying the speaker has a manager. The archived assertion claims 'Daniel is my manager.' While not a direct contradiction, the new evidence provides a functional role (manager) that could support or conflict with the identity claim depending on whether Daniel is the specific manager who approved the vacation. This requires judgment to determine if the evidence confirms, refutes, or is merely compatible with the identity claim.",
+      "latency_seconds": 2.651,
+      "completion_tokens": 166,
+      "prompt_tokens": 270
+    },
+    {
+      "blind_id": "B003",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence states a meeting was canceled, while the archived assertion states Maya called the user this morning. These are independent events with no explicit causal, temporal, or contradictory link provided. The caller's identity or the meeting's status does not inherently negate the call.",
+      "latency_seconds": 2.023,
+      "completion_tokens": 118,
+      "prompt_tokens": 273
+    },
+    {
+      "blind_id": "B004",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'Dr. Chen', while the archive asserts 'Mei Chen is my dentist'. A relation exists only if 'Dr. Chen' refers to 'Mei Chen'. Without explicit confirmation of identity, this is a potential coreference link requiring judgment.",
+      "latency_seconds": 2.15,
+      "completion_tokens": 132,
+      "prompt_tokens": 273
+    },
+    {
+      "blind_id": "B005",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "temporal_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence confirms the existence of a sister (Lina) and adds a temporal detail (moving next month) regarding her current state. This supports the assertion that Lina is the only sister while providing additional context about her situation.",
+      "latency_seconds": 2.046,
+      "completion_tokens": 125,
+      "prompt_tokens": 276
+    },
+    {
+      "blind_id": "B006",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'Alex' accepting an offer. The archived assertion states 'Alexander Chen goes by Alex.' This establishes a coreference identity link, confirming that the 'Alex' in the new evidence is the same person as 'Alexander Chen' in the archive. This is a non-trivial semantic relation.",
+      "latency_seconds": 2.261,
+      "completion_tokens": 140,
+      "prompt_tokens": 270
+    },
+    {
+      "blind_id": "B007",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "coreference_identity"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence mentions 'The Orion lead,' which likely refers to the person identified in assertion A1 as 'Priya.' Establishing this coreference is necessary to determine if the approval action relates to the specific individual mentioned in the archive.",
+      "latency_seconds": 2.059,
+      "completion_tokens": 126,
+      "prompt_tokens": 275
+    },
+    {
+      "blind_id": "B008",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [
+        "support_evidence_relation"
+      ],
+      "epistemic_requirement": "RELATION_JUDGMENT_NEEDED",
+      "rationale": "The new evidence confirms that a presentation of 'Falcon' occurred and involved a presenter who sent an email. This supports the archived assertion that Marcus presented the Falcon demo yesterday, assuming 'yesterday' aligns with the timing of the email. The relation is supportive but requires judgment on temporal alignment.",
+      "latency_seconds": 2.251,
+      "completion_tokens": 139,
+      "prompt_tokens": 275
+    },
+    {
+      "blind_id": "B009",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence concerns Lina Gomez's promotion, while the archived assertion identifies Lina Zhang as the user's sister. These refer to different individuals with no overlapping semantic content or causal link. Therefore, no relation exists.",
+      "latency_seconds": 1.702,
+      "completion_tokens": 100,
+      "prompt_tokens": 274
+    },
+    {
+      "blind_id": "B010",
+      "candidate_assertion_ids": [
+        "A1"
+      ],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence mentions a manager from another department contacting the user, but it does not specify the user's identity or confirm that the contact is not Daniel. Without knowing who 'me' refers to or if Daniel is in another department, no definitive semantic relation can be established.",
+      "latency_seconds": 1.97,
+      "completion_tokens": 120,
+      "prompt_tokens": 272
+    },
+    {
+      "blind_id": "B011",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence mentions a physicist named Wei Chen, while the archived assertion identifies Mei Chen as a dentist. The names differ, and the professions are distinct. There is no indication of identity, contradiction, or causal link between the two statements.",
+      "latency_seconds": 1.739,
+      "completion_tokens": 104,
+      "prompt_tokens": 275
+    },
+    {
+      "blind_id": "B012",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence describes an action by 'He' attaching a contract. The archived assertions describe actions by 'Maya' and 'Priya' involving calling and emailing. There is no overlap in entities, actions, or context to establish a semantic relation.",
+      "latency_seconds": 1.807,
+      "completion_tokens": 107,
+      "prompt_tokens": 320
+    },
+    {
+      "blind_id": "B013",
+      "candidate_assertion_ids": [],
+      "relation_families": [],
+      "epistemic_requirement": "NO_RELATION_NEEDED",
+      "rationale": "The new evidence states that 'Lina' got promoted. The archive assertions identify two different individuals named Lina (Zhang and Gomez). Without information linking the promoted Lina to either Zhang or Gomez, there is no non-trivial semantic relation (such as coreference, causality, or contradiction) between the evidence and the specific assertions. The event is independent of the identity claims.",
+      "latency_seconds": 2.273,
+      "completion_tokens": 134,
+      "prompt_tokens": 293
+    }
+  ]
+}
