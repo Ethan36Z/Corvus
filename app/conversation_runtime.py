@@ -6,13 +6,7 @@ from app.model_client import (
 from app.working_context import build_working_context
 from memory.dense_index import sync_dense_message_ids
 from memory.store import add_message
-
-
-SYSTEM_PROMPT = (
-    "You are Corvus, a persistent personal AI. "
-    "Use relevant historical evidence when it helps answer the user. "
-    "Do not claim memories that are not present in the provided context."
-)
+from personality.runtime import compile_personality_system_prompt
 
 
 def process_turn(
@@ -23,6 +17,7 @@ def process_turn(
     count_tokens_fn=count_input_tokens,
     generate_fn=generate_chat_completion,
     dense_sync_fn=sync_dense_message_ids,
+    system_prompt_fn=compile_personality_system_prompt,
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -54,11 +49,12 @@ def process_turn(
 
     # 2. Build this turn's temporary Working Context.
     try:
+        system_prompt = system_prompt_fn()
         context = build_context_fn(
             session_id=session_id,
             current_user_message_id=user_message_id,
             current_user_content=user_content,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             count_tokens=count_tokens_fn,
         )
     except ModelClientError as exc:
