@@ -95,6 +95,7 @@ function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  const messagesRef = useRef<HTMLDivElement | null>(null)
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [sending, setSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
@@ -189,6 +190,32 @@ function App() {
     setComposerExpanded(scrollHeight > 44)
   }, [draft])
 
+  function scrollChatToBottom() {
+    requestAnimationFrame(() => {
+      const container = messagesRef.current
+      if (!container) return
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      })
+    })
+  }
+
+  useEffect(() => {
+    if (chatMessages.length === 0) return
+
+    requestAnimationFrame(() => {
+      const container = messagesRef.current
+      if (!container) return
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      })
+    })
+  }, [chatMessages])
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -219,6 +246,7 @@ function App() {
     ])
     setSending(true)
     setChatError(null)
+    scrollChatToBottom()
 
     if (wasNew) {
       setSelectedSession(sessionId)
@@ -253,6 +281,7 @@ function App() {
        * SQLite-backed session history.
        */
       await selectSession(sessionId)
+      scrollChatToBottom()
 
       const sessionsResponse = await fetch('/api/sessions')
       if (sessionsResponse.ok) {
@@ -455,7 +484,7 @@ function App() {
         </aside>
 
         <section className="chat-panel">
-          <div className="messages">
+          <div className="messages" ref={messagesRef}>
           {chatMessages.length === 0 && !sending ? (
             <div className="welcome">
               <h2>Corvus</h2>
