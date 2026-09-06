@@ -1,0 +1,28 @@
+[Unit]
+Description=Corvus Private API
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ethan
+Group=ethan
+WorkingDirectory=/home/ethan/srv/apps/small-vram-companion
+
+Environment=HOME=/home/ethan
+Environment=PYTHONUNBUFFERED=1
+Environment=CORVUS_DATA_DIR=/home/ethan/srv/apps/small-vram-companion/data
+Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
+
+ExecStart=/home/ethan/srv/apps/small-vram-companion/.venv/bin/uvicorn app.playground_api:app --host 127.0.0.1 --port 8096
+
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
