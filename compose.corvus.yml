@@ -2,6 +2,7 @@ services:
   corvus-llama:
     image: ghcr.io/ggml-org/llama.cpp:server-cuda12-b10630
     container_name: corvus-llama
+    restart: unless-stopped
 
     ports:
       - "127.0.0.1:8095:8080"
