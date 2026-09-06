@@ -40,3 +40,20 @@ services:
       - --parallel
       - "1"
       - --no-cache-prompt
+
+  corvus-web:
+    build:
+      context: .
+      dockerfile: playground/Dockerfile.production
+    container_name: corvus-web
+    restart: unless-stopped
+    network_mode: host
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:8097/healthz || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
