@@ -11,7 +11,7 @@ WorkingDirectory=/home/ethan/srv/apps/small-vram-companion
 
 Environment=HOME=/home/ethan
 Environment=PYTHONUNBUFFERED=1
-Environment=CORVUS_DATA_DIR=/home/ethan/srv/apps/small-vram-companion/data
+Environment=CORVUS_DATA_DIR=/home/ethan/srv/data/corvus/private
 Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
 
 ExecStart=/home/ethan/srv/apps/small-vram-companion/.venv/bin/uvicorn app.playground_api:app --host 127.0.0.1 --port 8096
