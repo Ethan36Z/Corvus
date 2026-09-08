@@ -93,6 +93,120 @@ def init_db():
 
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS attachment_blobs (
+                sha256 TEXT PRIMARY KEY,
+                size_bytes INTEGER NOT NULL
+                    CHECK (size_bytes > 0),
+                storage_path TEXT NOT NULL UNIQUE,
+                blob_status TEXT NOT NULL DEFAULT 'PRESENT'
+                    CHECK (
+                        blob_status IN (
+                            'PRESENT',
+                            'PURGED'
+                        )
+                    ),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                purged_at TEXT
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS attachments (
+                id TEXT PRIMARY KEY,
+                blob_sha256 TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                media_type TEXT NOT NULL,
+                retention_class TEXT NOT NULL
+                    CHECK (
+                        retention_class IN (
+                            'PERMANENT',
+                            'STANDARD',
+                            'EPHEMERAL'
+                        )
+                    ),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (blob_sha256)
+                    REFERENCES attachment_blobs(sha256)
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                attachments_blob_sha256_idx
+            ON attachments(blob_sha256)
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS message_attachments (
+                message_id INTEGER NOT NULL,
+                attachment_id TEXT NOT NULL,
+                ordinal INTEGER NOT NULL DEFAULT 0
+                    CHECK (ordinal >= 0),
+
+                PRIMARY KEY (
+                    message_id,
+                    attachment_id
+                ),
+
+                UNIQUE (
+                    message_id,
+                    ordinal
+                ),
+
+                FOREIGN KEY (message_id)
+                    REFERENCES messages(id)
+                    ON DELETE CASCADE,
+
+                FOREIGN KEY (attachment_id)
+                    REFERENCES attachments(id)
+                    ON DELETE CASCADE
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                message_attachments_attachment_idx
+            ON message_attachments(attachment_id)
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS attachment_artifacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                attachment_id TEXT NOT NULL,
+                artifact_kind TEXT NOT NULL,
+                content TEXT NOT NULL,
+                producer TEXT NOT NULL,
+                producer_version TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (attachment_id)
+                    REFERENCES attachments(id)
+                    ON DELETE CASCADE
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                attachment_artifacts_attachment_idx
+            ON attachment_artifacts(attachment_id)
+            """
+        )
+
+        conn.execute(
+            """
             CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
             USING fts5(
                 content,

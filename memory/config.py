@@ -14,3 +14,4 @@ DATA_DIR = (
 
 DB_PATH = DATA_DIR / "corvus.db"
 LANCE_DB_PATH = DATA_DIR / "corvus-retrieval.lancedb"
+ATTACHMENTS_DIR = DATA_DIR / "attachments"

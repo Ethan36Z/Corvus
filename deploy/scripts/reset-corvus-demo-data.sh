@@ -108,8 +108,14 @@ install -d -m 700 "$BACKUP_ROOT"
 install -d -m 700 "$BACKUP_ROOT/$TS"
 
 if find "$DEMO_DATA" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
-  tar -C "$DEMO_DATA" -czf "$BACKUP_ROOT/$TS/demo-data-before-reset.tgz" .
+  tar \
+    -C "$DEMO_DATA" \
+    --exclude='./attachments' \
+    --exclude='./attachments/**' \
+    -czf "$BACKUP_ROOT/$TS/demo-data-before-reset.tgz" \
+    .
   echo "demo_backup=$BACKUP_ROOT/$TS/demo-data-before-reset.tgz"
+  echo "demo_backup_excludes_raw_attachments=YES"
 else
   echo "demo_backup=SKIPPED_EMPTY_DIR"
 fi
