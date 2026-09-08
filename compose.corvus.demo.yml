@@ -1,0 +1,23 @@
+name: corvus-demo
+
+services:
+  corvus-demo-web:
+    build:
+      context: .
+      dockerfile: playground/Dockerfile.production
+
+    container_name: corvus-demo-web
+    restart: unless-stopped
+    network_mode: host
+
+    volumes:
+      - ./deploy/nginx/corvus-web-demo.conf:/etc/nginx/conf.d/default.conf:ro
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:8099/healthz || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
