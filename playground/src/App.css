@@ -2081,3 +2081,304 @@
 .inspector-header {
   justify-content: flex-start;
 }
+
+/* ===== Mobile application shell final authority ===== */
+
+.theme-toggle {
+  width: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 700px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .corvus-app {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: 64px;
+    min-height: 64px;
+    flex: 0 0 64px;
+    padding:
+      env(safe-area-inset-top)
+      12px
+      0;
+    box-sizing: border-box;
+  }
+
+  .topbar-brand {
+    min-width: 0;
+  }
+
+  .topbar-brand > div {
+    min-width: 0;
+  }
+
+  .topbar h1 {
+    white-space: nowrap;
+  }
+
+  .topbar-actions {
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+
+  .workspace {
+    width: 100%;
+    height: calc(100dvh - 64px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-panel {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    padding:
+      8px
+      0
+      calc(10px + env(safe-area-inset-bottom));
+
+    overflow: hidden;
+  }
+
+  .messages {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 8px 0 18px;
+  }
+
+  .welcome {
+    max-width: calc(100% - 32px);
+    text-align: center;
+  }
+
+  .chat-history {
+    width: calc(100% - 24px);
+    max-width: 100%;
+    padding:
+      8px
+      0
+      92px;
+  }
+
+  .composer,
+  .composer-new.composer-single,
+  .composer-new.composer-expanded,
+  .composer-established {
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    min-width: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .composer {
+    position: relative;
+    bottom: auto;
+    flex: 0 0 auto;
+    margin-top: 8px;
+  }
+
+  .composer-new.composer-single {
+    width: calc(100% - 24px);
+  }
+
+  .conversation-sidebar,
+  .inspector {
+    top: 64px;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
+  }
+
+  .conversation-sidebar {
+    width: min(320px, 90vw);
+  }
+
+  .inspector {
+    width: min(100%, 420px);
+  }
+
+  .drawer-backdrop {
+    top: 64px;
+    height: calc(100dvh - 64px);
+  }
+
+  .conversation-sidebar,
+  .inspector,
+  .workspace,
+  .chat-panel,
+  .messages,
+  .composer {
+    box-sizing: border-box;
+  }
+
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+/* ===== Mobile keyboard / iOS focus stability ===== */
+
+@media (max-width: 700px) {
+  /*
+   * iOS Safari auto-zooms focused form controls below 16px.
+   * Keep the composer at 16px so opening the keyboard does not
+   * zoom or visually jump the application shell.
+   */
+  .composer textarea {
+    font-size: 16px;
+  }
+
+  html,
+  body,
+  #root,
+  .corvus-app {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* ===== iOS visual viewport + safe-area final authority ===== */
+
+@media (max-width: 700px) {
+  .corvus-app {
+    --mobile-topbar-content-height: 64px;
+    --mobile-safe-top: env(safe-area-inset-top, 0px);
+    --mobile-topbar-height:
+      calc(
+        var(--mobile-topbar-content-height)
+        + var(--mobile-safe-top)
+      );
+
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--corvus-visual-top, 0px);
+
+    width: 100%;
+    height: var(--corvus-visual-height, 100dvh);
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+  /*
+   * 64px usable header content PLUS the iPhone status-bar safe area.
+   */
+  .topbar {
+    height: var(--mobile-topbar-height);
+    min-height: var(--mobile-topbar-height);
+    flex: 0 0 var(--mobile-topbar-height);
+
+    padding:
+      var(--mobile-safe-top)
+      12px
+      0;
+
+    box-sizing: border-box;
+  }
+
+  /*
+   * Workspace receives the ACTUAL visible height.
+   * When the keyboard opens, VisualViewport shrinks this immediately.
+   */
+  .workspace {
+    height:
+      calc(
+        var(--corvus-visual-height, 100dvh)
+        - var(--mobile-topbar-height)
+      );
+
+    min-height: 0;
+  }
+
+  .chat-panel {
+    height: 100%;
+    min-height: 0;
+
+    padding:
+      8px
+      0
+      calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /*
+   * Messages take all remaining room;
+   * composer remains directly below them,
+   * therefore directly above the software keyboard.
+   */
+  .messages {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .composer {
+    flex: 0 0 auto;
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  /*
+   * Mobile drawers belong to the Corvus shell,
+   * rather than the browser layout viewport.
+   */
+  .conversation-sidebar,
+  .inspector,
+  .drawer-backdrop {
+    position: absolute;
+  }
+
+  .conversation-sidebar,
+  .inspector {
+    top: var(--mobile-topbar-height);
+
+    height:
+      calc(
+        var(--corvus-visual-height, 100dvh)
+        - var(--mobile-topbar-height)
+      );
+
+    max-height:
+      calc(
+        var(--corvus-visual-height, 100dvh)
+        - var(--mobile-topbar-height)
+      );
+  }
+
+  .drawer-backdrop {
+    top: var(--mobile-topbar-height);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+  }
+}
