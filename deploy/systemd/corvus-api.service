@@ -13,6 +13,8 @@ Environment=HOME=/home/ethan
 Environment=PYTHONUNBUFFERED=1
 Environment=CORVUS_DATA_DIR=/home/ethan/srv/data/corvus/private
 Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
+Environment=CORVUS_ATTACHMENT_MAX_BYTES=33554432
+Environment=CORVUS_ATTACHMENT_DEFAULT_RETENTION=STANDARD
 
 ExecStart=/home/ethan/srv/apps/small-vram-companion/.venv/bin/uvicorn app.playground_api:app --host 127.0.0.1 --port 8096
 

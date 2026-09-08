@@ -56,3 +56,35 @@ RECOVERY_MAX_BATCHES = _positive_int_env(
     "CORVUS_RECOVERY_MAX_BATCHES",
     8,
 )
+
+def _choice_env(name, default, allowed):
+    value = os.getenv(
+        name,
+        default,
+    ).strip().upper()
+
+    if value not in allowed:
+        choices = ", ".join(
+            sorted(allowed)
+        )
+        raise ValueError(
+            f"{name} must be one of: {choices}"
+        )
+
+    return value
+
+
+ATTACHMENT_MAX_BYTES = _positive_int_env(
+    "CORVUS_ATTACHMENT_MAX_BYTES",
+    32 * 1024 * 1024,
+)
+
+ATTACHMENT_DEFAULT_RETENTION = _choice_env(
+    "CORVUS_ATTACHMENT_DEFAULT_RETENTION",
+    "STANDARD",
+    {
+        "PERMANENT",
+        "STANDARD",
+        "EPHEMERAL",
+    },
+)

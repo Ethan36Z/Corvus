@@ -1,10 +1,19 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.conversation_runtime import process_turn
+from app.attachment_upload import (
+    AttachmentUploadEmptyError,
+    AttachmentUploadTooLargeError,
+    ingest_attachment_chunks,
+)
+from app.runtime_config import (
+    ATTACHMENT_DEFAULT_RETENTION,
+    ATTACHMENT_MAX_BYTES,
+)
 from app.model_client import (
     ModelClientError,
     check_model_health,
@@ -74,6 +83,130 @@ def build_health_status(
 @app.get("/api/health")
 def get_health():
     return build_health_status(app)
+
+
+@app.post(
+    "/api/attachments",
+    status_code=201,
+)
+async def post_attachment(
+    request: Request,
+    filename: str = Query(
+        ...,
+        min_length=1,
+        max_length=255,
+    ),
+):
+    filename = filename.strip()
+
+    if not filename:
+        raise HTTPException(
+            status_code=400,
+            detail="filename must not be empty",
+        )
+
+    raw_content_length = request.headers.get(
+        "content-length"
+    )
+
+    if raw_content_length is not None:
+        try:
+            content_length = int(
+                raw_content_length
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail="invalid Content-Length",
+            ) from exc
+
+        if content_length < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="invalid Content-Length",
+            )
+
+        if content_length == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="attachment must not be empty",
+            )
+
+    media_type = (
+        request.headers.get(
+            "content-type",
+            "application/octet-stream",
+        )
+        .split(";", 1)[0]
+        .strip()
+        .lower()
+    )
+
+    if not media_type:
+        media_type = (
+            "application/octet-stream"
+        )
+
+    if len(media_type) > 255:
+        raise HTTPException(
+            status_code=400,
+            detail="Content-Type too long",
+        )
+
+    try:
+        attachment = (
+            await ingest_attachment_chunks(
+                request.stream(),
+                original_filename=filename,
+                media_type=media_type,
+                retention_class=(
+                    ATTACHMENT_DEFAULT_RETENTION
+                ),
+                max_bytes=(
+                    ATTACHMENT_MAX_BYTES
+                ),
+            )
+        )
+
+    except AttachmentUploadEmptyError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except AttachmentUploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=413,
+            detail=str(exc),
+        ) from exc
+
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    return {
+        "attachment_id": attachment["id"],
+        "original_filename": attachment[
+            "original_filename"
+        ],
+        "media_type": attachment[
+            "media_type"
+        ],
+        "size_bytes": attachment[
+            "size_bytes"
+        ],
+        "sha256": attachment[
+            "sha256"
+        ],
+        "retention_class": attachment[
+            "retention_class"
+        ],
+        "blob_status": attachment[
+            "blob_status"
+        ],
+    }
 
 
 class ChatRequest(BaseModel):
