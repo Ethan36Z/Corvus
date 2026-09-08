@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Demo Corvus clean-baseline reset timer
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+Unit=corvus-demo-reset.service
+
+[Install]
+WantedBy=timers.target

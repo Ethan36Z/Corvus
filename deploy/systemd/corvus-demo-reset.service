@@ -1,0 +1,11 @@
+[Unit]
+Description=Reset Demo Corvus data to clean baseline
+Documentation=https://github.com/Ethan36Z/Corvus
+After=network-online.target docker.service corvus-demo-api.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/home/ethan/srv/apps/small-vram-companion/deploy/scripts/reset-corvus-demo-data.sh
