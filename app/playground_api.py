@@ -212,6 +212,7 @@ async def post_attachment(
 class ChatRequest(BaseModel):
     session_id: str = "default"
     message: str
+    attachment_id: str | None = None
 
 
 def load_messages_by_ids(message_ids):
@@ -317,6 +318,13 @@ def build_chat_response(
         "assistant_message_id": result[
             "assistant_message_id"
         ],
+        "attachment_id": result.get(
+            "attachment_id"
+        ),
+        "attachment_status": result.get(
+            "attachment_status",
+            "NOT_REQUESTED",
+        ),
         "recent_message_ids": result[
             "recent_message_ids"
         ],
@@ -325,6 +333,10 @@ def build_chat_response(
         "input_tokens": result["input_tokens"],
         "status": {
             "overall": overall,
+            "attachment": result.get(
+                "attachment_status",
+                "NOT_REQUESTED",
+            ),
             "retrieval": result[
                 "retrieval_status"
             ],
@@ -343,6 +355,9 @@ def build_chat_response(
         "retrieval_error": result[
             "retrieval_error"
         ],
+        "attachment_error": result.get(
+            "attachment_error"
+        ),
         "error": result["error"],
     }
 
@@ -356,18 +371,22 @@ def build_hard_failure_response(
         "session_id": session_id,
         "user_message_id": None,
         "assistant_message_id": None,
+        "attachment_id": None,
+        "attachment_status": "NOT_RUN",
         "recent_message_ids": [],
         "historical_message_ids": [],
         "retrieved_memories": [],
         "input_tokens": None,
         "status": {
             "overall": "FAILED",
+            "attachment": "NOT_RUN",
             "retrieval": "NOT_RUN",
             "model": "NOT_CALLED",
             "persistence": "USER_PERSISTENCE_FAILED",
             "dense": "NOT_RUN",
         },
         "retrieval_error": None,
+        "attachment_error": None,
         "error": str(error),
     }
 
@@ -394,10 +413,25 @@ def post_chat(request: ChatRequest):
             ),
         )
 
+    attachment_id = request.attachment_id
+
+    if attachment_id is not None:
+        attachment_id = attachment_id.strip()
+
+        if not attachment_id:
+            return JSONResponse(
+                status_code=400,
+                content=build_hard_failure_response(
+                    session_id,
+                    "attachment_id must not be empty",
+                ),
+            )
+
     try:
         result = process_turn(
             session_id=session_id,
             user_content=request.message,
+            attachment_id=attachment_id,
         )
     except Exception as exc:
         return JSONResponse(

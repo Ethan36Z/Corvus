@@ -132,6 +132,9 @@ chmod 700 "$DEMO_DATA"
 echo "initializing_demo_sqlite_schema=YES"
 runuser -u ethan -- env PYTHONPATH="$CORVUS" CORVUS_DATA_DIR="$DEMO_DATA" "$PY" -m memory.store
 
+echo "initializing_demo_dense_index=YES"
+runuser -u ethan -- env PYTHONPATH="$CORVUS" CORVUS_DATA_DIR="$DEMO_DATA" "$PY" -m memory.dense_index rebuild
+
 chown -R ethan:ethan "$DEMO_DATA"
 chmod 700 "$DEMO_DATA"
 
