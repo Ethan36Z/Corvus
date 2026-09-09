@@ -1,4 +1,10 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import './App.css'
 
 type Tab = 'evidence' | 'assertions' | 'world'
@@ -33,12 +39,26 @@ type Session = {
   updated_at: string
 }
 
+type MessageAttachment = {
+  id: string
+  ordinal: number
+  original_filename: string
+  media_type: string
+  size_bytes: number
+  retention_class: string
+  blob_status: string
+  created_at: string
+  content_url: string | null
+  preview_url?: string
+}
+
 type ChatMessage = {
   id: number
   session_id: string
   role: string
   content: string
   created_at: string
+  attachments?: MessageAttachment[]
 }
 
 type SessionDetail = {
@@ -56,6 +76,23 @@ type ChatResponse = {
   }
   error: string | null
 }
+
+type AttachmentUploadResponse = {
+  attachment_id: string
+  original_filename: string
+  media_type: string
+  size_bytes: number
+  retention_class: string
+  blob_status: string
+}
+
+const VISION_IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+])
+
+const MAX_VISION_IMAGE_BYTES =
+  16 * 1024 * 1024
 
 
 const WELCOME_PROMPTS = [
@@ -95,7 +132,12 @@ function App() {
   const [selectedSession, setSelectedSession] = useState('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null)
+  const [selectedImagePreview, setSelectedImagePreview] =
+    useState<string | null>(null)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [sending, setSending] = useState(false)
@@ -195,6 +237,7 @@ function App() {
 
   async function selectSession(sessionId: string) {
     setDraft('')
+    clearSelectedImage()
     setChatError(null)
     setSelectedSession(sessionId)
 
@@ -262,15 +305,75 @@ function App() {
     })
   }, [chatMessages])
 
+  useEffect(() => {
+    const preview = selectedImagePreview
+
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview)
+      }
+    }
+  }, [selectedImagePreview])
+
+  function clearSelectedImage() {
+    setSelectedImage(null)
+    setSelectedImagePreview(null)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  function handleImageSelected(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    if (!VISION_IMAGE_TYPES.has(file.type)) {
+      event.target.value = ''
+      setChatError(
+        'Vision v1 supports PNG and JPEG images only.',
+      )
+      return
+    }
+
+    if (file.size > MAX_VISION_IMAGE_BYTES) {
+      event.target.value = ''
+      setChatError(
+        'This image is larger than the 16 MiB Vision v1 limit.',
+      )
+      return
+    }
+
+    setSelectedImage(file)
+    setSelectedImagePreview(
+      URL.createObjectURL(file),
+    )
+    setChatError(null)
+
+    window.setTimeout(() => {
+      composerRef.current?.focus()
+    }, 0)
+  }
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const message = draft.trim()
+    const image = selectedImage
+
     if (!message || sending) return
 
     const wasNew = !selectedSession
     const sessionId = selectedSession || `chat-${Date.now()}`
     const previousMessages = chatMessages
+
+    const optimisticPreview =
+      image && selectedImagePreview
+        ? selectedImagePreview
+        : undefined
 
     const optimisticMessage: ChatMessage = {
       id: -Date.now(),
@@ -278,6 +381,23 @@ function App() {
       role: 'user',
       content: message,
       created_at: new Date().toISOString(),
+      attachments:
+        image && optimisticPreview
+          ? [
+              {
+                id: 'pending',
+                ordinal: 0,
+                original_filename: image.name,
+                media_type: image.type,
+                size_bytes: image.size,
+                retention_class: 'PENDING',
+                blob_status: 'PRESENT',
+                created_at: new Date().toISOString(),
+                content_url: null,
+                preview_url: optimisticPreview,
+              },
+            ]
+          : [],
     }
 
     /*
@@ -286,6 +406,12 @@ function App() {
      * the canonical source once the backend turn completes.
      */
     setDraft('')
+    setSelectedImage(null)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+
     setChatMessages([
       ...previousMessages,
       optimisticMessage,
@@ -298,6 +424,62 @@ function App() {
       setSelectedSession(sessionId)
     }
 
+    let attachmentId: string | undefined
+
+    if (image) {
+      try {
+        const uploadResponse = await fetch(
+          `/api/attachments?filename=${encodeURIComponent(image.name)}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': image.type,
+            },
+            body: image,
+          },
+        )
+
+        const uploadData =
+          (await uploadResponse.json()) as
+            AttachmentUploadResponse & {
+              detail?: string
+            }
+
+        if (
+          !uploadResponse.ok ||
+          !uploadData.attachment_id
+        ) {
+          throw new Error(
+            uploadData.detail ||
+              'Corvus could not upload the image.',
+          )
+        }
+
+        attachmentId =
+          uploadData.attachment_id
+      } catch (error) {
+        setChatMessages(previousMessages)
+        setDraft(message)
+
+        if (image) {
+          setSelectedImage(image)
+        }
+
+        if (wasNew) {
+          setSelectedSession('')
+        }
+
+        setChatError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to upload the image.',
+        )
+
+        setSending(false)
+        return
+      }
+    }
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -307,6 +489,11 @@ function App() {
         body: JSON.stringify({
           session_id: sessionId,
           message,
+          ...(attachmentId
+            ? {
+                attachment_id: attachmentId,
+              }
+            : {}),
         }),
       })
 
@@ -367,6 +554,10 @@ function App() {
       if (!canonicalRecovered) {
         setChatMessages(previousMessages)
         setDraft(message)
+
+        if (image) {
+          setSelectedImage(image)
+        }
 
         if (wasNew) {
           setSelectedSession('')
@@ -582,6 +773,45 @@ function App() {
                   key={message.id}
                 >
                   <div className="message-body">
+                    {message.attachments?.length ? (
+                      <div className="message-attachments">
+                        {message.attachments.map(
+                          (attachment) => {
+                            const imageUrl =
+                              attachment.preview_url ||
+                              attachment.content_url
+
+                            return (
+                              <div
+                                className="message-attachment"
+                                key={`${message.id}-${attachment.id}-${attachment.ordinal}`}
+                              >
+                                {imageUrl &&
+                                attachment.blob_status ===
+                                  'PRESENT' ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt={
+                                      attachment.original_filename ||
+                                      'Attached image'
+                                    }
+                                    className="message-attachment-image"
+                                  />
+                                ) : (
+                                  <div className="message-attachment-unavailable">
+                                    <span>Image</span>
+                                    <small>
+                                      No longer retained
+                                    </small>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          },
+                        )}
+                      </div>
+                    ) : null}
+
                     <p>{message.content}</p>
                   </div>
                 </article>
@@ -610,12 +840,73 @@ function App() {
               ? 'composer-new'
               : 'composer-established'
           } ${
-            composerExpanded
+            composerExpanded || selectedImage
               ? 'composer-expanded'
               : 'composer-single'
+          } ${
+            selectedImage
+              ? 'composer-has-attachment'
+              : ''
           }`}
           onSubmit={sendMessage}
         >
+          {selectedImage && selectedImagePreview && (
+            <div className="attachment-preview">
+              <img
+                src={selectedImagePreview}
+                alt=""
+                className="attachment-preview-image"
+              />
+
+              <div className="attachment-preview-meta">
+                <span title={selectedImage.name}>
+                  {selectedImage.name}
+                </span>
+                <small>
+                  {Math.max(
+                    1,
+                    Math.round(selectedImage.size / 1024),
+                  )}{' '}
+                  KB
+                </small>
+              </div>
+
+              <button
+                type="button"
+                className="attachment-remove-button"
+                aria-label="Remove selected image"
+                title="Remove image"
+                disabled={sending}
+                onClick={clearSelectedImage}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            className="attachment-file-input"
+            type="file"
+            accept="image/png,image/jpeg"
+            aria-label="Choose an image"
+            disabled={sending}
+            onChange={handleImageSelected}
+          />
+
+          <button
+            type="button"
+            className="attachment-button"
+            aria-label="Attach image"
+            title="Attach image"
+            disabled={sending}
+            onClick={() => {
+              fileInputRef.current?.click()
+            }}
+          >
+            <span aria-hidden="true">+</span>
+          </button>
+
           <textarea
             ref={composerRef}
             rows={1}

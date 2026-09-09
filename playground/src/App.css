@@ -2382,3 +2382,282 @@
     height: auto;
   }
 }
+
+/* ===== A3.2d Web image interaction ===== */
+
+.attachment-file-input {
+  display: none;
+}
+
+.attachment-button {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px;
+  flex: 0 0 28px !important;
+  display: grid;
+  place-items: center;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  color: var(--muted) !important;
+  background: transparent !important;
+  font-size: 24px !important;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    opacity 150ms ease !important;
+}
+
+.attachment-button:hover:not(:disabled) {
+  color: var(--text) !important;
+  background: var(--surface-soft) !important;
+  transform: none !important;
+}
+
+.attachment-button:active:not(:disabled) {
+  transform: none !important;
+}
+
+.attachment-button:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+/*
+ * Fresh single-line composer:
+ *
+ * + | message | send
+ */
+.composer-new.composer-single {
+  grid-template-columns:
+    28px
+    minmax(0, 1fr)
+    28px !important;
+}
+
+.composer-new.composer-single .attachment-button {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.composer-new.composer-single textarea {
+  grid-column: 2 !important;
+  grid-row: 1;
+}
+
+.composer-new.composer-single .send-button {
+  grid-column: 3 !important;
+  grid-row: 1;
+}
+
+/*
+ * Established / expanded composer:
+ *
+ * textarea
+ * +                         send
+ *
+ * This activates the controls footer that was already
+ * reserved for A3 file / microphone / voice controls.
+ */
+.composer-established .attachment-button,
+.composer-new.composer-expanded .attachment-button {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-self: start;
+}
+
+.composer-established .send-button,
+.composer-new.composer-expanded .send-button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/*
+ * With an image selected:
+ *
+ * image preview
+ * textarea
+ * +                         send
+ */
+.composer-established.composer-has-attachment,
+.composer-new.composer-expanded.composer-has-attachment {
+  grid-template-rows:
+    auto
+    minmax(0, auto)
+    30px !important;
+}
+
+.composer-has-attachment .attachment-preview {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.composer-established.composer-has-attachment textarea,
+.composer-new.composer-expanded.composer-has-attachment textarea {
+  grid-column: 1 / -1;
+  grid-row: 2 !important;
+}
+
+.composer-established.composer-has-attachment .attachment-button,
+.composer-new.composer-expanded.composer-has-attachment .attachment-button {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.composer-established.composer-has-attachment .send-button,
+.composer-new.composer-expanded.composer-has-attachment .send-button {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.attachment-preview {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 2px 8px;
+}
+
+.attachment-preview-image {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  display: block;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.attachment-preview-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.attachment-preview-meta span,
+.attachment-preview-meta small {
+  display: block;
+}
+
+.attachment-preview-meta span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-preview-meta small {
+  margin-top: 3px;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.attachment-remove-button {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px;
+  flex: 0 0 26px !important;
+  display: grid !important;
+  place-items: center;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  color: var(--muted) !important;
+  background: var(--surface-soft) !important;
+  font-size: 18px !important;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.attachment-remove-button:hover:not(:disabled) {
+  color: var(--text) !important;
+  transform: none !important;
+}
+
+.attachment-remove-button:active:not(:disabled) {
+  transform: none !important;
+}
+
+@media (max-width: 700px) {
+  .attachment-preview-image {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  .attachment-preview {
+    gap: 9px;
+  }
+}
+
+/* ===== A3.2d canonical message attachment presentation ===== */
+
+.message-attachments {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.chat-message.user .message-attachments {
+  justify-items: end;
+}
+
+.message-attachment {
+  min-width: 0;
+}
+
+.message-attachment-image {
+  display: block;
+  width: auto;
+  max-width: min(360px, 100%);
+  max-height: 360px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.message-attachment-unavailable {
+  width: min(260px, 100%);
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.message-attachment-unavailable span,
+.message-attachment-unavailable small {
+  display: block;
+}
+
+.message-attachment-unavailable span {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.message-attachment-unavailable small {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.chat-message.user:has(.message-attachments) .message-body {
+  max-width: min(72%, 440px);
+}
+
+@media (max-width: 700px) {
+  .message-attachment-image {
+    max-width: min(300px, 76vw);
+    max-height: 320px;
+  }
+
+  .chat-message.user:has(.message-attachments) .message-body {
+    max-width: 86%;
+  }
+}

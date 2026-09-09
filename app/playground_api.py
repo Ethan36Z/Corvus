@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from app.conversation_runtime import process_turn
@@ -20,6 +20,10 @@ from app.model_client import (
 )
 from app.runtime_lifecycle import recover_dense_tail
 from memory.store import connect
+from memory.attachments import (
+    get_attachment,
+    read_attachment_bytes,
+)
 
 
 @asynccontextmanager
@@ -83,6 +87,165 @@ def build_health_status(
 @app.get("/api/health")
 def get_health():
     return build_health_status(app)
+
+
+def public_attachment_metadata(attachment):
+    if attachment is None:
+        return None
+
+    return {
+        "id": attachment["id"],
+        "original_filename": attachment[
+            "original_filename"
+        ],
+        "media_type": attachment["media_type"],
+        "size_bytes": attachment["size_bytes"],
+        "retention_class": attachment[
+            "retention_class"
+        ],
+        "blob_status": attachment["blob_status"],
+        "created_at": attachment["created_at"],
+        "content_url": (
+            f"/api/attachments/"
+            f"{attachment['id']}/content"
+            if attachment["blob_status"] == "PRESENT"
+            else None
+        ),
+    }
+
+
+def load_message_attachments(message_ids):
+    ids = sorted({
+        int(message_id)
+        for message_id in message_ids
+    })
+
+    if not ids:
+        return {}
+
+    placeholders = ",".join(
+        "?"
+        for _ in ids
+    )
+
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                ma.message_id,
+                ma.ordinal,
+                a.id,
+                a.original_filename,
+                a.media_type,
+                b.size_bytes,
+                a.retention_class,
+                b.blob_status,
+                a.created_at
+            FROM message_attachments AS ma
+            JOIN attachments AS a
+              ON a.id = ma.attachment_id
+            JOIN attachment_blobs AS b
+              ON b.sha256 = a.blob_sha256
+            WHERE ma.message_id IN ({placeholders})
+            ORDER BY
+                ma.message_id ASC,
+                ma.ordinal ASC
+            """,
+            ids,
+        ).fetchall()
+
+    by_message = {
+        message_id: []
+        for message_id in ids
+    }
+
+    for row in rows:
+        attachment_id = row[2]
+        blob_status = row[7]
+
+        by_message.setdefault(
+            int(row[0]),
+            [],
+        ).append({
+            "id": attachment_id,
+            "ordinal": int(row[1]),
+            "original_filename": row[3],
+            "media_type": row[4],
+            "size_bytes": int(row[5]),
+            "retention_class": row[6],
+            "blob_status": blob_status,
+            "created_at": row[8],
+            "content_url": (
+                f"/api/attachments/"
+                f"{attachment_id}/content"
+                if blob_status == "PRESENT"
+                else None
+            ),
+        })
+
+    return by_message
+
+
+@app.get("/api/attachments/{attachment_id}/content")
+def get_attachment_content(
+    attachment_id: str,
+):
+    attachment_id = attachment_id.strip()
+
+    if not attachment_id:
+        raise HTTPException(
+            status_code=400,
+            detail="attachment_id must not be empty",
+        )
+
+    attachment = get_attachment(
+        attachment_id
+    )
+
+    if attachment is None:
+        raise HTTPException(
+            status_code=404,
+            detail="attachment not found",
+        )
+
+    if attachment["blob_status"] != "PRESENT":
+        raise HTTPException(
+            status_code=410,
+            detail="attachment content is no longer retained",
+        )
+
+    if attachment["media_type"] not in {
+        "image/png",
+        "image/jpeg",
+    }:
+        raise HTTPException(
+            status_code=415,
+            detail="attachment media type is not displayable",
+        )
+
+    try:
+        data = read_attachment_bytes(
+            attachment_id
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=410,
+            detail="attachment content is unavailable",
+        ) from exc
+    except (IOError, ValueError) as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="attachment integrity verification failed",
+        ) from exc
+
+    return Response(
+        content=data,
+        media_type=attachment["media_type"],
+        headers={
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @app.post(
@@ -569,6 +732,13 @@ def get_session(
 
     rows.reverse()
 
+    attachment_map = load_message_attachments(
+        [
+            row[0]
+            for row in rows
+        ]
+    )
+
     messages = [
         {
             "id": row[0],
@@ -576,6 +746,10 @@ def get_session(
             "role": row[2],
             "content": row[3],
             "created_at": row[4],
+            "attachments": attachment_map.get(
+                row[0],
+                [],
+            ),
         }
         for row in rows
     ]
