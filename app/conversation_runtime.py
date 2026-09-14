@@ -8,12 +8,26 @@ from app.vision_input import (
     VisionInputError,
     build_vision_messages,
 )
+from app.transcription import (
+    TranscriptionError,
+    transcribe_attachment,
+)
 from memory.attachments import (
     link_attachment_to_message,
 )
 from memory.dense_index import sync_dense_message_ids
 from memory.store import add_message
 from personality.runtime import compile_personality_system_prompt
+
+
+VOICE_TRANSCRIPT_SYSTEM_NOTE = (
+    "The current user turn was received by Corvus as spoken audio. "
+    "The user-facing text for this turn is an STT transcript produced "
+    "by the speech-recognition layer. Respond to the spoken content "
+    "normally, but allow for possible transcription errors. Do not "
+    "claim that Corvus cannot process audio merely because this model "
+    "component receives the transcript as text."
+)
 
 
 def process_turn(
@@ -28,6 +42,9 @@ def process_turn(
     attachment_id=None,
     link_attachment_fn=link_attachment_to_message,
     build_vision_messages_fn=build_vision_messages,
+    model_user_content=None,
+    attachment_mode="vision",
+    transcribe_attachment_fn=transcribe_attachment,
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -36,6 +53,30 @@ def process_turn(
         attachment_id = str(
             attachment_id
         ).strip()
+
+    if model_user_content is None:
+        model_user_content = user_content
+
+    attachment_mode = str(
+        attachment_mode
+    ).strip().lower()
+
+    if attachment_mode not in {
+        "vision",
+        "voice",
+        "provenance_only",
+    }:
+        raise ValueError(
+            "invalid attachment_mode"
+        )
+
+    if (
+        attachment_mode == "voice"
+        and attachment_id is None
+    ):
+        raise ValueError(
+            "voice mode requires attachment_id"
+        )
 
     result = {
         "session_id": session_id,
@@ -48,6 +89,14 @@ def process_turn(
             else "NOT_RUN"
         ),
         "attachment_error": None,
+        "transcription_status": (
+            "NOT_RUN"
+            if attachment_mode == "voice"
+            else "NOT_REQUESTED"
+        ),
+        "transcription_error": None,
+        "transcript_artifact_id": None,
+        "transcript": None,
         "recent_message_ids": [],
         "historical_message_ids": [],
         "input_tokens": None,
@@ -90,13 +139,64 @@ def process_turn(
 
         result["attachment_status"] = "LINKED"
 
-    # 3. Build this turn's temporary Working Context.
+    # 3. Voice perception happens only after the
+    # canonical message and raw attachment provenance
+    # are safely persisted.
+    if (
+        attachment_id is not None
+        and attachment_mode == "voice"
+    ):
+        try:
+            transcription = (
+                transcribe_attachment_fn(
+                    attachment_id
+                )
+            )
+        except TranscriptionError as exc:
+            result["transcription_status"] = (
+                exc.code
+            )
+            result["transcription_error"] = str(
+                exc
+            )
+            result["error"] = str(exc)
+            return result
+        except Exception as exc:
+            result["transcription_status"] = (
+                "TRANSCRIPTION_FAILED"
+            )
+            result["transcription_error"] = str(
+                exc
+            )
+            result["error"] = str(exc)
+            return result
+
+        model_user_content = transcription[
+            "transcript"
+        ]
+
+        result["transcription_status"] = "OK"
+        result["transcript"] = (
+            transcription["transcript"]
+        )
+        result["transcript_artifact_id"] = (
+            transcription["artifact_id"]
+        )
+
+    # 4. Build this turn's temporary Working Context.
     try:
         system_prompt = system_prompt_fn()
+
+        if attachment_mode == "voice":
+            system_prompt = (
+                f"{system_prompt}\n\n"
+                f"{VOICE_TRANSCRIPT_SYSTEM_NOTE}"
+            )
+
         context = build_context_fn(
             session_id=session_id,
             current_user_message_id=user_message_id,
-            current_user_content=user_content,
+            current_user_content=model_user_content,
             system_prompt=system_prompt,
             count_tokens=count_tokens_fn,
         )
@@ -135,7 +235,10 @@ def process_turn(
     # becomes multimodal.
     model_messages = context["messages"]
 
-    if attachment_id is not None:
+    if (
+        attachment_id is not None
+        and attachment_mode == "vision"
+    ):
         try:
             vision_input = (
                 build_vision_messages_fn(
@@ -187,7 +290,10 @@ def process_turn(
     result["model_status"] = "OK"
     result["reply"] = reply
 
-    if attachment_id is not None:
+    if (
+        attachment_id is not None
+        and attachment_mode == "vision"
+    ):
         result["attachment_status"] = "USED"
 
     # 6. Assistant text becomes canonical only after SQLite commit.

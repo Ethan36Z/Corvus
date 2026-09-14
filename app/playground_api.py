@@ -374,8 +374,9 @@ async def post_attachment(
 
 class ChatRequest(BaseModel):
     session_id: str = "default"
-    message: str
+    message: str = ""
     attachment_id: str | None = None
+    attachment_mode: str = "vision"
 
 
 def load_messages_by_ids(message_ids):
@@ -488,6 +489,16 @@ def build_chat_response(
             "attachment_status",
             "NOT_REQUESTED",
         ),
+        "transcription_status": result.get(
+            "transcription_status",
+            "NOT_REQUESTED",
+        ),
+        "transcript_artifact_id": result.get(
+            "transcript_artifact_id"
+        ),
+        "transcript": result.get(
+            "transcript"
+        ),
         "recent_message_ids": result[
             "recent_message_ids"
         ],
@@ -498,6 +509,10 @@ def build_chat_response(
             "overall": overall,
             "attachment": result.get(
                 "attachment_status",
+                "NOT_REQUESTED",
+            ),
+            "transcription": result.get(
+                "transcription_status",
                 "NOT_REQUESTED",
             ),
             "retrieval": result[
@@ -521,6 +536,9 @@ def build_chat_response(
         "attachment_error": result.get(
             "attachment_error"
         ),
+        "transcription_error": result.get(
+            "transcription_error"
+        ),
         "error": result["error"],
     }
 
@@ -536,6 +554,9 @@ def build_hard_failure_response(
         "assistant_message_id": None,
         "attachment_id": None,
         "attachment_status": "NOT_RUN",
+        "transcription_status": "NOT_RUN",
+        "transcript_artifact_id": None,
+        "transcript": None,
         "recent_message_ids": [],
         "historical_message_ids": [],
         "retrieved_memories": [],
@@ -543,6 +564,7 @@ def build_hard_failure_response(
         "status": {
             "overall": "FAILED",
             "attachment": "NOT_RUN",
+            "transcription": "NOT_RUN",
             "retrieval": "NOT_RUN",
             "model": "NOT_CALLED",
             "persistence": "USER_PERSISTENCE_FAILED",
@@ -550,6 +572,7 @@ def build_hard_failure_response(
         },
         "retrieval_error": None,
         "attachment_error": None,
+        "transcription_error": None,
         "error": str(error),
     }
 
@@ -567,12 +590,21 @@ def post_chat(request: ChatRequest):
             ),
         )
 
-    if not request.message.strip():
+    attachment_mode = (
+        request.attachment_mode
+        .strip()
+        .lower()
+    )
+
+    if attachment_mode not in {
+        "vision",
+        "voice",
+    }:
         return JSONResponse(
             status_code=400,
             content=build_hard_failure_response(
                 session_id,
-                "message must not be empty",
+                "attachment_mode must be vision or voice",
             ),
         )
 
@@ -590,11 +622,39 @@ def post_chat(request: ChatRequest):
                 ),
             )
 
+    if attachment_mode == "voice":
+        if attachment_id is None:
+            return JSONResponse(
+                status_code=400,
+                content=build_hard_failure_response(
+                    session_id,
+                    "voice mode requires attachment_id",
+                ),
+            )
+
+        # The raw audio is canonical evidence.
+        # STT text is derived perception and must
+        # never masquerade as typed user content.
+        user_content = "[Voice message]"
+
+    else:
+        user_content = request.message.strip()
+
+        if not user_content:
+            return JSONResponse(
+                status_code=400,
+                content=build_hard_failure_response(
+                    session_id,
+                    "message must not be empty",
+                ),
+            )
+
     try:
         result = process_turn(
             session_id=session_id,
-            user_content=request.message,
+            user_content=user_content,
             attachment_id=attachment_id,
+            attachment_mode=attachment_mode,
         )
     except Exception as exc:
         return JSONResponse(
