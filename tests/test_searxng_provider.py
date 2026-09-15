@@ -180,3 +180,75 @@ print(
 print(
     "SEARXNG EPHEMERAL BOUNDARY OK"
 )
+
+
+route_calls = []
+
+
+def route_fetch_json(
+    url,
+    *,
+    timeout,
+):
+    route_calls.append(url)
+
+    return {
+        "results": [
+            {
+                "url": (
+                    "https://example.net/"
+                    "zh-result"
+                ),
+                "title": "中文结果",
+                "content": "中文搜索摘要",
+            }
+        ]
+    }
+
+
+route_base = SearXNGProvider(
+    fetch_json=route_fetch_json,
+)
+
+route_provider = (
+    route_base.with_route(
+        category="general",
+        language="zh-CN",
+        engine_bang="goc",
+        time_range="day",
+    )
+)
+
+route_provider.search(
+    "洛杉矶 今日 新闻",
+    limit=3,
+)
+
+assert len(route_calls) == 1
+
+route_params = parse_qs(
+    urlparse(
+        route_calls[0]
+    ).query
+)
+
+assert route_params["q"] == [
+    "!goc 洛杉矶 今日 新闻"
+]
+
+assert route_params["categories"] == [
+    "general"
+]
+
+assert route_params["language"] == [
+    "zh-CN"
+]
+
+assert route_params["time_range"] == [
+    "day"
+]
+
+
+print(
+    "SEARXNG ROUTE PARAMETER CONTRACT OK"
+)

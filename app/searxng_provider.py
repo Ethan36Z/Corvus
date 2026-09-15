@@ -88,6 +88,10 @@ class SearXNGProvider:
             DEFAULT_SEARXNG_TIMEOUT_SECONDS
         ),
         fetch_json=None,
+        category="general",
+        language=None,
+        engine_bang=None,
+        time_range=None,
     ):
         if not isinstance(
             base_url,
@@ -125,17 +129,118 @@ class SearXNGProvider:
             else _fetch_json
         )
 
+        category = str(
+            category
+        ).strip()
+
+        if not category:
+            raise ValueError(
+                "SearXNG category must not be empty"
+            )
+
+        self.category = category
+
+        if language is None:
+            self.language = None
+        else:
+            language = str(
+                language
+            ).strip()
+
+            self.language = (
+                language
+                if language
+                else None
+            )
+
+        if engine_bang is None:
+            self.engine_bang = None
+        else:
+            engine_bang = str(
+                engine_bang
+            ).strip()
+
+            if engine_bang.startswith("!"):
+                engine_bang = (
+                    engine_bang[1:]
+                )
+
+            if (
+                not engine_bang
+                or any(
+                    char.isspace()
+                    for char in engine_bang
+                )
+            ):
+                raise ValueError(
+                    "SearXNG engine bang is invalid"
+                )
+
+            self.engine_bang = (
+                engine_bang
+            )
+
+        if time_range not in (
+            None,
+            "day",
+            "month",
+            "year",
+        ):
+            raise ValueError(
+                "SearXNG time range is invalid"
+            )
+
+        self.time_range = time_range
+
+    def with_route(
+        self,
+        *,
+        category,
+        language=None,
+        engine_bang=None,
+        time_range=None,
+    ):
+        return SearXNGProvider(
+            base_url=self.base_url,
+            timeout_seconds=(
+                self.timeout_seconds
+            ),
+            fetch_json=self._fetch_json,
+            category=category,
+            language=language,
+            engine_bang=engine_bang,
+            time_range=time_range,
+        )
+
     def search(
         self,
         query,
         *,
         limit,
     ):
+        routed_query = query
+
+        if self.engine_bang:
+            routed_query = (
+                f"!{self.engine_bang} "
+                f"{query}"
+            )
+
         params = {
-            "q": query,
+            "q": routed_query,
             "format": "json",
-            "categories": "general",
+            "categories": self.category,
         }
+
+        if self.language:
+            params["language"] = (
+                self.language
+            )
+
+        if self.time_range:
+            params["time_range"] = (
+                self.time_range
+            )
 
         endpoint = (
             self.base_url
