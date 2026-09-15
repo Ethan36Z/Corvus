@@ -207,6 +207,46 @@ def init_db():
 
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS web_evidence (
+                id TEXT PRIMARY KEY,
+
+                assistant_message_id INTEGER NOT NULL,
+                ordinal INTEGER NOT NULL
+                    CHECK (ordinal >= 0),
+
+                source_url TEXT NOT NULL,
+                source_title TEXT,
+
+                excerpt TEXT NOT NULL,
+                excerpt_sha256 TEXT NOT NULL,
+
+                fetched_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+
+                UNIQUE (
+                    assistant_message_id,
+                    ordinal
+                ),
+
+                FOREIGN KEY (assistant_message_id)
+                    REFERENCES messages(id)
+                    ON DELETE CASCADE
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                web_evidence_message_idx
+            ON web_evidence(
+                assistant_message_id
+            )
+            """
+        )
+
+        conn.execute(
+            """
             CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
             USING fts5(
                 content,
