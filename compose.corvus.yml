@@ -60,3 +60,23 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+
+  corvus-kokoro:
+    image: ghcr.io/hsiang-han/kokoro-fastapi-zh-cpu@sha256:a675c4d280ff08002778468a2687d35c27d0a9709c6a8259afbfa573a72e7e2b
+    container_name: corvus-kokoro
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8105:8880"
+
+    environment:
+      USE_GPU: "false"
+      PYTHONUNBUFFERED: "1"
+      REPO_ID: "hexgrad/Kokoro-82M-v1.1-zh"
+      KOKORO_V1_FILE: "v1_1_zh/kokoro-v1_1-zh.pth"
+      VOICES_DIR: "/app/api/src/voices/v1_1_zh"
+      DEFAULT_VOICE: "af_mica"
+      DEFAULT_VOICE_CODE: "z"
+
+    volumes:
+      - /home/ethan/srv/shared/models/kokoro-voices/community:/app/api/src/voices/v1_1_zh:ro

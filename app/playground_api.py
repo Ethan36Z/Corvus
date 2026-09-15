@@ -19,6 +19,7 @@ from app.model_client import (
     check_model_health,
 )
 from app.runtime_lifecycle import recover_dense_tail
+from app.tts import TTSError, synthesize_speech
 from memory.store import connect
 from memory.attachments import (
     get_attachment,
@@ -667,6 +668,123 @@ def post_chat(request: ChatRequest):
 
     return build_chat_response(
         result
+    )
+
+
+def load_message_for_tts(message_id):
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id,
+                session_id,
+                role,
+                content,
+                created_at
+            FROM messages
+            WHERE id = ?
+            """,
+            (int(message_id),),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    return {
+        "id": row[0],
+        "session_id": row[1],
+        "role": row[2],
+        "content": row[3],
+        "created_at": row[4],
+    }
+
+
+def synthesize_message_audio(
+    message_id,
+    *,
+    load_message_fn=load_message_for_tts,
+    synthesize_fn=synthesize_speech,
+):
+    message = load_message_fn(
+        message_id
+    )
+
+    if message is None:
+        raise HTTPException(
+            status_code=404,
+            detail="message not found",
+        )
+
+    if message["role"] != "assistant":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "TTS is only available "
+                "for assistant messages"
+            ),
+        )
+
+    return synthesize_fn(
+        message["content"]
+    )
+
+
+@app.get("/api/tts/{assistant_message_id}")
+def get_tts_audio(
+    assistant_message_id: int,
+):
+    if assistant_message_id <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "assistant_message_id "
+                "must be positive"
+            ),
+        )
+
+    try:
+        result = synthesize_message_audio(
+            assistant_message_id
+        )
+
+    except TTSError as exc:
+        if exc.code in {
+            "TTS_TIMEOUT",
+            "TTS_UNAVAILABLE",
+        }:
+            status_code = 503
+
+        elif exc.code in {
+            "TTS_HTTP_ERROR",
+            "TTS_RESPONSE_INVALID",
+        }:
+            status_code = 502
+
+        else:
+            status_code = 400
+
+        raise HTTPException(
+            status_code=status_code,
+            detail={
+                "code": exc.code,
+                "message": str(exc),
+            },
+        ) from exc
+
+    return Response(
+        content=result["audio"],
+        media_type=result["media_type"],
+        headers={
+            "Cache-Control": (
+                "private, no-store"
+            ),
+            "X-Content-Type-Options": (
+                "nosniff"
+            ),
+            "X-Corvus-TTS-Voice": (
+                result["voice"]
+            ),
+        },
     )
 
 
