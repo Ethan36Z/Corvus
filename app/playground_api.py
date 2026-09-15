@@ -23,6 +23,7 @@ from app.tts import TTSError, synthesize_speech
 from memory.store import connect
 from memory.attachments import (
     get_attachment,
+    get_latest_attachment_artifact,
     read_attachment_bytes,
 )
 
@@ -215,10 +216,17 @@ def get_attachment_content(
             detail="attachment content is no longer retained",
         )
 
-    if attachment["media_type"] not in {
+    displayable_media_types = {
         "image/png",
         "image/jpeg",
-    }:
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg",
+        "audio/wav",
+        "audio/mpeg",
+    }
+
+    if attachment["media_type"] not in displayable_media_types:
         raise HTTPException(
             status_code=415,
             detail="attachment media type is not displayable",
@@ -247,6 +255,61 @@ def get_attachment_content(
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@app.get(
+    "/api/attachments/{attachment_id}/transcript"
+)
+def get_attachment_transcript(
+    attachment_id: str,
+):
+    attachment_id = attachment_id.strip()
+
+    if not attachment_id:
+        raise HTTPException(
+            status_code=400,
+            detail="attachment_id must not be empty",
+        )
+
+    attachment = get_attachment(
+        attachment_id
+    )
+
+    if attachment is None:
+        raise HTTPException(
+            status_code=404,
+            detail="attachment not found",
+        )
+
+    if not attachment["media_type"].startswith(
+        "audio/"
+    ):
+        raise HTTPException(
+            status_code=415,
+            detail="attachment is not audio",
+        )
+
+    artifact = get_latest_attachment_artifact(
+        attachment_id,
+        artifact_kind="TRANSCRIPT",
+    )
+
+    if artifact is None:
+        raise HTTPException(
+            status_code=404,
+            detail="transcript not available",
+        )
+
+    return {
+        "attachment_id": attachment_id,
+        "artifact_kind": "TRANSCRIPT",
+        "content": artifact["content"],
+        "producer": artifact["producer"],
+        "producer_version": artifact[
+            "producer_version"
+        ],
+        "created_at": artifact["created_at"],
+    }
 
 
 @app.post(

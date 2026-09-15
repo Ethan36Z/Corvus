@@ -2739,3 +2739,512 @@
     height: 16px;
   }
 }
+
+/* ===== A3.3d microphone recording ===== */
+
+.voice-mic-button {
+  position: absolute;
+  right:
+    calc(
+      var(--composer-inset, 14px)
+      + var(--send-size, 28px)
+      + 7px
+    );
+  bottom: var(--composer-inset, 14px);
+  z-index: 3;
+
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+
+  color: var(--muted);
+  background: transparent;
+
+  cursor: pointer;
+
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    opacity 140ms ease;
+}
+
+.voice-mic-button svg {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.voice-mic-button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.voice-mic-button:focus-visible {
+  outline: none;
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.voice-mic-button:disabled {
+  opacity: .38;
+  cursor: default;
+}
+
+/*
+ * Fresh single-line capsule:
+ * reserve space for mic + send.
+ */
+.composer-new.composer-single textarea {
+  padding:
+    1px
+    36px
+    0
+    0 !important;
+}
+
+.composer-new.composer-single
+.voice-mic-button {
+  top: 50%;
+  right: 44px;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+/*
+ * Recording mode becomes a temporary,
+ * full-width voice surface.
+ */
+.composer-recording {
+  min-height: 56px !important;
+}
+
+.composer-recording
+> :not(.voice-recording-strip) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.voice-recording-strip {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+  padding: 0 11px;
+
+  border-radius: inherit;
+  background: var(--surface);
+}
+
+.voice-recording-cancel,
+.voice-recording-send {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+.voice-recording-cancel {
+  color: var(--muted);
+  background: transparent;
+
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.voice-recording-cancel:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.voice-recording-send {
+  color: var(--bg);
+  background: var(--text);
+}
+
+.voice-recording-send:hover {
+  opacity: .88;
+}
+
+.voice-recording-stop-icon {
+  width: 9px;
+  height: 9px;
+
+  display: block;
+
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.voice-recording-wave {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+
+  overflow: hidden;
+}
+
+.voice-recording-wave i {
+  width: 2px;
+  height: 5px;
+  flex: 0 0 2px;
+
+  border-radius: 999px;
+  background: var(--muted);
+
+  animation:
+    corvus-voice-wave
+    850ms
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.voice-recording-wave i:nth-child(3n) {
+  animation-delay: -160ms;
+}
+
+.voice-recording-wave i:nth-child(3n + 1) {
+  animation-delay: -340ms;
+}
+
+.voice-recording-wave i:nth-child(4n) {
+  animation-delay: -520ms;
+}
+
+.voice-recording-wave i:nth-child(5n) {
+  animation-delay: -700ms;
+}
+
+.voice-recording-time {
+  flex: 0 0 auto;
+
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+@keyframes corvus-voice-wave {
+  0% {
+    height: 4px;
+    opacity: .45;
+  }
+
+  35% {
+    height: 11px;
+    opacity: .72;
+  }
+
+  70% {
+    height: 21px;
+    opacity: 1;
+  }
+
+  100% {
+    height: 8px;
+    opacity: .62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-recording-wave i {
+    animation: none;
+    height: 8px;
+  }
+
+  .voice-recording-wave i:nth-child(3n) {
+    height: 17px;
+  }
+}
+
+@media (max-width: 700px) {
+  .voice-mic-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .voice-recording-strip {
+    gap: 8px;
+    padding: 0 9px;
+  }
+
+  .voice-recording-wave {
+    gap: 2px;
+  }
+}
+
+
+/* ===== A3.3d microphone ghost polish ===== */
+
+.composer-new button.voice-mic-button {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+
+  padding: 0;
+  border: 0;
+
+  color: var(--muted);
+  background: transparent;
+
+  box-shadow: none;
+}
+
+.composer-new button.voice-mic-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.composer-new button.voice-mic-button:hover:not(:disabled),
+.composer-new button.voice-mic-button:focus-visible {
+  color: var(--text);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.composer-new button.voice-mic-button:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+
+/* ===== A3.3d voice message UX ===== */
+
+/*
+ * GPT-like microphone:
+ * visually small, but still easy to click.
+ */
+.composer button.voice-mic-button {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  flex: 0 0 24px !important;
+
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50%;
+
+  color: var(--muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  font-size: 0 !important;
+}
+
+.composer button.voice-mic-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.composer button.voice-mic-button:hover:not(:disabled),
+.composer button.voice-mic-button:focus-visible {
+  color: var(--text) !important;
+  background: var(--surface-soft) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.composer button.voice-mic-button:active:not(:disabled) {
+  transform: scale(.92) !important;
+}
+
+/* Voice message */
+
+.voice-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voice-message-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  min-width: 190px;
+  max-width: 280px;
+}
+
+.voice-message-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.voice-message-play {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+
+  color: var(--text);
+  background: rgba(255, 255, 255, .48);
+
+  cursor: pointer;
+}
+
+.voice-message-play:hover:not(:disabled) {
+  background: rgba(255, 255, 255, .68);
+}
+
+.voice-message-play:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.voice-message-play svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.voice-stop-symbol {
+  width: 7px;
+  height: 7px;
+  border-radius: 1.5px;
+  background: currentColor;
+}
+
+.voice-message-wave {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  height: 25px;
+  overflow: hidden;
+}
+
+.voice-message-wave i {
+  display: block;
+
+  width: 2px;
+  height: 7px;
+
+  border-radius: 999px;
+  background: currentColor;
+
+  opacity: .55;
+}
+
+.voice-message-wave i:nth-child(4n + 1) {
+  height: 12px;
+}
+
+.voice-message-wave i:nth-child(4n + 2) {
+  height: 18px;
+}
+
+.voice-message-wave i:nth-child(4n + 3) {
+  height: 9px;
+}
+
+.voice-message-card.playing
+.voice-message-wave i {
+  animation:
+    voice-message-pulse
+    760ms
+    ease-in-out
+    infinite
+    alternate;
+}
+
+@keyframes voice-message-pulse {
+  from {
+    transform: scaleY(.58);
+    opacity: .42;
+  }
+
+  to {
+    transform: scaleY(1.12);
+    opacity: .9;
+  }
+}
+
+.voice-transcript-toggle {
+  align-self: flex-end;
+
+  padding: 0;
+  border: 0;
+
+  color: var(--muted);
+  background: transparent;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+
+  cursor: pointer;
+}
+
+.voice-transcript-toggle:hover:not(:disabled) {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.voice-transcript-toggle:disabled {
+  opacity: .5;
+}
+
+.voice-transcript {
+  padding-top: 5px;
+  border-top: 1px solid
+    rgba(0, 0, 0, .08);
+
+  color: var(--text);
+
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 700px) {
+  .voice-message-card {
+    min-width: 165px;
+    max-width: 245px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-message-card.playing
+  .voice-message-wave i {
+    animation: none;
+  }
+}

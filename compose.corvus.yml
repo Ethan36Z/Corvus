@@ -80,3 +80,33 @@ services:
 
     volumes:
       - /home/ethan/srv/shared/models/kokoro-voices/community:/app/api/src/voices/v1_1_zh:ro
+
+  corvus-whisper:
+    image: ghcr.io/ggml-org/whisper.cpp@sha256:caf0cd77c922e9c53f10a9bc17c2f74cc2295d12e7b0f96b630fb3b3c55a0026
+    container_name: corvus-whisper
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8104:8080"
+
+    volumes:
+      - /home/ethan/srv/shared/models/whisper:/models:ro
+
+    entrypoint:
+      - whisper-server
+
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -m
+      - /models/ggml-small.bin
+      - -t
+      - "8"
+      - -l
+      - auto
+      - --no-gpu
+      - --convert
+      - --prompt
+      - Corvus Ethan FoxLuma FoxRove PawCareHub

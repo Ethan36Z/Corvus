@@ -140,10 +140,23 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const speechAudioRef = useRef<HTMLAudioElement | null>(null)
+  const voiceAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [playingVoiceAttachmentId, setPlayingVoiceAttachmentId] = useState<string | null>(null)
+  const [voiceTranscriptByAttachment, setVoiceTranscriptByAttachment] = useState<Record<string, string>>({})
+  const [expandedVoiceTranscriptId, setExpandedVoiceTranscriptId] = useState<string | null>(null)
+  const [voiceTranscriptLoadingId, setVoiceTranscriptLoadingId] = useState<string | null>(null)
   const [speakingMessageId, setSpeakingMessageId] =
     useState<number | null>(null)
   const [speechLoadingMessageId, setSpeechLoadingMessageId] =
     useState<number | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const voiceChunksRef = useRef<Blob[]>([])
+  const recordingTimerRef = useRef<number | null>(null)
+  const micLeaseTimerRef = useRef<number | null>(null)
+  const recordingStartedAtRef = useRef<number | null>(null)
+  const [recording, setRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [sending, setSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
@@ -152,6 +165,24 @@ function App() {
   )
 
 
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current !== null) {
+        window.clearInterval(recordingTimerRef.current)
+      }
+
+      const recorder = mediaRecorderRef.current
+
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop()
+      }
+
+      mediaStreamRef.current
+        ?.getTracks()
+        .forEach((track) => track.stop())
+    }
+  }, [])
 
   useEffect(() => {
     const viewport = window.visualViewport
@@ -320,6 +351,17 @@ function App() {
     }
   }, [selectedImagePreview])
 
+  useEffect(() => {
+    return () => {
+      if (micLeaseTimerRef.current !== null) {
+        window.clearTimeout(
+          micLeaseTimerRef.current,
+        )
+        micLeaseTimerRef.current = null
+      }
+    }
+  }, [])
+
   function clearSelectedImage() {
     setSelectedImage(null)
     setSelectedImagePreview(null)
@@ -361,6 +403,602 @@ function App() {
     window.setTimeout(() => {
       composerRef.current?.focus()
     }, 0)
+  }
+
+  function formatRecordingTime(totalSeconds: number) {
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  function cancelMicLeaseTimer() {
+    if (micLeaseTimerRef.current !== null) {
+      window.clearTimeout(
+        micLeaseTimerRef.current,
+      )
+      micLeaseTimerRef.current = null
+    }
+  }
+
+  function releaseMicrophoneStream() {
+    cancelMicLeaseTimer()
+
+    mediaStreamRef.current
+      ?.getTracks()
+      .forEach((track) => track.stop())
+
+    mediaStreamRef.current = null
+  }
+
+  function scheduleMicrophoneRelease() {
+    cancelMicLeaseTimer()
+
+    const stream = mediaStreamRef.current
+
+    if (!stream) return
+
+    micLeaseTimerRef.current =
+      window.setTimeout(() => {
+        if (mediaStreamRef.current !== stream) {
+          return
+        }
+
+        stream
+          .getTracks()
+          .forEach((track) => track.stop())
+
+        mediaStreamRef.current = null
+        micLeaseTimerRef.current = null
+      }, 30_000)
+  }
+
+  function clearVoiceCaptureResources(
+    keepMicrophone = false,
+  ) {
+    if (recordingTimerRef.current !== null) {
+      window.clearInterval(recordingTimerRef.current)
+      recordingTimerRef.current = null
+    }
+
+    if (keepMicrophone) {
+      cancelMicLeaseTimer()
+    } else {
+      releaseMicrophoneStream()
+    }
+
+    mediaRecorderRef.current = null
+    recordingStartedAtRef.current = null
+  }
+
+  async function startVoiceRecording() {
+    if (sending || recording) return
+
+    if (selectedImage) {
+      setChatError(
+        'Remove the image before starting a voice message.',
+      )
+      return
+    }
+
+    if (
+      !navigator.mediaDevices?.getUserMedia ||
+      typeof MediaRecorder === 'undefined'
+    ) {
+      setChatError(
+        'Voice recording is not supported in this browser.',
+      )
+      return
+    }
+
+    try {
+      stopSpeechPlayback()
+      setChatError(null)
+
+      cancelMicLeaseTimer()
+
+      let stream = mediaStreamRef.current
+
+      const hasLiveAudioTrack =
+        stream
+          ?.getAudioTracks()
+          .some(
+            (track) =>
+              track.readyState === 'live',
+          ) ?? false
+
+      if (!stream || !hasLiveAudioTrack) {
+        stream
+          ?.getTracks()
+          .forEach((track) => track.stop())
+
+        stream =
+          await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          })
+
+        mediaStreamRef.current = stream
+      }
+
+      const preferredMimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ]
+
+      const mimeType =
+        preferredMimeTypes.find((candidate) =>
+          MediaRecorder.isTypeSupported(candidate),
+        )
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, {
+            mimeType,
+          })
+        : new MediaRecorder(stream)
+
+      voiceChunksRef.current = []
+      mediaStreamRef.current = stream
+      mediaRecorderRef.current = recorder
+
+      recorder.addEventListener(
+        'dataavailable',
+        (event) => {
+          if (event.data.size > 0) {
+            voiceChunksRef.current.push(
+              event.data,
+            )
+          }
+        },
+      )
+
+      recorder.start(250)
+
+      const startedAt = Date.now()
+
+      recordingStartedAtRef.current =
+        startedAt
+
+      setRecordingSeconds(0)
+      setRecording(true)
+
+      recordingTimerRef.current =
+        window.setInterval(() => {
+          setRecordingSeconds(
+            Math.floor(
+              (Date.now() - startedAt) /
+                1000,
+            ),
+          )
+        }, 250)
+
+    } catch (error) {
+      clearVoiceCaptureResources()
+
+      setRecording(false)
+      setRecordingSeconds(0)
+
+      setChatError(
+        error instanceof Error
+          ? `Microphone unavailable: ${error.message}`
+          : 'Microphone unavailable.',
+      )
+    }
+  }
+
+  async function finishVoiceRecording(
+    shouldSend: boolean,
+  ) {
+    const recorder =
+      mediaRecorderRef.current
+
+    if (!recorder) return
+
+    if (recordingTimerRef.current !== null) {
+      window.clearInterval(
+        recordingTimerRef.current,
+      )
+      recordingTimerRef.current = null
+    }
+
+    const mimeType =
+      recorder.mimeType || 'audio/webm'
+
+    let voiceBlob: Blob
+
+    try {
+      voiceBlob = await new Promise<Blob>(
+        (resolve, reject) => {
+          const finish = () => {
+            resolve(
+              new Blob(
+                voiceChunksRef.current,
+                {
+                  type: mimeType,
+                },
+              ),
+            )
+          }
+
+          recorder.addEventListener(
+            'stop',
+            finish,
+            { once: true },
+          )
+
+          try {
+            if (
+              recorder.state !== 'inactive'
+            ) {
+              recorder.stop()
+            } else {
+              finish()
+            }
+          } catch (error) {
+            reject(error)
+          }
+        },
+      )
+    } catch (error) {
+      clearVoiceCaptureResources()
+      voiceChunksRef.current = []
+      setRecording(false)
+      setRecordingSeconds(0)
+
+      setChatError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to finish voice recording.',
+      )
+      return
+    }
+
+    clearVoiceCaptureResources(true)
+    voiceChunksRef.current = []
+
+    setRecording(false)
+    setRecordingSeconds(0)
+
+    if (!shouldSend) {
+      scheduleMicrophoneRelease()
+      setChatError(null)
+      return
+    }
+
+    if (voiceBlob.size === 0) {
+      scheduleMicrophoneRelease()
+
+      setChatError(
+        'The voice recording was empty.',
+      )
+      return
+    }
+
+    await sendVoiceBlob(voiceBlob)
+  }
+
+  async function sendVoiceBlob(
+    voiceBlob: Blob,
+  ) {
+    if (sending) return
+
+    const wasNew = !selectedSession
+    const sessionId =
+      selectedSession || `chat-${Date.now()}`
+
+    const previousMessages =
+      chatMessages
+
+    const optimisticMessage: ChatMessage = {
+      id: -Date.now(),
+      session_id: sessionId,
+      role: 'user',
+      content: '[Voice message]',
+      created_at: new Date().toISOString(),
+      attachments: [],
+    }
+
+    setChatMessages([
+      ...previousMessages,
+      optimisticMessage,
+    ])
+
+    setSending(true)
+    setChatError(null)
+    scrollChatToBottom()
+
+    if (wasNew) {
+      setSelectedSession(sessionId)
+    }
+
+    try {
+      const mediaType =
+        voiceBlob.type ||
+        'audio/webm'
+
+      const normalizedMediaType =
+        mediaType
+          .split(';', 1)[0]
+          .toLowerCase()
+
+      const extension =
+        normalizedMediaType === 'audio/mp4'
+          ? 'm4a'
+          : normalizedMediaType ===
+              'audio/ogg'
+            ? 'ogg'
+            : 'webm'
+
+      const filename =
+        `voice-${Date.now()}.${extension}`
+
+      const uploadResponse =
+        await fetch(
+          `/api/attachments?filename=${encodeURIComponent(filename)}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': mediaType,
+            },
+            body: voiceBlob,
+          },
+        )
+
+      const uploadData =
+        (await uploadResponse.json()) as
+          AttachmentUploadResponse & {
+            detail?: string
+          }
+
+      if (
+        !uploadResponse.ok ||
+        !uploadData.attachment_id
+      ) {
+        throw new Error(
+          uploadData.detail ||
+            'Corvus could not upload the voice recording.',
+        )
+      }
+
+      const response =
+        await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            message: '',
+            attachment_id:
+              uploadData.attachment_id,
+            attachment_mode: 'voice',
+          }),
+        })
+
+      const data: ChatResponse =
+        await response.json()
+
+      if (
+        !response.ok ||
+        !data.reply ||
+        data.status?.overall ===
+          'FAILED'
+      ) {
+        throw new Error(
+          data.error ||
+            'Corvus could not complete the voice turn.',
+        )
+      }
+
+      await selectSession(sessionId)
+      scrollChatToBottom()
+
+      const sessionsResponse =
+        await fetch('/api/sessions')
+
+      if (sessionsResponse.ok) {
+        const sessionData: Session[] =
+          await sessionsResponse.json()
+
+        setSessions(sessionData)
+      }
+
+    } catch (error) {
+      let canonicalRecovered = false
+
+      try {
+        const historyResponse =
+          await fetch(
+            `/api/sessions/${encodeURIComponent(sessionId)}`,
+          )
+
+        if (historyResponse.ok) {
+          const history: SessionDetail =
+            await historyResponse.json()
+
+          setSelectedSession(sessionId)
+          setChatMessages(
+            history.messages,
+          )
+
+          canonicalRecovered = true
+        }
+      } catch {
+        // Fall through to local rollback.
+      }
+
+      if (!canonicalRecovered) {
+        setChatMessages(
+          previousMessages,
+        )
+
+        if (wasNew) {
+          setSelectedSession('')
+        }
+      }
+
+      setChatError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to send voice message.',
+      )
+
+    } finally {
+      setSending(false)
+      scheduleMicrophoneRelease()
+    }
+  }
+
+  function stopVoicePlayback() {
+    const audio = voiceAudioRef.current
+
+    if (audio) {
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      voiceAudioRef.current = null
+    }
+
+    setPlayingVoiceAttachmentId(null)
+  }
+
+  async function playVoiceAttachment(
+    attachmentId: string,
+    contentUrl: string,
+  ) {
+    if (
+      voiceAudioRef.current &&
+      playingVoiceAttachmentId === attachmentId
+    ) {
+      stopVoicePlayback()
+      return
+    }
+
+    stopVoicePlayback()
+    stopSpeechPlayback()
+
+    const audio = new Audio(contentUrl)
+
+    voiceAudioRef.current = audio
+    setPlayingVoiceAttachmentId(
+      attachmentId,
+    )
+
+    audio.addEventListener(
+      'ended',
+      () => {
+        if (voiceAudioRef.current === audio) {
+          voiceAudioRef.current = null
+          setPlayingVoiceAttachmentId(
+            null,
+          )
+        }
+      },
+      { once: true },
+    )
+
+    audio.addEventListener(
+      'error',
+      () => {
+        if (voiceAudioRef.current === audio) {
+          voiceAudioRef.current = null
+          setPlayingVoiceAttachmentId(
+            null,
+          )
+        }
+
+        setChatError(
+          'Unable to play this voice message.',
+        )
+      },
+      { once: true },
+    )
+
+    try {
+      await audio.play()
+    } catch (error) {
+      stopVoicePlayback()
+
+      setChatError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to play this voice message.',
+      )
+    }
+  }
+
+  async function toggleVoiceTranscript(
+    attachmentId: string,
+  ) {
+    if (
+      expandedVoiceTranscriptId ===
+      attachmentId
+    ) {
+      setExpandedVoiceTranscriptId(null)
+      return
+    }
+
+    if (
+      voiceTranscriptByAttachment[
+        attachmentId
+      ]
+    ) {
+      setExpandedVoiceTranscriptId(
+        attachmentId,
+      )
+      return
+    }
+
+    setVoiceTranscriptLoadingId(
+      attachmentId,
+    )
+
+    try {
+      const response = await fetch(
+        `/api/attachments/${encodeURIComponent(
+          attachmentId,
+        )}/transcript`,
+      )
+
+      const data = (
+        await response.json()
+      ) as {
+        content?: string
+        detail?: string
+      }
+
+      if (!response.ok || !data.content) {
+        throw new Error(
+          data.detail ||
+            'Transcript is not available.',
+        )
+      }
+
+      setVoiceTranscriptByAttachment(
+        (current) => ({
+          ...current,
+          [attachmentId]:
+            data.content as string,
+        }),
+      )
+
+      setExpandedVoiceTranscriptId(
+        attachmentId,
+      )
+    } catch (error) {
+      setChatError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load transcript.',
+      )
+    } finally {
+      setVoiceTranscriptLoadingId(null)
+    }
   }
 
   function stopSpeechPlayback() {
@@ -850,9 +1488,21 @@ function App() {
                   key={message.id}
                 >
                   <div className="message-body">
-                    {message.attachments?.length ? (
+                    {message.attachments?.some(
+                      (attachment) =>
+                        attachment.media_type
+                          .toLowerCase()
+                          .startsWith('image/'),
+                    ) ? (
                       <div className="message-attachments">
-                        {message.attachments.map(
+                        {message.attachments
+                          .filter(
+                            (attachment) =>
+                              attachment.media_type
+                                .toLowerCase()
+                                .startsWith('image/'),
+                          )
+                          .map(
                           (attachment) => {
                             const imageUrl =
                               attachment.preview_url ||
@@ -889,7 +1539,157 @@ function App() {
                       </div>
                     ) : null}
 
-                    <p>{message.content}</p>
+                    {message.role === 'user' &&
+                    message.attachments?.some(
+                      (attachment) =>
+                        attachment.media_type
+                          .toLowerCase()
+                          .startsWith('audio/'),
+                    ) ? (
+                      <div className="voice-message-list">
+                        {message.attachments
+                          .filter(
+                            (attachment) =>
+                              attachment.media_type
+                                .toLowerCase()
+                                .startsWith('audio/'),
+                          )
+                          .map((attachment) => {
+                            const isPlaying =
+                              playingVoiceAttachmentId ===
+                              attachment.id
+
+                            const transcript =
+                              voiceTranscriptByAttachment[
+                                attachment.id
+                              ]
+
+                            const transcriptOpen =
+                              expandedVoiceTranscriptId ===
+                              attachment.id
+
+                            return (
+                              <div
+                                className={`voice-message-card${
+                                  isPlaying
+                                    ? ' playing'
+                                    : ''
+                                }`}
+                                key={`${message.id}-voice-${attachment.id}`}
+                              >
+                                <div className="voice-message-main">
+                                  <button
+                                    type="button"
+                                    className="voice-message-play"
+                                    disabled={
+                                      attachment.blob_status !==
+                                        'PRESENT' ||
+                                      !attachment.content_url
+                                    }
+                                    onClick={() => {
+                                      if (
+                                        attachment.content_url
+                                      ) {
+                                        void playVoiceAttachment(
+                                          attachment.id,
+                                          attachment.content_url,
+                                        )
+                                      }
+                                    }}
+                                    aria-label={
+                                      isPlaying
+                                        ? 'Stop voice message'
+                                        : 'Play voice message'
+                                    }
+                                    title={
+                                      isPlaying
+                                        ? 'Stop'
+                                        : 'Play'
+                                    }
+                                  >
+                                    {isPlaying ? (
+                                      <span className="voice-stop-symbol" />
+                                    ) : (
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        aria-hidden="true"
+                                      >
+                                        <path d="M8 5.5v13l10-6.5-10-6.5Z" />
+                                      </svg>
+                                    )}
+                                  </button>
+
+                                  <div
+                                    className="voice-message-wave"
+                                    aria-hidden="true"
+                                  >
+                                    {Array.from({
+                                      length: 22,
+                                    }).map(
+                                      (_, index) => (
+                                        <i
+                                          key={index}
+                                          style={{
+                                            animationDelay:
+                                              `${(
+                                                index %
+                                                7
+                                              ) * 55}ms`,
+                                          }}
+                                        />
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="voice-transcript-toggle"
+                                  onClick={() =>
+                                    void toggleVoiceTranscript(
+                                      attachment.id,
+                                    )
+                                  }
+                                  disabled={
+                                    voiceTranscriptLoadingId ===
+                                    attachment.id
+                                  }
+                                >
+                                  {voiceTranscriptLoadingId ===
+                                  attachment.id
+                                    ? 'Loading…'
+                                    : transcriptOpen
+                                      ? 'Hide transcript'
+                                      : 'Transcript'}
+                                </button>
+
+                                {transcriptOpen &&
+                                transcript ? (
+                                  <div className="voice-transcript">
+                                    {transcript}
+                                  </div>
+                                ) : null}
+                              </div>
+                            )
+                          })}
+                      </div>
+                    ) : null}
+
+                    {!(
+                      message.role === 'user' &&
+                      message.content ===
+                        '[Voice message]' &&
+                      message.attachments?.some(
+                        (attachment) =>
+                          attachment.media_type
+                            .toLowerCase()
+                            .startsWith(
+                              'audio/',
+                            ),
+                      )
+                    ) ? (
+                      <p>{message.content}</p>
+                    ) : null}
 
                     {message.role === 'assistant' ? (
                       <div className="message-actions">
@@ -971,9 +1771,66 @@ function App() {
             selectedImage
               ? 'composer-has-attachment'
               : ''
+          } ${
+            recording
+              ? 'composer-recording'
+              : ''
           }`}
           onSubmit={sendMessage}
         >
+          {recording ? (
+            <div
+              className="voice-recording-strip"
+              role="status"
+              aria-label="Recording voice message"
+            >
+              <button
+                type="button"
+                className="voice-recording-cancel"
+                aria-label="Cancel voice recording"
+                title="Cancel"
+                onClick={() => {
+                  void finishVoiceRecording(false)
+                }}
+              >
+                ×
+              </button>
+
+              <div
+                className="voice-recording-wave"
+                aria-hidden="true"
+              >
+                {Array.from(
+                  { length: 22 },
+                  (_, index) => (
+                    <i key={index} />
+                  ),
+                )}
+              </div>
+
+              <span className="voice-recording-time">
+                {formatRecordingTime(
+                  recordingSeconds,
+                )}
+              </span>
+
+              <button
+                type="button"
+                className="voice-recording-send"
+                aria-label="Stop recording and send"
+                title="Stop and send"
+                onClick={() => {
+                  void finishVoiceRecording(true)
+                }}
+              >
+                <span
+                  className="voice-recording-stop-icon"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          ) : null}
+
           {selectedImage && selectedImagePreview && (
             <div className="attachment-preview">
               <img
@@ -1046,6 +1903,37 @@ function App() {
               }
             }}
           />
+          <button
+            type="button"
+            className="voice-mic-button"
+            aria-label="Start voice recording"
+            title="Voice message"
+            disabled={
+              sending ||
+              recording ||
+              Boolean(selectedImage)
+            }
+            onClick={() => {
+              void startVoiceRecording()
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <rect
+                x="9"
+                y="3"
+                width="6"
+                height="11"
+                rx="3"
+              />
+              <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
+              <path d="M12 17.5V21" />
+              <path d="M9 21h6" />
+            </svg>
+          </button>
+
           <button
             type="submit"
             className="send-button"

@@ -574,3 +574,55 @@ def add_attachment_artifact(
         conn.commit()
 
         return cursor.lastrowid
+
+
+def get_latest_attachment_artifact(
+    attachment_id,
+    *,
+    artifact_kind,
+):
+    attachment_id = _validate_text(
+        attachment_id,
+        "attachment_id",
+    )
+
+    artifact_kind = _validate_text(
+        artifact_kind,
+        "artifact_kind",
+    ).upper()
+
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id,
+                attachment_id,
+                artifact_kind,
+                content,
+                producer,
+                producer_version,
+                created_at
+            FROM attachment_artifacts
+            WHERE attachment_id = ?
+              AND artifact_kind = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (
+                attachment_id,
+                artifact_kind,
+            ),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    return {
+        "id": row[0],
+        "attachment_id": row[1],
+        "artifact_kind": row[2],
+        "content": row[3],
+        "producer": row[4],
+        "producer_version": row[5],
+        "created_at": row[6],
+    }
