@@ -139,6 +139,11 @@ function App() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
+  const speechAudioRef = useRef<HTMLAudioElement | null>(null)
+  const [speakingMessageId, setSpeakingMessageId] =
+    useState<number | null>(null)
+  const [speechLoadingMessageId, setSpeechLoadingMessageId] =
+    useState<number | null>(null)
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [sending, setSending] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
@@ -356,6 +361,78 @@ function App() {
     window.setTimeout(() => {
       composerRef.current?.focus()
     }, 0)
+  }
+
+  function stopSpeechPlayback() {
+    const audio = speechAudioRef.current
+
+    if (audio) {
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      speechAudioRef.current = null
+    }
+
+    setSpeakingMessageId(null)
+    setSpeechLoadingMessageId(null)
+  }
+
+  function playAssistantMessage(messageId: number) {
+    if (
+      speechAudioRef.current &&
+      (
+        speakingMessageId === messageId ||
+        speechLoadingMessageId === messageId
+      )
+    ) {
+      stopSpeechPlayback()
+      return
+    }
+
+    stopSpeechPlayback()
+
+    const audio = new Audio(`/api/tts/${messageId}`)
+    audio.preload = 'none'
+
+    speechAudioRef.current = audio
+    setSpeechLoadingMessageId(messageId)
+
+    audio.onplaying = () => {
+      if (speechAudioRef.current !== audio) return
+
+      setSpeechLoadingMessageId(null)
+      setSpeakingMessageId(messageId)
+    }
+
+    audio.onended = () => {
+      if (speechAudioRef.current !== audio) return
+
+      speechAudioRef.current = null
+      setSpeechLoadingMessageId(null)
+      setSpeakingMessageId(null)
+    }
+
+    audio.onerror = () => {
+      if (speechAudioRef.current !== audio) return
+
+      speechAudioRef.current = null
+      setSpeechLoadingMessageId(null)
+      setSpeakingMessageId(null)
+      setChatError(
+        'Voice playback failed. The text reply is still available.',
+      )
+    }
+
+    void audio.play().catch(() => {
+      if (speechAudioRef.current !== audio) return
+
+      speechAudioRef.current = null
+      setSpeechLoadingMessageId(null)
+      setSpeakingMessageId(null)
+      setChatError(
+        'Voice playback could not start. The text reply is still available.',
+      )
+    })
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -813,6 +890,53 @@ function App() {
                     ) : null}
 
                     <p>{message.content}</p>
+
+                    {message.role === 'assistant' ? (
+                      <div className="message-actions">
+                        <button
+                          type="button"
+                          className={`message-speech-button${
+                            speakingMessageId === message.id
+                              ? ' playing'
+                              : ''
+                          }${
+                            speechLoadingMessageId === message.id
+                              ? ' loading'
+                              : ''
+                          }`}
+                          onClick={() =>
+                            playAssistantMessage(message.id)
+                          }
+                          aria-label={
+                            speakingMessageId === message.id ||
+                            speechLoadingMessageId === message.id
+                              ? 'Stop voice reply'
+                              : 'Play voice reply'
+                          }
+                          aria-pressed={
+                            speakingMessageId === message.id
+                          }
+                          aria-busy={
+                            speechLoadingMessageId === message.id
+                          }
+                          title={
+                            speakingMessageId === message.id ||
+                            speechLoadingMessageId === message.id
+                              ? 'Stop'
+                              : 'Read aloud'
+                          }
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" />
+                            <path d="M15 9a4 4 0 0 1 0 6" />
+                            <path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </article>
               ))}

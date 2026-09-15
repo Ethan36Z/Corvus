@@ -2661,3 +2661,81 @@
     max-width: 86%;
   }
 }
+
+/* ===== Assistant voice replay ===== */
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  margin-top: 4px;
+}
+
+.message-speech-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: var(--faint);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.82;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    opacity 140ms ease,
+    transform 100ms ease;
+}
+
+.message-speech-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.message-speech-button:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+  opacity: 1;
+}
+
+.message-speech-button.playing {
+  color: var(--text);
+  background: var(--surface-soft);
+  opacity: 1;
+}
+
+.message-speech-button:active {
+  transform: scale(0.92);
+}
+
+.message-speech-button:focus-visible {
+  outline: none;
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.message-speech-button.loading {
+  opacity: 0.45;
+}
+
+@media (max-width: 700px) {
+  .message-speech-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .message-speech-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
