@@ -16,6 +16,12 @@ from app.web_evidence_prompt import (
     WebEvidencePromptError,
     pack_web_evidence,
 )
+from app.web_orchestration import (
+    prepare_web_grounding,
+)
+from app.searxng_provider import (
+    SearXNGProvider,
+)
 from memory.attachments import (
     link_attachment_to_message,
 )
@@ -37,6 +43,17 @@ VOICE_TRANSCRIPT_SYSTEM_NOTE = (
 )
 
 
+def _build_default_web_provider(
+    attempt,
+):
+    return SearXNGProvider(
+        category=attempt.category,
+        language=attempt.language,
+        engine_bang=attempt.engine_bang,
+        time_range=attempt.time_range,
+    )
+
+
 def process_turn(
     session_id,
     user_content,
@@ -56,6 +73,13 @@ def process_turn(
     pack_web_evidence_fn=pack_web_evidence,
     record_web_evidence_batch_fn=(
         record_web_evidence_batch
+    ),
+    web_mode="off",
+    prepare_web_grounding_fn=(
+        prepare_web_grounding
+    ),
+    web_provider_builder_fn=(
+        _build_default_web_provider
     ),
 ):
     """
@@ -80,6 +104,18 @@ def process_turn(
     }:
         raise ValueError(
             "invalid attachment_mode"
+        )
+
+    web_mode = str(
+        web_mode
+    ).strip().lower()
+
+    if web_mode not in {
+        "off",
+        "on",
+    }:
+        raise ValueError(
+            "invalid web_mode"
         )
 
     if (
@@ -109,6 +145,14 @@ def process_turn(
         "transcription_error": None,
         "transcript_artifact_id": None,
         "transcript": None,
+        "web_mode": web_mode,
+        "web_grounding_status": (
+            "NOT_REQUESTED"
+            if web_mode == "off"
+            else "NOT_RUN"
+        ),
+        "web_grounding_error": None,
+        "web_grounding_selected_result_id": None,
         "web_evidence_status": "NOT_REQUESTED",
         "web_evidence_error": None,
         "web_evidence_refs": [],
@@ -200,8 +244,9 @@ def process_turn(
             transcription["artifact_id"]
         )
 
-    # 4. Prepare optional current-turn Web evidence
-    # only after canonical user evidence is safe.
+    # 4. Normalize optional preselected Web evidence.
+    # Existing callers may still provide an already
+    # selected evidence tuple directly.
     try:
         used_web_evidence = tuple(
             used_web_evidence or ()
@@ -214,6 +259,97 @@ def process_turn(
         result["error"] = str(exc)
         return result
 
+    # 5. Explicit Web mode performs discovery only
+    # after canonical user evidence is safe.
+    #
+    # For voice turns, model_user_content is the STT
+    # derived perception, while the canonical message
+    # remains the raw-audio marker.
+    if web_mode == "on":
+        if used_web_evidence:
+            message = (
+                "web_mode=on cannot be combined "
+                "with preselected used_web_evidence"
+            )
+
+            result["web_grounding_status"] = (
+                "WEB_GROUNDING_INPUT_CONFLICT"
+            )
+            result["web_grounding_error"] = (
+                message
+            )
+            result["web_evidence_status"] = (
+                "WEB_EVIDENCE_INPUT_CONFLICT"
+            )
+            result["error"] = message
+            return result
+
+        try:
+            grounding = (
+                prepare_web_grounding_fn(
+                    model_user_content,
+                    provider_builder=(
+                        web_provider_builder_fn
+                    ),
+                )
+            )
+
+            grounding_status = str(
+                grounding.status
+            )
+
+            grounding_selected_result_id = (
+                grounding.selected_result_id
+            )
+
+            grounding_evidence = tuple(
+                grounding.used_web_evidence
+            )
+
+        except Exception as exc:
+            result["web_grounding_status"] = (
+                "WEB_GROUNDING_FAILED"
+            )
+            result["web_grounding_error"] = str(
+                exc
+            )
+            result["web_evidence_status"] = (
+                "NOT_AVAILABLE"
+            )
+            result["error"] = str(exc)
+            return result
+
+        result["web_grounding_status"] = (
+            grounding_status
+        )
+        result[
+            "web_grounding_selected_result_id"
+        ] = grounding_selected_result_id
+
+        if (
+            grounding_status != "READY"
+            or not grounding_evidence
+        ):
+            message = (
+                "Web grounding did not produce "
+                "usable evidence: "
+                f"{grounding_status}"
+            )
+
+            result["web_grounding_error"] = (
+                message
+            )
+            result["web_evidence_status"] = (
+                "NOT_AVAILABLE"
+            )
+            result["error"] = message
+            return result
+
+        used_web_evidence = (
+            grounding_evidence
+        )
+
+    # 6. Pack optional current-turn Web evidence.
     web_evidence_content = None
 
     if used_web_evidence:
