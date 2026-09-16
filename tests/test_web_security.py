@@ -137,7 +137,7 @@ expect_error(
 
 assert MAX_REDIRECTS == 3
 assert MAX_RESPONSE_BYTES == (
-    2 * 1024 * 1024
+    8 * 1024 * 1024
 )
 assert MAX_FETCHES_PER_TURN == 4
 assert CONNECT_TIMEOUT_SECONDS == 3

@@ -865,6 +865,87 @@ expect_security_error(
 )
 
 
+
+# ==================================================
+# Large-but-bounded textual pages are accepted.
+#
+# Web v1 originally used a 2 MiB ceiling. That was
+# too small for legitimate documentation pages such
+# as the Python standard-library documentation.
+#
+# The fetch remains strictly bounded by the current
+# MAX_RESPONSE_BYTES policy.
+# ==================================================
+
+previous_web_v1_limit = (
+    2 * 1024 * 1024
+)
+
+large_but_allowed_size = (
+    previous_web_v1_limit
+    + 64 * 1024
+)
+
+assert (
+    large_but_allowed_size
+    < MAX_RESPONSE_BYTES
+)
+
+large_allowed_factory = (
+    connection_factory_for(
+        [
+            FakeResponse(
+                status=200,
+                headers={
+                    "Content-Type": (
+                        "text/html; charset=utf-8"
+                    ),
+                    "Content-Length": str(
+                        large_but_allowed_size
+                    ),
+                },
+                body=(
+                    b"A"
+                    * large_but_allowed_size
+                ),
+            ),
+        ]
+    )
+)
+
+large_allowed_result = (
+    fetch_public_page(
+        "https://example.com/large-doc",
+        resolver=resolver_for(
+            {
+                "example.com": (
+                    "1.1.1.1",
+                ),
+            }
+        ),
+        connection_factory=(
+            large_allowed_factory
+        ),
+    )
+)
+
+assert (
+    large_allowed_result["bytes_read"]
+    == large_but_allowed_size
+)
+
+assert (
+    len(
+        large_allowed_result["text"]
+    )
+    == large_but_allowed_size
+)
+
+print(
+    "WEB LARGE-BUT-BOUNDED PAGE CONTRACT OK"
+)
+
+
 print(
     "WEB PINNED-IP FETCH CONTRACT OK"
 )
