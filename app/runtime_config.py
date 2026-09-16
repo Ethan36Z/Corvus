@@ -88,3 +88,13 @@ ATTACHMENT_DEFAULT_RETENTION = _choice_env(
         "EPHEMERAL",
     },
 )
+
+
+WEB_PROVIDER = _choice_env(
+    "CORVUS_WEB_PROVIDER",
+    "DDGS",
+    {
+        "DDGS",
+        "SEARXNG",
+    },
+)

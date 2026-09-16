@@ -1,2 +1,3 @@
-# Corvus A3.4 Web extraction engine
+# Corvus A3.4 Web dependencies
 trafilatura==2.2.0
+ddgs==9.16.0

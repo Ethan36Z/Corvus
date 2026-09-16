@@ -22,6 +22,12 @@ from app.web_orchestration import (
 from app.searxng_provider import (
     SearXNGProvider,
 )
+from app.ddgs_provider import (
+    DDGSProvider,
+)
+from app.runtime_config import (
+    WEB_PROVIDER,
+)
 from memory.attachments import (
     link_attachment_to_message,
 )
@@ -46,10 +52,28 @@ VOICE_TRANSCRIPT_SYSTEM_NOTE = (
 def _build_default_web_provider(
     attempt,
 ):
-    return SearXNGProvider(
+    if WEB_PROVIDER == "SEARXNG":
+        return SearXNGProvider(
+            category=attempt.category,
+            language=attempt.language,
+            engine_bang=attempt.engine_bang,
+            time_range=attempt.time_range,
+        )
+
+    region = (
+        "cn-zh"
+        if (
+            attempt.language is not None
+            and str(
+                attempt.language
+            ).lower().startswith("zh")
+        )
+        else "us-en"
+    )
+
+    return DDGSProvider(
         category=attempt.category,
-        language=attempt.language,
-        engine_bang=attempt.engine_bang,
+        region=region,
         time_range=attempt.time_range,
     )
 
