@@ -1,0 +1,2 @@
+# Corvus A3.4 Web extraction engine
+trafilatura==2.2.0
