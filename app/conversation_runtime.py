@@ -22,6 +22,9 @@ from app.web_orchestration import (
 from app.web_query_rewrite import (
     rewrite_web_query,
 )
+from app.web_intent_gate import (
+    decide_web_intent,
+)
 from app.searxng_provider import (
     SearXNGProvider,
 )
@@ -111,6 +114,9 @@ def process_turn(
     web_query_rewrite_fn=(
         rewrite_web_query
     ),
+    web_intent_decide_fn=(
+        decide_web_intent
+    ),
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -143,6 +149,7 @@ def process_turn(
     if web_mode not in {
         "off",
         "on",
+        "auto",
     }:
         raise ValueError(
             "invalid web_mode"
@@ -176,6 +183,26 @@ def process_turn(
         "transcript_artifact_id": None,
         "transcript": None,
         "web_mode": web_mode,
+        "web_intent_decision": (
+            "WEB"
+            if web_mode == "on"
+            else (
+                "NO_WEB"
+                if web_mode == "off"
+                else "NOT_RUN"
+            )
+        ),
+        "web_intent_source": (
+            "FORCED_ON"
+            if web_mode == "on"
+            else (
+                "FORCED_OFF"
+                if web_mode == "off"
+                else "NOT_RUN"
+            )
+        ),
+        "web_intent_signal": None,
+        "web_intent_error": None,
         "web_query_rewrite_status": (
             "NOT_REQUESTED"
             if web_mode == "off"
@@ -281,7 +308,94 @@ def process_turn(
             transcription["artifact_id"]
         )
 
-    # 4. Normalize optional preselected Web evidence.
+    # 4. Resolve Web intent exactly once for this turn.
+    #
+    # Forced modes bypass the classifier entirely.
+    # Auto mode uses deterministic high-confidence
+    # signals first and invokes the model only when
+    # the request remains ambiguous.
+    if web_mode == "on":
+        web_should_ground = True
+
+    elif web_mode == "off":
+        web_should_ground = False
+
+    else:
+        try:
+            web_intent = (
+                web_intent_decide_fn(
+                    model_user_content
+                )
+            )
+
+            decision = str(
+                web_intent.decision
+            ).strip().upper()
+
+            source = str(
+                web_intent.source
+            ).strip()
+
+            signal = getattr(
+                web_intent,
+                "signal",
+                None,
+            )
+
+            intent_error = getattr(
+                web_intent,
+                "error",
+                None,
+            )
+
+            if decision not in {
+                "WEB",
+                "NO_WEB",
+            }:
+                raise ValueError(
+                    "invalid Web intent decision"
+                )
+
+        except Exception as exc:
+            decision = "NO_WEB"
+            source = "DECISION_FAILED"
+            signal = None
+            intent_error = str(exc)
+
+        result[
+            "web_intent_decision"
+        ] = decision
+
+        result[
+            "web_intent_source"
+        ] = source
+
+        result[
+            "web_intent_signal"
+        ] = signal
+
+        result[
+            "web_intent_error"
+        ] = intent_error
+
+        web_should_ground = (
+            decision == "WEB"
+        )
+
+        if not web_should_ground:
+            result[
+                "web_query_rewrite_status"
+            ] = "NOT_REQUESTED"
+
+            result[
+                "web_grounding_status"
+            ] = "NOT_REQUESTED"
+
+            result[
+                "web_evidence_status"
+            ] = "NOT_REQUESTED"
+
+    # 5. Normalize optional preselected Web evidence.
     # Existing callers may still provide an already
     # selected evidence tuple directly.
     try:
@@ -302,10 +416,10 @@ def process_turn(
     # For voice turns, model_user_content is the STT
     # derived perception, while the canonical message
     # remains the raw-audio marker.
-    if web_mode == "on":
+    if web_should_ground:
         if used_web_evidence:
             message = (
-                "web_mode=on cannot be combined "
+                "Web grounding mode cannot be combined "
                 "with preselected used_web_evidence"
             )
 

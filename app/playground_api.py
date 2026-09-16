@@ -445,7 +445,7 @@ class ChatRequest(BaseModel):
     message: str = ""
     attachment_id: str | None = None
     attachment_mode: str = "vision"
-    web_mode: str = "off"
+    web_mode: str = "auto"
 
 
 def load_messages_by_ids(message_ids):
@@ -572,6 +572,20 @@ def build_chat_response(
             "web_mode",
             "off",
         ),
+        "web_intent_decision": result.get(
+            "web_intent_decision",
+            "NOT_RUN",
+        ),
+        "web_intent_source": result.get(
+            "web_intent_source",
+            "NOT_RUN",
+        ),
+        "web_intent_signal": result.get(
+            "web_intent_signal"
+        ),
+        "web_intent_error": result.get(
+            "web_intent_error"
+        ),
         "web_grounding_status": result.get(
             "web_grounding_status",
             "NOT_REQUESTED",
@@ -668,6 +682,10 @@ def build_hard_failure_response(
         "transcript_artifact_id": None,
         "transcript": None,
         "web_mode": "off",
+        "web_intent_decision": "NOT_RUN",
+        "web_intent_source": "NOT_RUN",
+        "web_intent_signal": None,
+        "web_intent_error": None,
         "web_grounding_status": "NOT_RUN",
         "web_grounding_selected_result_id": None,
         "web_evidence_status": "NOT_RUN",
@@ -737,12 +755,13 @@ def post_chat(request: ChatRequest):
     if web_mode not in {
         "off",
         "on",
+        "auto",
     }:
         return JSONResponse(
             status_code=400,
             content=build_hard_failure_response(
                 session_id,
-                "web_mode must be off or on",
+                "web_mode must be off, on, or auto",
             ),
         )
 

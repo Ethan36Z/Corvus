@@ -182,7 +182,7 @@ try:
 
 
     #
-    # Default request behavior remains Web-off.
+    # Default product-facing request behavior is Web-auto.
     #
     captured = {}
 
@@ -215,7 +215,7 @@ try:
     off_response = api.post_chat(
         api.ChatRequest(
             session_id=(
-                "web-api-default-off"
+                "web-api-default-auto"
             ),
             message="Hello Corvus",
         )
@@ -223,12 +223,12 @@ try:
 
     assert (
         captured["web_mode"]
-        == "off"
+        == "auto"
     )
 
     assert (
         off_response["web_mode"]
-        == "off"
+        == "auto"
     )
 
     assert (
@@ -239,7 +239,7 @@ try:
     )
 
     print(
-        "WEB API DEFAULT-OFF BACKWARD-COMPATIBILITY CONTRACT OK"
+        "WEB API DEFAULT-AUTO PRODUCT CONTRACT OK"
     )
 
 
@@ -268,7 +268,7 @@ try:
                     "web-api-invalid"
                 ),
                 message="Hello",
-                web_mode="auto",
+                web_mode="invalid",
             )
         )
     )
