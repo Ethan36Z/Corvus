@@ -174,8 +174,20 @@ def _compose_working_messages(
     historical_evidence,
     recent_messages,
     current_user_content,
+    web_evidence_content=None,
 ):
     system_content = system_prompt
+
+    if web_evidence_content is None:
+        web_evidence_content = ""
+
+    if not isinstance(
+        web_evidence_content,
+        str,
+    ):
+        raise ValueError(
+            "web_evidence_content must be text"
+        )
 
     if historical_evidence:
         historical_message = _historical_system_message(
@@ -185,6 +197,12 @@ def _compose_working_messages(
         system_content = (
             f"{system_prompt}\n\n"
             f"{historical_message['content']}"
+        )
+
+    if web_evidence_content:
+        system_content = (
+            f"{system_content}\n\n"
+            f"{web_evidence_content}"
         )
 
     messages = [
@@ -216,6 +234,7 @@ def build_working_context(
     current_user_content,
     system_prompt,
     count_tokens,
+    web_evidence_content=None,
     recent_token_budget=4096,
     historical_token_budget=2048,
     input_token_budget=7168,
@@ -224,9 +243,20 @@ def build_working_context(
     search_fn=hybrid_search,
 ):
     """
-    Combine bounded recent conversation context and A0 historical evidence
-    into the final token-bounded model input for one turn.
+    Combine bounded recent conversation context, historical evidence,
+    and optional current-turn Web evidence into one final token-bounded
+    model input.
     """
+    if web_evidence_content is None:
+        web_evidence_content = ""
+    elif not isinstance(
+        web_evidence_content,
+        str,
+    ):
+        raise ValueError(
+            "web_evidence_content must be text"
+        )
+
     recent_messages = build_recent_context(
         session_id=session_id,
         before_message_id=current_user_message_id,
@@ -266,6 +296,7 @@ def build_working_context(
             historical_evidence=[],
             recent_messages=[],
             current_user_content=current_user_content,
+            web_evidence_content=web_evidence_content,
         )
     )
 
@@ -281,6 +312,7 @@ def build_working_context(
                 historical_evidence=candidate,
                 recent_messages=[],
                 current_user_content=current_user_content,
+                web_evidence_content=web_evidence_content,
             )
         )
 
@@ -299,6 +331,7 @@ def build_working_context(
         historical_evidence=historical_evidence,
         recent_messages=recent_messages,
         current_user_content=current_user_content,
+        web_evidence_content=web_evidence_content,
     )
 
     input_tokens = count_tokens(messages)
@@ -314,6 +347,7 @@ def build_working_context(
             historical_evidence=historical_evidence,
             recent_messages=recent_messages,
             current_user_content=current_user_content,
+            web_evidence_content=web_evidence_content,
         )
 
         input_tokens = count_tokens(messages)
@@ -324,19 +358,31 @@ def build_working_context(
     ):
         recent_messages.pop(0)
 
+        while (
+            recent_messages
+            and recent_messages[0]["role"] != "user"
+        ):
+            recent_messages.pop(0)
+
         messages = _compose_working_messages(
             system_prompt=system_prompt,
             historical_evidence=historical_evidence,
             recent_messages=recent_messages,
             current_user_content=current_user_content,
+            web_evidence_content=web_evidence_content,
         )
 
         input_tokens = count_tokens(messages)
 
     if input_tokens > input_token_budget:
+        required_context = (
+            "system prompt, Web evidence, and current user message"
+            if web_evidence_content
+            else "system prompt and current user message"
+        )
+
         raise ValueError(
-            "required system prompt and current user message exceed "
-            "input token budget"
+            f"required {required_context} exceed input token budget"
         )
 
     return {
@@ -352,6 +398,12 @@ def build_working_context(
             for row in historical_evidence
         ],
         "input_tokens": input_tokens,
+        "web_evidence_included": bool(
+            web_evidence_content
+        ),
+        "web_evidence_prompt_chars": len(
+            web_evidence_content
+        ),
         "retrieval_status": retrieval_status,
         "retrieval_error": retrieval_error,
     }
