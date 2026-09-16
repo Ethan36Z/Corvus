@@ -44,6 +44,272 @@ def _optional_text(
     return value or None
 
 
+def _normalize_assistant_message_id(
+    assistant_message_id,
+):
+    try:
+        assistant_message_id = int(
+            assistant_message_id
+        )
+    except (
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise ValueError(
+            "assistant_message_id "
+            "must be an integer"
+        ) from exc
+
+    return assistant_message_id
+
+
+def _prepare_web_evidence_batch_item(
+    item,
+    expected_ordinal,
+):
+    if not isinstance(
+        item,
+        dict,
+    ):
+        raise ValueError(
+            "web evidence item must be a dict"
+        )
+
+    if "ordinal" not in item:
+        raise ValueError(
+            "web evidence item requires ordinal"
+        )
+
+    try:
+        ordinal = int(
+            item["ordinal"]
+        )
+    except (
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise ValueError(
+            "ordinal must be an integer"
+        ) from exc
+
+    if ordinal < 0:
+        raise ValueError(
+            "ordinal must be >= 0"
+        )
+
+    if ordinal != expected_ordinal:
+        raise ValueError(
+            "web evidence ordinals must be "
+            "contiguous and zero-based"
+        )
+
+    if "source_url" not in item:
+        raise ValueError(
+            "web evidence item requires source_url"
+        )
+
+    if "excerpt" not in item:
+        raise ValueError(
+            "web evidence item requires excerpt"
+        )
+
+    validated_url = (
+        validate_public_url(
+            item["source_url"]
+        )["url"]
+    )
+
+    excerpt = _required_text(
+        item["excerpt"],
+        "excerpt",
+    )
+
+    source_title = _optional_text(
+        item.get(
+            "source_title"
+        )
+    )
+
+    excerpt_sha256 = (
+        hashlib.sha256(
+            excerpt.encode("utf-8")
+        )
+        .hexdigest()
+    )
+
+    evidence_id = item.get(
+        "evidence_id"
+    )
+
+    if evidence_id is None:
+        evidence_id = (
+            _new_evidence_id()
+        )
+    else:
+        evidence_id = (
+            _required_text(
+                evidence_id,
+                "evidence_id",
+            )
+        )
+
+    return {
+        "evidence_id": evidence_id,
+        "ordinal": ordinal,
+        "source_url": validated_url,
+        "source_title": source_title,
+        "excerpt": excerpt,
+        "excerpt_sha256": (
+            excerpt_sha256
+        ),
+    }
+
+
+def record_web_evidence_batch(
+    assistant_message_id,
+    evidence_items,
+):
+    """
+    Persist one complete Used Web Evidence set atomically.
+
+    All item normalization and public-URL validation happen before
+    database writes begin.
+
+    Once the transaction starts, every evidence row is committed
+    together or the complete batch is rolled back.
+    """
+    assistant_message_id = (
+        _normalize_assistant_message_id(
+            assistant_message_id
+        )
+    )
+
+    try:
+        evidence_items = tuple(
+            evidence_items
+        )
+    except TypeError as exc:
+        raise ValueError(
+            "evidence_items must be iterable"
+        ) from exc
+
+    if not evidence_items:
+        return []
+
+    prepared = [
+        _prepare_web_evidence_batch_item(
+            item,
+            expected_ordinal=ordinal,
+        )
+        for ordinal, item in enumerate(
+            evidence_items
+        )
+    ]
+
+    evidence_ids = [
+        item["evidence_id"]
+        for item in prepared
+    ]
+
+    if len(
+        set(evidence_ids)
+    ) != len(evidence_ids):
+        raise ValueError(
+            "duplicate evidence_id in batch"
+        )
+
+    conn = connect()
+
+    try:
+        conn.execute(
+            "BEGIN"
+        )
+
+        message = conn.execute(
+            """
+            SELECT role
+            FROM messages
+            WHERE id = ?
+            """,
+            (
+                assistant_message_id,
+            ),
+        ).fetchone()
+
+        if message is None:
+            raise ValueError(
+                "assistant message "
+                "does not exist"
+            )
+
+        if message[0] != "assistant":
+            raise ValueError(
+                "web evidence may only "
+                "attach to an assistant message"
+            )
+
+        for item in prepared:
+            conn.execute(
+                """
+                INSERT INTO web_evidence (
+                    id,
+                    assistant_message_id,
+                    ordinal,
+                    source_url,
+                    source_title,
+                    excerpt,
+                    excerpt_sha256
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item["evidence_id"],
+                    assistant_message_id,
+                    item["ordinal"],
+                    item["source_url"],
+                    item["source_title"],
+                    item["excerpt"],
+                    item["excerpt_sha256"],
+                ),
+            )
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+    return [
+        {
+            "evidence_id": item[
+                "evidence_id"
+            ],
+            "assistant_message_id": (
+                assistant_message_id
+            ),
+            "ordinal": item[
+                "ordinal"
+            ],
+            "source_url": item[
+                "source_url"
+            ],
+            "source_title": item[
+                "source_title"
+            ],
+            "excerpt": item[
+                "excerpt"
+            ],
+            "excerpt_sha256": item[
+                "excerpt_sha256"
+            ],
+        }
+        for item in prepared
+    ]
+
+
 def record_web_evidence(
     assistant_message_id,
     *,
