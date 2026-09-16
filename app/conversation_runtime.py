@@ -12,6 +12,10 @@ from app.transcription import (
     TranscriptionError,
     transcribe_attachment,
 )
+from app.web_evidence_prompt import (
+    WebEvidencePromptError,
+    pack_web_evidence,
+)
 from memory.attachments import (
     link_attachment_to_message,
 )
@@ -45,6 +49,8 @@ def process_turn(
     model_user_content=None,
     attachment_mode="vision",
     transcribe_attachment_fn=transcribe_attachment,
+    used_web_evidence=None,
+    pack_web_evidence_fn=pack_web_evidence,
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -97,6 +103,10 @@ def process_turn(
         "transcription_error": None,
         "transcript_artifact_id": None,
         "transcript": None,
+        "web_evidence_status": "NOT_REQUESTED",
+        "web_evidence_error": None,
+        "web_evidence_refs": [],
+        "web_evidence_prompt_chars": 0,
         "recent_message_ids": [],
         "historical_message_ids": [],
         "input_tokens": None,
@@ -183,7 +193,63 @@ def process_turn(
             transcription["artifact_id"]
         )
 
-    # 4. Build this turn's temporary Working Context.
+    # 4. Prepare optional current-turn Web evidence
+    # only after canonical user evidence is safe.
+    try:
+        used_web_evidence = tuple(
+            used_web_evidence or ()
+        )
+    except TypeError as exc:
+        result["web_evidence_status"] = (
+            "WEB_EVIDENCE_INPUT_INVALID"
+        )
+        result["web_evidence_error"] = str(exc)
+        result["error"] = str(exc)
+        return result
+
+    web_evidence_content = None
+
+    if used_web_evidence:
+        try:
+            packed_web_evidence = (
+                pack_web_evidence_fn(
+                    used_web_evidence
+                )
+            )
+        except WebEvidencePromptError as exc:
+            result["web_evidence_status"] = (
+                exc.code
+            )
+            result["web_evidence_error"] = str(
+                exc
+            )
+            result["error"] = str(exc)
+            return result
+        except Exception as exc:
+            result["web_evidence_status"] = (
+                "WEB_EVIDENCE_PACKING_FAILED"
+            )
+            result["web_evidence_error"] = str(
+                exc
+            )
+            result["error"] = str(exc)
+            return result
+
+        web_evidence_content = (
+            packed_web_evidence.content
+        )
+
+        result["web_evidence_status"] = (
+            "PREPARED"
+        )
+        result["web_evidence_refs"] = list(
+            packed_web_evidence.evidence_refs
+        )
+        result[
+            "web_evidence_prompt_chars"
+        ] = packed_web_evidence.packed_chars
+
+    # 5. Build this turn's temporary Working Context.
     try:
         system_prompt = system_prompt_fn()
 
@@ -193,12 +259,25 @@ def process_turn(
                 f"{VOICE_TRANSCRIPT_SYSTEM_NOTE}"
             )
 
+        context_kwargs = {
+            "session_id": session_id,
+            "current_user_message_id": (
+                user_message_id
+            ),
+            "current_user_content": (
+                model_user_content
+            ),
+            "system_prompt": system_prompt,
+            "count_tokens": count_tokens_fn,
+        }
+
+        if web_evidence_content:
+            context_kwargs[
+                "web_evidence_content"
+            ] = web_evidence_content
+
         context = build_context_fn(
-            session_id=session_id,
-            current_user_message_id=user_message_id,
-            current_user_content=model_user_content,
-            system_prompt=system_prompt,
-            count_tokens=count_tokens_fn,
+            **context_kwargs
         )
     except ModelClientError as exc:
         result["model_status"] = exc.code
@@ -289,6 +368,9 @@ def process_turn(
 
     result["model_status"] = "OK"
     result["reply"] = reply
+
+    if used_web_evidence:
+        result["web_evidence_status"] = "USED"
 
     if (
         attachment_id is not None
