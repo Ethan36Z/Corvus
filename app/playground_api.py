@@ -441,6 +441,7 @@ class ChatRequest(BaseModel):
     message: str = ""
     attachment_id: str | None = None
     attachment_mode: str = "vision"
+    web_mode: str = "off"
 
 
 def load_messages_by_ids(message_ids):
@@ -563,6 +564,33 @@ def build_chat_response(
         "transcript": result.get(
             "transcript"
         ),
+        "web_mode": result.get(
+            "web_mode",
+            "off",
+        ),
+        "web_grounding_status": result.get(
+            "web_grounding_status",
+            "NOT_REQUESTED",
+        ),
+        "web_grounding_selected_result_id": (
+            result.get(
+                "web_grounding_selected_result_id"
+            )
+        ),
+        "web_evidence_status": result.get(
+            "web_evidence_status",
+            "NOT_REQUESTED",
+        ),
+        "web_evidence_refs": result.get(
+            "web_evidence_refs",
+            [],
+        ),
+        "web_evidence_persisted_count": (
+            result.get(
+                "web_evidence_persisted_count",
+                0,
+            )
+        ),
         "recent_message_ids": result[
             "recent_message_ids"
         ],
@@ -577,6 +605,14 @@ def build_chat_response(
             ),
             "transcription": result.get(
                 "transcription_status",
+                "NOT_REQUESTED",
+            ),
+            "web_grounding": result.get(
+                "web_grounding_status",
+                "NOT_REQUESTED",
+            ),
+            "web_evidence": result.get(
+                "web_evidence_status",
                 "NOT_REQUESTED",
             ),
             "retrieval": result[
@@ -603,6 +639,12 @@ def build_chat_response(
         "transcription_error": result.get(
             "transcription_error"
         ),
+        "web_grounding_error": result.get(
+            "web_grounding_error"
+        ),
+        "web_evidence_error": result.get(
+            "web_evidence_error"
+        ),
         "error": result["error"],
     }
 
@@ -621,6 +663,12 @@ def build_hard_failure_response(
         "transcription_status": "NOT_RUN",
         "transcript_artifact_id": None,
         "transcript": None,
+        "web_mode": "off",
+        "web_grounding_status": "NOT_RUN",
+        "web_grounding_selected_result_id": None,
+        "web_evidence_status": "NOT_RUN",
+        "web_evidence_refs": [],
+        "web_evidence_persisted_count": 0,
         "recent_message_ids": [],
         "historical_message_ids": [],
         "retrieved_memories": [],
@@ -629,6 +677,8 @@ def build_hard_failure_response(
             "overall": "FAILED",
             "attachment": "NOT_RUN",
             "transcription": "NOT_RUN",
+            "web_grounding": "NOT_RUN",
+            "web_evidence": "NOT_RUN",
             "retrieval": "NOT_RUN",
             "model": "NOT_CALLED",
             "persistence": "USER_PERSISTENCE_FAILED",
@@ -637,6 +687,8 @@ def build_hard_failure_response(
         "retrieval_error": None,
         "attachment_error": None,
         "transcription_error": None,
+        "web_grounding_error": None,
+        "web_evidence_error": None,
         "error": str(error),
     }
 
@@ -669,6 +721,24 @@ def post_chat(request: ChatRequest):
             content=build_hard_failure_response(
                 session_id,
                 "attachment_mode must be vision or voice",
+            ),
+        )
+
+    web_mode = (
+        request.web_mode
+        .strip()
+        .lower()
+    )
+
+    if web_mode not in {
+        "off",
+        "on",
+    }:
+        return JSONResponse(
+            status_code=400,
+            content=build_hard_failure_response(
+                session_id,
+                "web_mode must be off or on",
             ),
         )
 
@@ -719,6 +789,7 @@ def post_chat(request: ChatRequest):
             user_content=user_content,
             attachment_id=attachment_id,
             attachment_mode=attachment_mode,
+            web_mode=web_mode,
         )
     except Exception as exc:
         return JSONResponse(
