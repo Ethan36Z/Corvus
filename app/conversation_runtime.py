@@ -19,6 +19,9 @@ from app.web_evidence_prompt import (
 from app.web_orchestration import (
     prepare_web_grounding,
 )
+from app.web_query_rewrite import (
+    rewrite_web_query,
+)
 from app.searxng_provider import (
     SearXNGProvider,
 )
@@ -105,6 +108,9 @@ def process_turn(
     web_provider_builder_fn=(
         _build_default_web_provider
     ),
+    web_query_rewrite_fn=(
+        rewrite_web_query
+    ),
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -170,6 +176,13 @@ def process_turn(
         "transcript_artifact_id": None,
         "transcript": None,
         "web_mode": web_mode,
+        "web_query_rewrite_status": (
+            "NOT_REQUESTED"
+            if web_mode == "off"
+            else "NOT_RUN"
+        ),
+        "web_query_rewrite_error": None,
+        "web_search_query": None,
         "web_grounding_status": (
             "NOT_REQUESTED"
             if web_mode == "off"
@@ -308,10 +321,63 @@ def process_turn(
             result["error"] = message
             return result
 
+        search_query = model_user_content
+
+        try:
+            rewritten_query = (
+                web_query_rewrite_fn(
+                    model_user_content
+                )
+            )
+
+            if not isinstance(
+                rewritten_query,
+                str,
+            ):
+                raise ValueError(
+                    "Web query rewrite must "
+                    "return text"
+                )
+
+            rewritten_query = " ".join(
+                rewritten_query.split()
+            )
+
+            if not rewritten_query:
+                raise ValueError(
+                    "Web query rewrite must "
+                    "not be empty"
+                )
+
+            search_query = (
+                rewritten_query
+            )
+
+            result[
+                "web_query_rewrite_status"
+            ] = "OK"
+
+        except Exception as exc:
+            result[
+                "web_query_rewrite_status"
+            ] = "FALLBACK_ORIGINAL"
+
+            result[
+                "web_query_rewrite_error"
+            ] = str(exc)
+
+            search_query = (
+                model_user_content
+            )
+
+        result["web_search_query"] = (
+            search_query
+        )
+
         try:
             grounding = (
                 prepare_web_grounding_fn(
-                    model_user_content,
+                    search_query,
                     provider_builder=(
                         web_provider_builder_fn
                     ),

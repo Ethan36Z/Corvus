@@ -76,6 +76,13 @@ def fake_provider_builder(
     )
 
 
+
+def identity_rewrite(
+    query,
+):
+    return query
+
+
 def prepare_grounding(
     query,
     *,
@@ -264,6 +271,9 @@ result = process_turn(
     ),
     web_provider_builder_fn=(
         fake_provider_builder
+    ),
+    web_query_rewrite_fn=(
+        identity_rewrite
     ),
 )
 
@@ -517,6 +527,9 @@ failure_result = process_turn(
     web_provider_builder_fn=(
         fake_provider_builder
     ),
+    web_query_rewrite_fn=(
+        identity_rewrite
+    ),
 )
 
 assert (
@@ -656,6 +669,9 @@ no_evidence_result = process_turn(
     ),
     web_provider_builder_fn=(
         fake_provider_builder
+    ),
+    web_query_rewrite_fn=(
+        identity_rewrite
     ),
 )
 
