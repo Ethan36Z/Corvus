@@ -20,6 +20,9 @@ from memory.attachments import (
     link_attachment_to_message,
 )
 from memory.dense_index import sync_dense_message_ids
+from memory.web_evidence import (
+    record_web_evidence_batch,
+)
 from memory.store import add_message
 from personality.runtime import compile_personality_system_prompt
 
@@ -51,6 +54,9 @@ def process_turn(
     transcribe_attachment_fn=transcribe_attachment,
     used_web_evidence=None,
     pack_web_evidence_fn=pack_web_evidence,
+    record_web_evidence_batch_fn=(
+        record_web_evidence_batch
+    ),
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -107,6 +113,7 @@ def process_turn(
         "web_evidence_error": None,
         "web_evidence_refs": [],
         "web_evidence_prompt_chars": 0,
+        "web_evidence_persisted_count": 0,
         "recent_message_ids": [],
         "historical_message_ids": [],
         "input_tokens": None,
@@ -396,7 +403,54 @@ def process_turn(
         assistant_message_id
     )
 
-    # 7. Dense state is derived and happens last.
+    # 7. Persist exactly the same Used Web Evidence
+    # set that was supplied to the successful model
+    # call. Assistant canonical evidence remains
+    # committed if provenance persistence degrades.
+    if used_web_evidence:
+        try:
+            evidence_items = [
+                {
+                    "ordinal": item.ordinal,
+                    "source_url": (
+                        item.source_url
+                    ),
+                    "source_title": (
+                        item.source_title
+                    ),
+                    "excerpt": item.excerpt,
+                }
+                for item in used_web_evidence
+            ]
+
+            persisted_web_evidence = (
+                record_web_evidence_batch_fn(
+                    assistant_message_id,
+                    evidence_items,
+                )
+            )
+        except Exception as exc:
+            result["web_evidence_status"] = (
+                "USED_PERSISTENCE_FAILED"
+            )
+            result["web_evidence_error"] = str(
+                exc
+            )
+            result["persistence_status"] = (
+                "WEB_EVIDENCE_PERSISTENCE_DEGRADED"
+            )
+            result["error"] = str(exc)
+        else:
+            result["web_evidence_status"] = (
+                "PERSISTED"
+            )
+            result[
+                "web_evidence_persisted_count"
+            ] = len(
+                persisted_web_evidence
+            )
+
+    # 8. Dense state is derived and happens last.
     try:
         dense_sync_fn(
             [

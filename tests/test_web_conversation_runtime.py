@@ -124,6 +124,63 @@ def generate(
     )
 
 
+def persist_web_evidence(
+    assistant_message_id,
+    evidence_items,
+):
+    evidence_items = tuple(
+        evidence_items
+    )
+
+    events.append(
+        (
+            "persist_web",
+            assistant_message_id,
+            evidence_items,
+        )
+    )
+
+    assert len(
+        evidence_items
+    ) == 1
+
+    item = evidence_items[0]
+
+    expected = make_evidence()
+
+    assert (
+        item["ordinal"]
+        == expected.ordinal
+    )
+
+    assert (
+        item["source_url"]
+        == expected.source_url
+    )
+
+    assert (
+        item["source_title"]
+        == expected.source_title
+    )
+
+    assert (
+        item["excerpt"]
+        == expected.excerpt
+    )
+
+    return [
+        {
+            "evidence_id": (
+                "webev_runtime_1"
+            ),
+            "assistant_message_id": (
+                assistant_message_id
+            ),
+            **item,
+        }
+    ]
+
+
 def dense_sync(
     message_ids,
 ):
@@ -149,6 +206,9 @@ result = process_turn(
     used_web_evidence=(
         make_evidence(),
     ),
+    record_web_evidence_batch_fn=(
+        persist_web_evidence
+    ),
 )
 
 assert (
@@ -168,7 +228,14 @@ assert (
 
 assert (
     result["web_evidence_status"]
-    == "USED"
+    == "PERSISTED"
+)
+
+assert (
+    result[
+        "web_evidence_persisted_count"
+    ]
+    == 1
 )
 
 assert (
@@ -208,7 +275,24 @@ assert (
 )
 
 assert (
-    events[4]
+    events[4][0]
+    == "persist_web"
+)
+
+assert (
+    events[4][1]
+    == 102
+)
+
+assert (
+    events[4][2][0][
+        "excerpt"
+    ]
+    == make_evidence().excerpt
+)
+
+assert (
+    events[5]
     == (
         "dense",
         (
@@ -226,6 +310,14 @@ print(
 )
 print(
     "WEB RUNTIME EVIDENCE-REF CONTRACT OK"
+)
+print(
+    "WEB RUNTIME EXACT-EVIDENCE "
+    "PERSISTENCE CONTRACT OK"
+)
+print(
+    "WEB RUNTIME ASSISTANT-BEFORE-PROVENANCE "
+    "ORDER CONTRACT OK"
 )
 
 
@@ -406,6 +498,245 @@ print(
     "WEB PACK FAILURE PRESERVES USER EVIDENCE OK"
 )
 
+
+persistence_failure_events = []
+
+
+def persistence_failure_add_message(
+    session_id,
+    role,
+    content,
+):
+    persistence_failure_events.append(
+        (
+            "add",
+            role,
+        )
+    )
+
+    if role == "user":
+        return 401
+
+    return 402
+
+
+def persistence_failure_context(
+    **kwargs,
+):
+    persistence_failure_events.append(
+        (
+            "context",
+        )
+    )
+
+    return {
+        "messages": [
+            {
+                "role": "system",
+                "content": kwargs[
+                    "web_evidence_content"
+                ],
+            },
+            {
+                "role": "user",
+                "content": kwargs[
+                    "current_user_content"
+                ],
+            },
+        ],
+        "recent_message_ids": [],
+        "historical_message_ids": [],
+        "input_tokens": 20,
+        "retrieval_status": "OK",
+        "retrieval_error": None,
+    }
+
+
+def persistence_failure_generate(
+    messages,
+):
+    persistence_failure_events.append(
+        (
+            "generate",
+        )
+    )
+
+    assert (
+        "SOURCE [web_1]"
+        in messages[0]["content"]
+    )
+
+    return (
+        "Grounded reply [web_1]"
+    )
+
+
+def persistence_failure_store(
+    assistant_message_id,
+    evidence_items,
+):
+    evidence_items = tuple(
+        evidence_items
+    )
+
+    persistence_failure_events.append(
+        (
+            "persist_web",
+            assistant_message_id,
+            len(evidence_items),
+        )
+    )
+
+    assert assistant_message_id == 402
+    assert len(evidence_items) == 1
+
+    raise RuntimeError(
+        "synthetic Web evidence "
+        "persistence failure"
+    )
+
+
+def persistence_failure_dense(
+    message_ids,
+):
+    persistence_failure_events.append(
+        (
+            "dense",
+            tuple(message_ids),
+        )
+    )
+
+
+persistence_failure_result = process_turn(
+    session_id=(
+        "session_persistence_failure"
+    ),
+    user_content=(
+        "Use Web evidence"
+    ),
+    add_message_fn=(
+        persistence_failure_add_message
+    ),
+    build_context_fn=(
+        persistence_failure_context
+    ),
+    count_tokens_fn=lambda messages: 0,
+    generate_fn=(
+        persistence_failure_generate
+    ),
+    dense_sync_fn=(
+        persistence_failure_dense
+    ),
+    system_prompt_fn=lambda: "SYS",
+    used_web_evidence=(
+        make_evidence(),
+    ),
+    record_web_evidence_batch_fn=(
+        persistence_failure_store
+    ),
+)
+
+assert (
+    persistence_failure_result[
+        "user_message_id"
+    ]
+    == 401
+)
+
+assert (
+    persistence_failure_result[
+        "assistant_message_id"
+    ]
+    == 402
+)
+
+assert (
+    persistence_failure_result[
+        "model_status"
+    ]
+    == "OK"
+)
+
+assert (
+    persistence_failure_result[
+        "web_evidence_status"
+    ]
+    == "USED_PERSISTENCE_FAILED"
+)
+
+assert (
+    persistence_failure_result[
+        "web_evidence_persisted_count"
+    ]
+    == 0
+)
+
+assert (
+    persistence_failure_result[
+        "persistence_status"
+    ]
+    == (
+        "WEB_EVIDENCE_PERSISTENCE_DEGRADED"
+    )
+)
+
+assert (
+    "synthetic Web evidence persistence failure"
+    in persistence_failure_result[
+        "web_evidence_error"
+    ]
+)
+
+assert (
+    persistence_failure_result[
+        "dense_status"
+    ]
+    == "OK"
+)
+
+assert persistence_failure_events == [
+    (
+        "add",
+        "user",
+    ),
+    (
+        "context",
+    ),
+    (
+        "generate",
+    ),
+    (
+        "add",
+        "assistant",
+    ),
+    (
+        "persist_web",
+        402,
+        1,
+    ),
+    (
+        "dense",
+        (
+            401,
+            402,
+        ),
+    ),
+]
+
+print(
+    "WEB PERSISTENCE FAILURE "
+    "PRESERVES ASSISTANT EVIDENCE OK"
+)
+
+print(
+    "WEB PERSISTENCE FAILURE "
+    "CONTINUES DENSE SYNC OK"
+)
+
 print(
     "A3_4C9D1_RUNTIME_WEB_CARRIER=PASS"
+)
+
+print(
+    "A3_4C9D2B_RUNTIME_WEB_EVIDENCE_PERSISTENCE=PASS"
 )
