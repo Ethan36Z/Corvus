@@ -18,7 +18,9 @@ from app.model_client import (
     ModelClientError,
     check_model_health,
 )
-from app.runtime_lifecycle import recover_dense_tail
+from app.runtime_lifecycle import (
+    prepare_runtime_startup,
+)
 from app.tts import TTSError, synthesize_speech
 from memory.store import connect
 from memory.attachments import (
@@ -30,7 +32,9 @@ from memory.attachments import (
 
 @asynccontextmanager
 async def lifespan(app):
-    app.state.startup_recovery = recover_dense_tail()
+    app.state.startup_recovery = (
+        prepare_runtime_startup()
+    )
     yield
 
 

@@ -3,6 +3,7 @@ from app.runtime_config import (
     RECOVERY_MAX_BATCHES,
 )
 from memory.dense_index import sync_dense_tail_once
+from memory.store import init_db
 
 
 def recover_dense_tail(
@@ -58,3 +59,23 @@ def recover_dense_tail(
         "progress_after": progress_after,
         "error": None,
     }
+
+
+
+def prepare_runtime_startup(
+    schema_ensure_fn=init_db,
+    recovery_fn=recover_dense_tail,
+):
+    """
+    Prepare canonical and derived runtime state.
+
+    Canonical SQLite schema must be ensured before
+    any derived dense recovery runs.
+
+    Schema failure is fatal to startup. Dense recovery
+    retains its existing degraded / bounded semantics.
+    """
+
+    schema_ensure_fn()
+
+    return recovery_fn()
