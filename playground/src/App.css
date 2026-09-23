@@ -3248,3 +3248,269 @@
     animation: none;
   }
 }
+
+/* ===== Post-Web UI polish: stable history + actions + mic geometry ===== */
+
+/*
+ * Session loading surface:
+ * hide long-thread mount/position work from the user.
+ */
+.conversation-loading {
+  width: 100%;
+  min-height: 100%;
+
+  display: grid;
+  place-items: center;
+
+  color: var(--muted);
+}
+
+.conversation-loading-mark {
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid var(--border);
+  border-radius: 50%;
+
+  color: var(--muted);
+  background: var(--surface);
+
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+
+  animation:
+    conversation-loading-pulse
+    900ms
+    ease-in-out
+    infinite
+    alternate;
+}
+
+@keyframes conversation-loading-pulse {
+  from {
+    opacity: .38;
+    transform: scale(.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+/*
+ * Floating jump-to-latest control.
+ */
+.scroll-to-bottom-button {
+  position: absolute;
+
+  left: 50%;
+  bottom: 104px;
+
+  z-index: 14;
+
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 50%;
+
+  color: var(--text);
+  background: var(--surface);
+
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, .12);
+
+  cursor: pointer;
+
+  transform: translateX(-50%);
+
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease,
+    opacity 140ms ease;
+}
+
+.scroll-to-bottom-button:hover {
+  background: var(--surface-soft);
+  transform:
+    translateX(-50%)
+    translateY(-1px);
+}
+
+.scroll-to-bottom-button:active {
+  transform:
+    translateX(-50%)
+    scale(.94);
+}
+
+.scroll-to-bottom-button svg {
+  width: 17px;
+  height: 17px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/*
+ * Assistant copy action.
+ */
+.message-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 7px;
+
+  color: var(--faint);
+  background: transparent;
+
+  cursor: pointer;
+  opacity: .82;
+
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    opacity 140ms ease,
+    transform 100ms ease;
+}
+
+.message-copy-button svg {
+  width: 16px;
+  height: 16px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.message-copy-button:hover,
+.message-copy-button.copied {
+  color: var(--text);
+  background: var(--surface-soft);
+  opacity: 1;
+}
+
+.message-copy-button:active {
+  transform: scale(.92);
+}
+
+.message-copy-button:focus-visible {
+  outline: none;
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+
+/*
+ * New-chat composer:
+ *
+ * + | textarea | mic | send
+ *
+ * The microphone is now a real grid cell instead of an
+ * absolutely positioned floating control. This prevents
+ * hover/focus transform rules from making it jump.
+ */
+.composer-new.composer-single {
+  grid-template-columns:
+    28px
+    minmax(0, 1fr)
+    24px
+    28px !important;
+
+  column-gap: 8px;
+}
+
+.composer-new.composer-single .attachment-button {
+  grid-column: 1 !important;
+  grid-row: 1;
+}
+
+.composer-new.composer-single textarea {
+  grid-column: 2 !important;
+  grid-row: 1;
+
+  padding:
+    1px
+    0
+    0
+    0 !important;
+}
+
+.composer-new.composer-single
+.voice-mic-button {
+  position: static !important;
+
+  grid-column: 3;
+  grid-row: 1;
+
+  justify-self: center;
+  align-self: center;
+
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+
+  margin: 0;
+
+  transform: none !important;
+}
+
+.composer-new.composer-single
+.voice-mic-button:hover:not(:disabled),
+.composer-new.composer-single
+.voice-mic-button:focus-visible {
+  transform: none !important;
+}
+
+.composer-new.composer-single
+.send-button {
+  grid-column: 4 !important;
+  grid-row: 1;
+}
+
+
+@media (max-width: 700px) {
+  .scroll-to-bottom-button {
+    bottom: 92px;
+  }
+
+  .message-copy-button {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-loading-mark {
+    animation: none;
+  }
+
+  .scroll-to-bottom-button {
+    transition: none;
+  }
+}

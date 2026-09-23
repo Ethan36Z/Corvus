@@ -2,6 +2,7 @@ import {
   type ChangeEvent,
   type FormEvent,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -131,6 +132,10 @@ function App() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [selectedSession, setSelectedSession] = useState('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [sessionLoading, setSessionLoading] = useState(false)
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
+  const [copiedMessageId, setCopiedMessageId] =
+    useState<number | null>(null)
   const [draft, setDraft] = useState('')
   const [selectedImage, setSelectedImage] =
     useState<File | null>(null)
@@ -139,6 +144,8 @@ function App() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesRef = useRef<HTMLDivElement | null>(null)
+  const pendingInitialScrollRef = useRef(false)
+  const copyFeedbackTimerRef = useRef<number | null>(null)
   const speechAudioRef = useRef<HTMLAudioElement | null>(null)
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null)
   const [playingVoiceAttachmentId, setPlayingVoiceAttachmentId] = useState<string | null>(null)
@@ -276,11 +283,24 @@ function App() {
     clearSelectedImage()
     setChatError(null)
     setSelectedSession(sessionId)
+    setShowScrollToBottom(false)
 
     if (!sessionId) {
+      pendingInitialScrollRef.current = false
+      setSessionLoading(false)
       setChatMessages([])
       return
     }
+
+    /*
+     * Keep the previous DOM hidden behind a loading surface while
+     * the next session is fetched. Once the new messages mount,
+     * useLayoutEffect snaps to the bottom before browser paint.
+     *
+     * This avoids visibly smooth-scrolling through a long thread.
+     */
+    pendingInitialScrollRef.current = true
+    setSessionLoading(true)
 
     try {
       const response = await fetch(
@@ -288,6 +308,7 @@ function App() {
       )
 
       if (!response.ok) {
+        pendingInitialScrollRef.current = false
         setChatMessages([])
         return
       }
@@ -295,7 +316,10 @@ function App() {
       const data: SessionDetail = await response.json()
       setChatMessages(data.messages)
     } catch {
+      pendingInitialScrollRef.current = false
       setChatMessages([])
+    } finally {
+      setSessionLoading(false)
     }
   }
 
@@ -315,30 +339,56 @@ function App() {
     setComposerExpanded(scrollHeight > 44)
   }, [draft])
 
-  function scrollChatToBottom() {
+  function handleMessagesScroll() {
+    const container = messagesRef.current
+    if (!container) return
+
+    const distanceFromBottom =
+      container.scrollHeight
+      - container.scrollTop
+      - container.clientHeight
+
+    setShowScrollToBottom(
+      distanceFromBottom > 140,
+    )
+  }
+
+  function scrollChatToBottom(
+    behavior: ScrollBehavior = 'smooth',
+  ) {
     requestAnimationFrame(() => {
       const container = messagesRef.current
       if (!container) return
 
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth',
+        behavior,
       })
+
+      setShowScrollToBottom(false)
     })
   }
 
-  useEffect(() => {
-    if (chatMessages.length === 0) return
+  /*
+   * Session switching must never visibly animate through the entire
+   * conversation. Snap before paint instead.
+   */
+  useLayoutEffect(() => {
+    if (
+      !pendingInitialScrollRef.current
+      || chatMessages.length === 0
+    ) {
+      return
+    }
 
-    requestAnimationFrame(() => {
-      const container = messagesRef.current
-      if (!container) return
+    const container = messagesRef.current
+    if (!container) return
 
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'smooth',
-      })
-    })
+    container.scrollTop =
+      container.scrollHeight
+
+    pendingInitialScrollRef.current = false
+    setShowScrollToBottom(false)
   }, [chatMessages])
 
   useEffect(() => {
@@ -1073,6 +1123,70 @@ function App() {
     })
   }
 
+  async function copyAssistantMessage(
+    message: ChatMessage,
+  ) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(
+          message.content,
+        )
+      } else {
+        const fallback =
+          document.createElement('textarea')
+
+        fallback.value = message.content
+        fallback.style.position = 'fixed'
+        fallback.style.opacity = '0'
+
+        document.body.appendChild(
+          fallback,
+        )
+
+        fallback.focus()
+        fallback.select()
+
+        const copied =
+          document.execCommand('copy')
+
+        fallback.remove()
+
+        if (!copied) {
+          throw new Error(
+            'Clipboard copy failed.',
+          )
+        }
+      }
+
+      if (
+        copyFeedbackTimerRef.current
+        !== null
+      ) {
+        window.clearTimeout(
+          copyFeedbackTimerRef.current,
+        )
+      }
+
+      setCopiedMessageId(
+        message.id,
+      )
+
+      copyFeedbackTimerRef.current =
+        window.setTimeout(() => {
+          setCopiedMessageId(null)
+          copyFeedbackTimerRef.current = null
+        }, 1400)
+
+    } catch (error) {
+      setChatError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to copy the reply.',
+      )
+    }
+  }
+
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -1474,8 +1588,25 @@ function App() {
         </aside>
 
         <section className="chat-panel">
-          <div className="messages" ref={messagesRef}>
-          {chatMessages.length === 0 && !sending ? (
+          <div
+            className="messages"
+            ref={messagesRef}
+            onScroll={handleMessagesScroll}
+          >
+          {sessionLoading ? (
+            <div
+              className="conversation-loading"
+              role="status"
+              aria-label="Loading conversation"
+            >
+              <div
+                className="conversation-loading-mark"
+                aria-hidden="true"
+              >
+                C
+              </div>
+            </div>
+          ) : chatMessages.length === 0 && !sending ? (
             <div className="welcome">
               <h2>Corvus</h2>
               <p>{welcomePrompt}</p>
@@ -1735,6 +1866,53 @@ function App() {
                             <path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" />
                           </svg>
                         </button>
+
+                        <button
+                          type="button"
+                          className={`message-copy-button${
+                            copiedMessageId === message.id
+                              ? ' copied'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            void copyAssistantMessage(
+                              message,
+                            )
+                          }}
+                          aria-label={
+                            copiedMessageId === message.id
+                              ? 'Copied reply'
+                              : 'Copy reply'
+                          }
+                          title={
+                            copiedMessageId === message.id
+                              ? 'Copied'
+                              : 'Copy'
+                          }
+                        >
+                          {copiedMessageId === message.id ? (
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path d="m5 12 4 4 10-10" />
+                            </svg>
+                          ) : (
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <rect
+                                x="8"
+                                y="8"
+                                width="11"
+                                height="11"
+                                rx="2"
+                              />
+                              <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+                            </svg>
+                          )}
+                        </button>
                       </div>
                     ) : null}
                   </div>
@@ -1757,6 +1935,27 @@ function App() {
             </div>
           )}
         </div>
+
+        {showScrollToBottom &&
+        chatMessages.length > 0 &&
+        !sessionLoading ? (
+          <button
+            type="button"
+            className="scroll-to-bottom-button"
+            aria-label="Scroll to bottom"
+            title="Go to latest message"
+            onClick={() => {
+              scrollChatToBottom('smooth')
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        ) : null}
 
         <form
           className={`composer ${
