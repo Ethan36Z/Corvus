@@ -31,7 +31,7 @@ from app.web_search_routing import (
 
 
 DEFAULT_SEARCH_LIMIT = 5
-DEFAULT_MAX_FETCH_CANDIDATES = 3
+DEFAULT_MAX_FETCH_CANDIDATES = 5
 
 
 @dataclass(

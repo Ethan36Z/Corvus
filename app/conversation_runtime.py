@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.model_client import (
     ModelClientError,
     count_input_tokens,
@@ -20,7 +22,10 @@ from app.web_orchestration import (
     prepare_web_grounding,
 )
 from app.web_query_rewrite import (
+    WEB_QUERY_RECENT_SCAN_LIMIT,
+    build_web_query_rewrite_input,
     rewrite_web_query,
+    select_web_query_rewrite_context,
 )
 from app.web_intent_gate import (
     decide_web_intent,
@@ -41,7 +46,10 @@ from memory.dense_index import sync_dense_message_ids
 from memory.web_evidence import (
     record_web_evidence_batch,
 )
-from memory.store import add_message
+from memory.store import (
+    add_message,
+    load_recent_messages,
+)
 from personality.runtime import compile_personality_system_prompt
 
 
@@ -113,6 +121,9 @@ def process_turn(
     ),
     web_query_rewrite_fn=(
         rewrite_web_query
+    ),
+    web_query_recent_loader_fn=(
+        load_recent_messages
     ),
     web_intent_decide_fn=(
         decide_web_intent
@@ -438,9 +449,51 @@ def process_turn(
         search_query = model_user_content
 
         try:
+            try:
+                rewrite_recent_messages = (
+                    web_query_recent_loader_fn(
+                        session_id=session_id,
+                        limit=(
+                            WEB_QUERY_RECENT_SCAN_LIMIT
+                        ),
+                        before_message_id=(
+                            user_message_id
+                        ),
+                    )
+                )
+            except Exception:
+                rewrite_recent_messages = []
+
+            rewrite_context_messages = (
+                select_web_query_rewrite_context(
+                    rewrite_recent_messages,
+                    model_user_content,
+                )
+            )
+
+            rewrite_current_date = None
+
+            if rewrite_context_messages:
+                rewrite_current_date = (
+                    datetime.now()
+                    .astimezone()
+                    .date()
+                    .isoformat()
+                )
+
+            rewrite_input = (
+                build_web_query_rewrite_input(
+                    model_user_content,
+                    rewrite_context_messages,
+                    current_date=(
+                        rewrite_current_date
+                    ),
+                )
+            )
+
             rewritten_query = (
                 web_query_rewrite_fn(
-                    model_user_content
+                    rewrite_input
                 )
             )
 

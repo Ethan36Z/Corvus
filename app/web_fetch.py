@@ -2,7 +2,7 @@ import http.client
 import ipaddress
 import socket
 import ssl
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 
 from app.web_security import (
     CONNECT_TIMEOUT_SECONDS,
@@ -313,19 +313,54 @@ def _format_host_header(
     )
 
 
+_URI_PATH_SAFE = (
+    "/:@!$&'()*+,;=-._~%"
+)
+
+_URI_QUERY_SAFE = (
+    "/?:@!$&'()*+,;=-._~%"
+)
+
+
 def _request_target(
     url,
 ):
-    parsed = urlsplit(url)
+    """
+    Convert an HTTP(S) IRI path/query into an
+    ASCII-safe request target.
 
-    target = parsed.path or "/"
+    Search engines may return valid public URLs whose
+    path or query contains Unicode characters.
 
-    if parsed.query:
-        target = (
-            f"{target}?{parsed.query}"
-        )
+    http.client requires the request-line target to be
+    ASCII-compatible, so encode only the transport
+    representation here while preserving the original
+    source URL for provenance.
+    """
+    parsed = urlsplit(
+        url
+    )
 
-    return target
+    path = quote(
+        parsed.path or "/",
+        safe=_URI_PATH_SAFE,
+        encoding="utf-8",
+        errors="strict",
+    )
+
+    if not parsed.query:
+        return path
+
+    query = quote(
+        parsed.query,
+        safe=_URI_QUERY_SAFE,
+        encoding="utf-8",
+        errors="strict",
+    )
+
+    return (
+        f"{path}?{query}"
+    )
 
 
 def _response_media_type(
@@ -768,6 +803,7 @@ def fetch_public_page(
             ssl.SSLError,
             http.client.HTTPException,
             OSError,
+            UnicodeError,
         ) as exc:
             raise WebFetchError(
                 "WEB_FETCH_FAILED",

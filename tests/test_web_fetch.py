@@ -964,3 +964,83 @@ print(
 print(
     "WEB READ-ONLY REQUEST CONTRACT OK"
 )
+
+# ==================================================
+# Unicode IRI request-target transport
+# ==================================================
+
+unicode_resolver = resolver_for(
+    {
+        "example.com": (
+            "1.1.1.1",
+        ),
+    }
+)
+
+unicode_factory = (
+    connection_factory_for(
+        [
+            FakeResponse(
+                status=200,
+                headers={
+                    "Content-Type": (
+                        "text/plain; charset=utf-8"
+                    ),
+                    "Content-Length": "2",
+                },
+                body=b"ok",
+            ),
+        ]
+    )
+)
+
+unicode_source_url = (
+    "https://example.com/"
+    "中文页面?q=民调&lang=zh"
+)
+
+unicode_result = fetch_public_page(
+    unicode_source_url,
+    resolver=unicode_resolver,
+    connection_factory=(
+        unicode_factory
+    ),
+)
+
+unicode_request = (
+    unicode_factory
+    .connections[0]
+    .requests[0]
+)
+
+expected_unicode_target = (
+    "/%E4%B8%AD%E6%96%87"
+    "%E9%A1%B5%E9%9D%A2"
+    "?q=%E6%B0%91%E8%B0%83"
+    "&lang=zh"
+)
+
+assert (
+    unicode_request["target"]
+    == expected_unicode_target
+)
+
+unicode_request[
+    "target"
+].encode(
+    "ascii"
+)
+
+assert (
+    unicode_result["url"]
+    == unicode_source_url
+)
+
+assert (
+    unicode_result["text"]
+    == "ok"
+)
+
+print(
+    "WEB UNICODE IRI TRANSPORT CONTRACT OK"
+)

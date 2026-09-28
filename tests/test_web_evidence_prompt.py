@@ -200,6 +200,36 @@ else:
     )
 
 
+
+assert (
+    "fetched by the Corvus runtime "
+    "for the current turn"
+    in packed.content
+)
+
+assert (
+    "do not claim that current Web information "
+    "is unavailable"
+    in packed.content
+)
+
+assert (
+    "Earlier assistant capability statements "
+    "are historical conversation content"
+    in packed.content
+)
+
+assert (
+    "Do not imply that you personally fetched "
+    "or browsed the Web"
+    in packed.content
+)
+
+print(
+    "WEB EVIDENCE PROMPT CURRENT-TURN "
+    "CAPABILITY CONTRACT OK"
+)
+
 print(
     "WEB EVIDENCE PROMPT EXACT-EXCERPT CONTRACT OK"
 )

@@ -337,3 +337,102 @@ print(
 print(
     "A3_4_WEB_ORCHESTRATION_FOUNDATION=PASS"
 )
+
+# Fourth-candidate resilience contract.
+late_fetch_calls = []
+
+
+def late_provider_builder(attempt):
+    return FakeProvider(
+        [
+            {
+                "url": "https://example.com/fail-1",
+                "title": "Fail 1",
+            },
+            {
+                "url": "https://example.com/fail-2",
+                "title": "Fail 2",
+            },
+            {
+                "url": "https://example.com/fail-3",
+                "title": "Fail 3",
+            },
+            {
+                "url": "https://example.com/usable-4",
+                "title": "Python 3.14 compression.zstd",
+            },
+            {
+                "url": "https://example.com/unused-5",
+                "title": "Unused 5",
+            },
+        ]
+    )
+
+
+def late_fetch(discovery, result_id):
+    def fake_fetcher(url):
+        late_fetch_calls.append(url)
+
+        if url.endswith(
+            ("fail-1", "fail-2", "fail-3")
+        ):
+            raise WebFetchError(
+                "WEB_FETCH_TEST_FAILURE",
+                "synthetic blocked candidate",
+            )
+
+        body = (
+            "Python 3.14 includes the "
+            "compression.zstd module. "
+            "The compression.zstd module "
+            "supports Zstandard compression."
+        )
+
+        return {
+            "url": url,
+            "status": 200,
+            "media_type": "text/plain",
+            "text": body,
+            "bytes_read": len(body.encode("utf-8")),
+            "resolved_ip": "1.1.1.1",
+            "redirects": (),
+        }
+
+    return fetch_search_result(
+        discovery,
+        result_id,
+        fetcher=fake_fetcher,
+    )
+
+
+late_result = prepare_web_grounding(
+    "Python 3.14 compression.zstd",
+    provider_builder=late_provider_builder,
+    fetch_search_result_fn=late_fetch,
+)
+
+assert late_result.status == "READY"
+assert late_result.selected_result_id == "result_4"
+
+assert [
+    item.status
+    for item in late_result.candidate_outcomes
+] == [
+    "FETCH_FAILED",
+    "FETCH_FAILED",
+    "FETCH_FAILED",
+    "SELECTED",
+]
+
+assert late_fetch_calls == [
+    "https://example.com/fail-1",
+    "https://example.com/fail-2",
+    "https://example.com/fail-3",
+    "https://example.com/usable-4",
+]
+
+print(
+    "WEB ORCHESTRATION FOURTH-CANDIDATE "
+    "RESILIENCE CONTRACT OK"
+)
+print("WEB_ORCHESTRATION_FETCH_BUDGET_5=PASS")
