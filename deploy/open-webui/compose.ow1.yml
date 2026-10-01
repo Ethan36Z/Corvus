@@ -1,0 +1,24 @@
+# OW1 review artifact. Do not start until deployment is separately approved.
+name: corvus-open-webui-ow1
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.6.5
+    # Linux host networking is required for the fixed Corvus loopback endpoint.
+    network_mode: host
+    restart: "no"
+    environment:
+      HOST: "127.0.0.1"
+      PORT: "3001"
+      WEBUI_AUTH: "true"
+      ENABLE_SIGNUP: "false"
+      ENABLE_OPENAI_API: "false"
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_EVALUATION_ARENA_MODELS: "false"
+      ENABLE_TITLE_GENERATION: "false"
+      ENABLE_TAGS_GENERATION: "false"
+      ENABLE_AUTOCOMPLETE_GENERATION: "false"
+    volumes:
+      - open-webui-data:/app/backend/data
+
+volumes:
+  open-webui-data:
