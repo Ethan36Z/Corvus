@@ -1,0 +1,8 @@
+# Explicit allowlist prevents unrelated checkout content and local secrets entering builds.
+*
+!Dockerfile.corvus
+!corvus_pipe.py
+!branding/
+!branding/**
+branding/**/__pycache__/
+branding/**/*.pyc

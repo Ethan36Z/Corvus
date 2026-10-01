@@ -1,0 +1,16 @@
+# Build-only / future replacement override. Do not run up until separately approved.
+# Combine with compose.ow1.yml; its name/network/port/volume are preserved.
+services:
+  open-webui:
+    image: corvus-open-webui:0.6.5-ow2d.1
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile.corvus
+    environment:
+      WEBUI_NAME: Corvus
+      CUSTOM_NAME: ""
+      LICENSE_KEY: ""
+      EXTERNAL_PWA_MANIFEST_URL: ""
+      WEBUI_URL: http://127.0.0.1:3001
+      OFFLINE_MODE: "true"

@@ -1,0 +1,43 @@
+# Build context: deploy/open-webui only. No credentials, Corvus code or data.
+# All FROM identities are immutable; version stays exactly 0.6.5.
+FROM ghcr.io/open-webui/open-webui@sha256:fe7a6870ec6b2fd540c0f2007e6aa812dc4bf04a2d0a305bb344eeb10de0a7b7 AS source
+COPY branding /branding
+COPY corvus_pipe.py /corvus_pipe.py
+COPY Dockerfile.corvus /Dockerfile.corvus
+RUN python -B /branding/verify_branding.py --prepare-source /source
+
+FROM node:22-alpine3.20@sha256:35d1e2d251585b806c41f71d0933d7ba3afb6374ee3745523c2ae406480f6bc7 AS frontend
+WORKDIR /source
+COPY --from=source /source/package.json /source/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY --from=source /source/ ./
+# Reuse immutable packaged Pyodide assets; do not run the unpinned wheel fetcher.
+COPY --from=source /app/build/pyodide/ ./static/pyodide/
+COPY branding/assets/ ./static/static/
+COPY branding/assets/favicon.png ./static/favicon.png
+ENV APP_BUILD_HASH=corvus-ow2d-07d8460126a686de9a99e2662d06106e22c3f6b6 \
+    NODE_OPTIONS=--max-old-space-size=6144
+RUN ./node_modules/.bin/vite build
+
+FROM ghcr.io/open-webui/open-webui@sha256:fe7a6870ec6b2fd540c0f2007e6aa812dc4bf04a2d0a305bb344eeb10de0a7b7 AS corvus
+LABEL org.opencontainers.image.title="Corvus" \
+    org.opencontainers.image.version="0.6.5-ow2d.1" \
+    org.opencontainers.image.revision="07d8460126a686de9a99e2662d06106e22c3f6b6"
+# Clear inherited generated frontend files so stale branded chunks cannot survive.
+RUN rm -rf /app/build
+COPY --from=frontend /source/build/ /app/build/
+COPY --from=source /source/backend/open_webui/env.py /app/backend/open_webui/env.py
+COPY --from=source /source/backend/open_webui/config.py /app/backend/open_webui/config.py
+COPY --from=source /source/backend/open_webui/main.py /app/backend/open_webui/main.py
+COPY --from=source /source/backend/open_webui/routers/audio.py /app/backend/open_webui/routers/audio.py
+COPY --from=source /source/backend/open_webui/routers/ollama.py /app/backend/open_webui/routers/ollama.py
+COPY --from=source /source/backend/open_webui/routers/openai.py /app/backend/open_webui/routers/openai.py
+COPY branding/assets/ /app/backend/open_webui/static/
+COPY --from=source /source/static/static/site.webmanifest /app/backend/open_webui/static/site.webmanifest
+COPY branding/assets/favicon.png /app/backend/open_webui/static/swagger-ui/favicon.png
+COPY branding/THIRD_PARTY_NOTICES.txt /usr/share/doc/corvus/THIRD_PARTY_NOTICES.txt
+COPY branding /opt/corvus-branding/branding
+ENV WEBUI_NAME=Corvus CUSTOM_NAME="" LICENSE_KEY="" EXTERNAL_PWA_MANIFEST_URL="" \
+    OFFLINE_MODE=true HOST=127.0.0.1 PORT=3001
+RUN python -B /opt/corvus-branding/branding/verify_branding.py --image-root /
+# Inherit the verified backend entrypoint, dependencies, auth and healthcheck.
