@@ -188,7 +188,7 @@ For a later deployment review:
    original Corvus UI still operates unchanged. No live Open WebUI acceptance
    has been performed by the offline tests.
 
-## OW2a isolated Corvus instance plan (not started)
+## OW2a isolated Corvus instance and OW2b filesystem hardening
 
 Changing the port alone does not isolate memory. A **fresh process**, with its
 environment set before Python imports Corvus, must use a separate data directory.
@@ -197,11 +197,11 @@ startup schema preparation and dense recovery then operate only on acceptance
 data. No production memory should be copied, seeded, mounted, queried, or used
 as a fallback. In particular, do not copy the repository's old `data/` either.
 
-The exact proposed instance:
+The isolated instance uses the following settings. Open WebUI remains unstarted:
 
 | Setting | Acceptance value |
 | --- | --- |
-| Separate service | `corvus-ow2a-acceptance.service` (not installed/enabled) |
+| Separate service | `corvus-ow2a-acceptance.service` (manually started; not enabled) |
 | API bind | `127.0.0.1:18096`, one worker |
 | `CORVUS_DATA_DIR` | `/home/ethan/srv/data/corvus/ow2a-acceptance` |
 | SQLite | `/home/ethan/srv/data/corvus/ow2a-acceptance/corvus.db` |
@@ -211,43 +211,40 @@ The exact proposed instance:
 | Pipe `INSTANCE_ID` | `corvus-open-webui-ow2a-acceptance` (never the production ID) |
 | Initial Pipe `WEB_MODE` | `off`; web-mode cases only after isolation is verified |
 
-The proposed unit is documentation only; it is not a production-unit override:
+The authoritative acceptance-only unit is
+[`deploy/systemd/corvus-ow2a-acceptance.service`](../systemd/corvus-ow2a-acceptance.service).
+It matches the installed, verified OW2b unit byte for byte, including its literal
+host paths and user. Prepare the isolated directory and complete offline cache
+before installing it. It is not a production-unit override.
 
-```ini
-[Unit]
-Description=Corvus OW2a Isolated Acceptance API
+Check the repository artifact against the installed unit without changing either:
 
-[Service]
-Type=simple
-User=ethan
-Group=ethan
-WorkingDirectory=/home/ethan/srv/apps/small-vram-companion
-Environment=HOME=/home/ethan
-Environment=PYTHONUNBUFFERED=1
-Environment=CORVUS_DATA_DIR=/home/ethan/srv/data/corvus/ow2a-acceptance
-Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
-Environment=HF_HOME=/home/ethan/srv/data/corvus/ow2a-acceptance/hf-cache
-Environment=HF_MODULES_CACHE=/home/ethan/srv/data/corvus/ow2a-acceptance/hf-cache/modules
-Environment=XDG_CACHE_HOME=/home/ethan/srv/data/corvus/ow2a-acceptance/cache
-Environment=HF_HUB_OFFLINE=1
-Environment=TRANSFORMERS_OFFLINE=1
-ExecStart=/home/ethan/srv/apps/small-vram-companion/.venv/bin/uvicorn app.playground_api:app --host 127.0.0.1 --port 18096 --workers 1
-Restart=no
-UMask=0077
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ReadWritePaths=/home/ethan/srv/data/corvus/ow2a-acceptance
-InaccessiblePaths=/home/ethan/srv/data/corvus/private /home/ethan/srv/data/corvus/demo /home/ethan/srv/apps/small-vram-companion/data
+```bash
+cmp deploy/systemd/corvus-ow2a-acceptance.service /etc/systemd/system/corvus-ow2a-acceptance.service
+systemd-analyze verify deploy/systemd/corvus-ow2a-acceptance.service
 ```
 
 Filesystem restrictions provide a second boundary: production/private memory,
 demo memory, and repository-local legacy memory are inaccessible inside this
-service's filesystem namespace. Only the acceptance data root is writable in the
-persistent filesystem. There is no autostart/install section or automatic
+service's filesystem namespace. `ProtectSystem=strict` alone leaves `/home`
+writable; `ProtectHome=read-only` closes that exemption. The source repository,
+its virtualenv, and both isolated cache directories are explicitly read-only.
+Only the acceptance data root outside those cache directories is writable in the
+persistent filesystem; systemd's private temporary directory remains available.
+There is no autostart/install section or automatic
 restart. No Nginx/public route, UI change, container, or database migration is
 needed. `compose.ow1.yml` remains an unstarted Open WebUI manifest; the Pipe
 endpoint is configured as an admin valve, not a Compose environment variable.
+
+Prepare the complete offline cache, including the pinned model's generated
+Transformers modules, before making it read-only. `PYTHONDONTWRITEBYTECODE=1`
+prevents runtime bytecode writes. Prove that the prepared cache loads and encodes
+a synthetic string while read-only inside the actual service mount namespace;
+do not grant cache write access merely to hide missing assets. Cache changes
+require separate preparation while acceptance is stopped. The live filesystem
+check must also demonstrate failed source/virtualenv/cache writes, successful
+temporary create/write/remove under the acceptance data root, and denial of all
+three canonical memory roots. Restart only the acceptance unit after changes.
 
 After separate deployment approval, the planned sequence is:
 
@@ -304,7 +301,8 @@ separate processes with a temporary `CORVUS_DATA_DIR` to avoid test module state
 and runtime-data interference. The OW2a path test starts only a short-lived Python
 subprocess, selects a temporary data root before imports, checks the store/dense/
 attachment paths, and writes a synthetic row there. It starts no service, loads no
-embedding model, and reads no production memory. No live test has run on 18096.
+embedding model, and reads no production memory. OW2b endpoint health and empty
+acceptance storage were checked on 18096; no live Open WebUI chat has run.
 
 Contract checked against the pinned upstream sources:
 [Pipe injection](https://github.com/open-webui/open-webui/blob/v0.6.5/backend/open_webui/functions.py),
