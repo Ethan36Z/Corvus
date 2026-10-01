@@ -1,8 +1,10 @@
-# Stage OW1: Corvus Function Pipe contract
+# Stages OW1 / OW2a: Corvus Function Pipe contract
 
 Status: implementation and offline contract tests only. Open WebUI has not been
 installed or deployed. The existing Corvus UI, API, runtime, and production
-services are unchanged. Hindsight is outside OW1.
+services are unchanged. Hindsight remains outside scope. OW2a adds only an admin
+endpoint valve, offline tests, and an isolated-instance plan; no instance has
+been started.
 
 ## Version and authority
 
@@ -16,8 +18,11 @@ The only conversation path is:
 
 ```text
 Open WebUI v0.6.5 -> Corvus Function Pipe
-    -> POST http://127.0.0.1:8096/api/chat -> process_turn()
+    -> POST <admin CORVUS_CHAT_URL> -> Corvus /api/chat -> process_turn()
 ```
+
+The default remains exactly `http://127.0.0.1:8096/api/chat` (production).
+Isolated live acceptance must explicitly use `http://127.0.0.1:18096/api/chat`.
 
 Corvus remains responsible for context, personality, retrieval, web mode,
 generation, and canonical persistence. Open WebUI receives only the reply text.
@@ -81,12 +86,24 @@ Admin valves:
 
 | Valve | Default | Contract |
 | --- | --- | --- |
+| `CORVUS_CHAT_URL` | `http://127.0.0.1:8096/api/chat` | Admin-only; literal HTTP loopback chat URL with a valid port. Set to `http://127.0.0.1:18096/api/chat` for acceptance. |
 | `INSTANCE_ID` | empty | Must be set before any conversation POST. |
 | `WEB_MODE` | `auto` | `off`, `on`, or `auto`, forwarded to Corvus only. |
 | `TIMEOUT_SECONDS` | `300` | HTTPX I/O timeout, 1–600 seconds; connect timeout is 5 seconds. |
 
-There are no user valves or configurable backend URLs. Corvus web mode is distinct
-from Open WebUI web search, which is unsupported.
+There are no user valves. `CORVUS_CHAT_URL` is selected only from the admin
+`Pipe.Valves`, never from body fields, parameters, user input, user valves, or
+request metadata. Its exact allowed form is
+`http://127.0.0.1:<port>/api/chat`, where the port is 1–65535 in ASCII decimal
+without leading zeros. Validation happens on valve loading and again before
+conversation I/O; invalid configuration never falls back to production.
+Remote hosts, DNS names (including `localhost`), other IP literals, HTTPS,
+credentials, query strings, fragments, alternate/encoded paths, whitespace,
+malformed ports, and other destinations are rejected without URL normalization.
+Client-facing errors from `pipe()` never echo the rejected URL or credentials.
+This is a destination restriction, not authentication of the process listening
+on a local port. Corvus web mode is distinct from Open WebUI web search, which is
+unsupported.
 
 Rejected before Corvus I/O:
 
@@ -133,11 +150,11 @@ OW1. They can append duplicate turns or diverge from canonical history. Enforced
 operation/history detection requires a later design; this implementation does not
 claim it.
 
-## Deployment preparation (not executed in OW1)
+## Deployment preparation (not executed)
 
 `compose.ow1.yml` is an inert review artifact; it is separate from the existing
 Corvus Compose files. Do not pull/start it until deployment is separately approved.
-Its Linux host network makes the fixed `127.0.0.1:8096` endpoint reachable; normal
+Its Linux host network makes the validated loopback endpoint reachable; normal
 Docker bridge loopback would refer to the container instead. The proposed Open
 WebUI bind is `127.0.0.1:3001`, with a separate named volume and no auto-restart.
 Check that port's availability during deployment. It mounts no Corvus data or
@@ -155,9 +172,12 @@ For a later deployment review:
    model, task model, tool server, filter, action, knowledge collection, or file
    retrieval pipeline.
 3. Import `corvus_pipe.py` as a **Function**, enable it, and configure its admin
-   valves. Select only the Corvus Pipe as the chat model. Disable the model's
-   vision, file upload, web search, image generation, code interpreter, and tool
-   capabilities and permissions; leave Open WebUI memory injection disabled.
+   valves. For acceptance, set `CORVUS_CHAT_URL` to
+   `http://127.0.0.1:18096/api/chat` **before sending any chat** and use a distinct
+   acceptance `INSTANCE_ID`. The default port 8096 is production and is never an
+   acceptance target. Select only the Corvus Pipe as the chat model. Disable the
+   model's vision, file upload, web search, image generation, code interpreter,
+   and tool capabilities and permissions; leave Open WebUI memory injection disabled.
 4. Keep feature/operation controls disabled or unused. Middleware can perform
    retrieval/tool/media work before invoking a Pipe, so Pipe rejection alone
    does not prevent that earlier Open WebUI work. Do not attach transforming
@@ -168,6 +188,104 @@ For a later deployment review:
    original Corvus UI still operates unchanged. No live Open WebUI acceptance
    has been performed by the offline tests.
 
+## OW2a isolated Corvus instance plan (not started)
+
+Changing the port alone does not isolate memory. A **fresh process**, with its
+environment set before Python imports Corvus, must use a separate data directory.
+`memory/config.py` derives SQLite, LanceDB, and attachments from that directory;
+startup schema preparation and dense recovery then operate only on acceptance
+data. No production memory should be copied, seeded, mounted, queried, or used
+as a fallback. In particular, do not copy the repository's old `data/` either.
+
+The exact proposed instance:
+
+| Setting | Acceptance value |
+| --- | --- |
+| Separate service | `corvus-ow2a-acceptance.service` (not installed/enabled) |
+| API bind | `127.0.0.1:18096`, one worker |
+| `CORVUS_DATA_DIR` | `/home/ethan/srv/data/corvus/ow2a-acceptance` |
+| SQLite | `/home/ethan/srv/data/corvus/ow2a-acceptance/corvus.db` |
+| Dense index | `/home/ethan/srv/data/corvus/ow2a-acceptance/corvus-retrieval.lancedb` |
+| Attachments | `/home/ethan/srv/data/corvus/ow2a-acceptance/attachments` |
+| Pipe `CORVUS_CHAT_URL` | `http://127.0.0.1:18096/api/chat` |
+| Pipe `INSTANCE_ID` | `corvus-open-webui-ow2a-acceptance` (never the production ID) |
+| Initial Pipe `WEB_MODE` | `off`; web-mode cases only after isolation is verified |
+
+The proposed unit is documentation only; it is not a production-unit override:
+
+```ini
+[Unit]
+Description=Corvus OW2a Isolated Acceptance API
+
+[Service]
+Type=simple
+User=ethan
+Group=ethan
+WorkingDirectory=/home/ethan/srv/apps/small-vram-companion
+Environment=HOME=/home/ethan
+Environment=PYTHONUNBUFFERED=1
+Environment=CORVUS_DATA_DIR=/home/ethan/srv/data/corvus/ow2a-acceptance
+Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
+Environment=HF_HOME=/home/ethan/srv/data/corvus/ow2a-acceptance/hf-cache
+Environment=HF_MODULES_CACHE=/home/ethan/srv/data/corvus/ow2a-acceptance/hf-cache/modules
+Environment=XDG_CACHE_HOME=/home/ethan/srv/data/corvus/ow2a-acceptance/cache
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+ExecStart=/home/ethan/srv/apps/small-vram-companion/.venv/bin/uvicorn app.playground_api:app --host 127.0.0.1 --port 18096 --workers 1
+Restart=no
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/ethan/srv/data/corvus/ow2a-acceptance
+InaccessiblePaths=/home/ethan/srv/data/corvus/private /home/ethan/srv/data/corvus/demo /home/ethan/srv/apps/small-vram-companion/data
+```
+
+Filesystem restrictions provide a second boundary: production/private memory,
+demo memory, and repository-local legacy memory are inaccessible inside this
+service's filesystem namespace. Only the acceptance data root is writable in the
+persistent filesystem. There is no autostart/install section or automatic
+restart. No Nginx/public route, UI change, container, or database migration is
+needed. `compose.ow1.yml` remains an unstarted Open WebUI manifest; the Pipe
+endpoint is configured as an admin valve, not a Compose environment variable.
+
+After separate deployment approval, the planned sequence is:
+
+1. Verify that port 18096 is unused and inspect the effective production
+   `corvus-api.service` configuration without opening production databases.
+   Confirm its resolved canonical data root is
+   `/home/ethan/srv/data/corvus/private`; if it differs, include the actual root in
+   the acceptance unit's deny list before proceeding. Verify all denied paths
+   exist and the acceptance root has no symlinks, hardlinked files, bind mounts,
+   or overlap with production, demo, or repository memory roots.
+2. Create a **new, empty**, mode-0700 acceptance directory owned by `ethan`.
+   Prepare its own embedding cache with only the pinned model assets required by
+   `memory/dense_index.py` (`Alibaba-NLP/gte-multilingual-base`, revision
+   `ca1791e0bcc104f6db161f27de1340241b13c5a4`), without copying canonical memory or
+   a dense index. Confirm the cache works offline before live turns. No packages
+   or model assets have been installed/copied in OW2a.
+3. Review/install only the separate acceptance unit, then start only that unit.
+   Validate the actual process environment and all four resolved memory paths,
+   the loopback listener, empty acceptance sessions, and lack of readable/writable
+   production paths inside the service namespace. Refuse live acceptance if any
+   isolation check fails. Production `corvus-api.service` stays running unchanged.
+4. Configure the acceptance Pipe endpoint and instance ID before any Open WebUI
+   chat. Installing/starting Open WebUI requires its own approval. Run synthetic
+   acceptance turns, inspect only acceptance canonical messages, and verify
+   persistence, resume, task suppression, rejection, and timeout behavior there.
+5. Stop only the acceptance unit when finished; retain its synthetic data for
+   review. Do not stop, restart, reset, or migrate production services or memory.
+
+The acceptance Corvus API can reuse the running model server on 8095 through the
+normal `process_turn()` path. Open WebUI still never connects directly to it.
+Sharing model inference does not share the SQLite/LanceDB memory root, but CPU,
+RAM, and model queue contention can affect production latency; schedule live
+acceptance accordingly. Model cache preparation and filesystem-namespace checks
+are deployment prerequisites, not claims of completed live validation. The
+production endpoint remains the default for compatibility, so explicit valve
+verification is mandatory before acceptance traffic. OW1's regenerate/branch and
+uncertain-timeout limitations remain unchanged.
+
 ## Offline verification
 
 From the repository root:
@@ -177,12 +295,16 @@ From the repository root:
 git diff --check
 ```
 
-The suite loads the deployable Function file, runs HTTPX mock transport contracts,
+The suite loads the deployable Function file, runs HTTPX mock transport contracts
+for default and acceptance destinations plus rejected endpoint forms,
 and exercises the real `/api/chat` ASGI route with `process_turn()` stubbed. It
-does not contact production, run a model, write canonical memory, or install
+does not contact production, run a model, write production memory, or install
 Open WebUI. Existing tests are mostly executable contract scripts; run them in
 separate processes with a temporary `CORVUS_DATA_DIR` to avoid test module state
-and runtime-data interference.
+and runtime-data interference. The OW2a path test starts only a short-lived Python
+subprocess, selects a temporary data root before imports, checks the store/dense/
+attachment paths, and writes a synthetic row there. It starts no service, loads no
+embedding model, and reads no production memory. No live test has run on 18096.
 
 Contract checked against the pinned upstream sources:
 [Pipe injection](https://github.com/open-webui/open-webui/blob/v0.6.5/backend/open_webui/functions.py),

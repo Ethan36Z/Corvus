@@ -1,17 +1,18 @@
 """
 title: Corvus OW1
 description: Text-only adapter to the authoritative Corvus conversation runtime.
-version: 0.1.0
+version: 0.2.0
 required_open_webui_version: 0.6.5
 """
 
 import hashlib
 import json
+import re
 from typing import Literal
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 CORVUS_CHAT_URL = "http://127.0.0.1:8096/api/chat"
@@ -19,6 +20,19 @@ UNCERTAIN_RESULT = (
     "Corvus did not confirm this turn. It may already have been saved. "
     "Check Corvus before sending again; do not retry or regenerate automatically."
 )
+
+
+def validate_corvus_chat_url(value):
+    """Accept only a literal loopback HTTP chat endpoint; never normalize URLs."""
+    match = re.fullmatch(
+        r"http://127\.0\.0\.1:([1-9][0-9]{0,4})/api/chat", value
+    ) if isinstance(value, str) else None
+    if match is None or int(match.group(1)) > 65535:
+        raise ValueError(
+            "Corvus endpoint must be http://127.0.0.1:<port>/api/chat "
+            "with a port from 1 to 65535."
+        )
+    return value
 
 
 def _identity(value):
@@ -66,6 +80,10 @@ def _reject_unsupported(source):
 
 class Pipe:
     class Valves(BaseModel):
+        CORVUS_CHAT_URL: str = Field(
+            default=CORVUS_CHAT_URL,
+            description="Admin-only HTTP loopback chat endpoint; use port 18096 for isolated acceptance.",
+        )
         INSTANCE_ID: str = Field(
             default="", description="Required stable unique ID for this Open WebUI installation."
         )
@@ -73,6 +91,11 @@ class Pipe:
             default="auto", description="Corvus web mode, controlled by the administrator."
         )
         TIMEOUT_SECONDS: float = Field(default=300, ge=1, le=600)
+
+        @field_validator("CORVUS_CHAT_URL")
+        @classmethod
+        def validate_endpoint(cls, value):
+            return validate_corvus_chat_url(value)
 
     def __init__(self):
         self.valves = self.Valves()
@@ -125,6 +148,9 @@ class Pipe:
         session_id = corvus_session_id(self.valves.INSTANCE_ID, user_id, chat_id)
         if self.valves.WEB_MODE not in {"off", "on", "auto"}:
             raise ValueError("OW1 WEB_MODE must be off, on, or auto.")
+        # Validate again because direct assignment can bypass Pydantic validators.
+        # Request fields, metadata, and user valves never select a destination.
+        chat_url = validate_corvus_chat_url(self.valves.CORVUS_CHAT_URL)
 
         messages = body.get("messages")
         if not isinstance(messages, list) or not messages:
@@ -155,7 +181,7 @@ class Pipe:
                 trust_env=False,
                 transport=httpx.AsyncHTTPTransport(retries=0),
             ) as client:
-                response = await client.post(CORVUS_CHAT_URL, json=payload)
+                response = await client.post(chat_url, json=payload)
         except httpx.TimeoutException:
             raise ValueError("Corvus request timed out. " + UNCERTAIN_RESULT) from None
         except httpx.HTTPError:

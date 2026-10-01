@@ -1,9 +1,12 @@
-"""OW1 contracts, using HTTPX mock transport; never call the production API."""
+"""OW1/OW2a contracts with mocked HTTP; never call either live Corvus API."""
 
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -19,6 +22,33 @@ spec.loader.exec_module(adapter)
 
 CHAT_ID = "3c57a4d8-0201-4db0-8e6e-a8fc734ba6a0"
 OTHER_CHAT = "ae03ed9d-94d2-4e5e-a104-2b5520530e07"
+ACCEPTANCE_URL = "http://127.0.0.1:18096/api/chat"
+INVALID_ENDPOINTS = (
+    "http://example.com:18096/api/chat", "http://localhost:18096/api/chat",
+    "http://127.0.0.1.example.com:18096/api/chat", "http://127.0.0.2:18096/api/chat",
+    "http://0.0.0.0:18096/api/chat", "http://10.0.0.1:18096/api/chat",
+    "http://[::1]:18096/api/chat", "http://2130706433:18096/api/chat",
+    "http://127.1:18096/api/chat", "http://0177.0.0.1:18096/api/chat",
+    "http://127%2e0%2e0%2e1:18096/api/chat", "https://127.0.0.1:18096/api/chat",
+    "HTTP://127.0.0.1:18096/api/chat", "//127.0.0.1:18096/api/chat",
+    "ftp://127.0.0.1:18096/api/chat", "file:///api/chat",
+    "http://user:password@127.0.0.1:18096/api/chat", "http://127.0.0.1:18096@evil.example/api/chat",
+    "http://127.0.0.1:18096/api/chat?", "http://127.0.0.1:18096/api/chat?url=evil",
+    "http://127.0.0.1:18096/api/chat#", "http://127.0.0.1:18096/api/chat#fragment",
+    "http://127.0.0.1:18096/api/chat/", "http://127.0.0.1:18096/API/chat",
+    "http://127.0.0.1:18096/health", "http://127.0.0.1:18096/api/../api/chat",
+    "http://127.0.0.1:18096/api/%63hat", "http://127.0.0.1:18096//api/chat",
+    "http://127.0.0.1:18096", "http://127.0.0.1/api/chat",
+    "http://127.0.0.1:/api/chat", "http://127.0.0.1:0/api/chat",
+    "http://127.0.0.1:65536/api/chat", "http://127.0.0.1:999999999999/api/chat",
+    "http://127.0.0.1:-1/api/chat", "http://127.0.0.1:+80/api/chat",
+    "http://127.0.0.1:08096/api/chat", "http://127.0.0.1:80.0/api/chat",
+    "http://127.0.0.1:eighty/api/chat", "http://127.0.0.1:８０/api/chat",
+    "http://127.0.0.1:18096\\api\\chat", "http://127.0.0.1:18096:80/api/chat",
+    " http://127.0.0.1:18096/api/chat", "http://127.0.0.1:18096/api/chat ",
+    "http://127.0.0.1:18096/api/chat\n", "http://127.0.0.1:\t18096/api/chat",
+    "http://127.0.0.1:18096/api/chat\x00", "", None, 18096, [], {},
+)
 
 
 class PipeContracts(unittest.IsolatedAsyncioTestCase):
@@ -105,6 +135,7 @@ class PipeContracts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.client_options, [])
 
     async def test_only_current_text_reaches_authoritative_endpoint(self):
+        self.assertEqual(self.pipe.valves.CORVUS_CHAT_URL, "http://127.0.0.1:8096/api/chat")
         self.assertEqual(await self.call(), "Corvus reply")
         self.assertEqual(len(self.requests), 1)
         request = self.requests[0]
@@ -120,6 +151,116 @@ class PipeContracts(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.client_options[0]["follow_redirects"])
         self.assertEqual(self.client_options[0]["timeout"].connect, 5)
         self.assertEqual(self.client_options[0]["timeout"].read, 300)
+
+    def test_admin_endpoint_accepts_only_canonical_loopback_ports(self):
+        for port in (1, 80, 8096, 18096, 65535):
+            with self.subTest(port=port):
+                url = f"http://127.0.0.1:{port}/api/chat"
+                self.assertEqual(adapter.Pipe.Valves(CORVUS_CHAT_URL=url).CORVUS_CHAT_URL, url)
+
+    async def test_invalid_admin_endpoints_fail_on_load_and_before_io(self):
+        for url in INVALID_ENDPOINTS:
+            with self.subTest(url=url):
+                with self.assertRaises(ValidationError):
+                    adapter.Pipe.Valves(CORVUS_CHAT_URL=url)
+                # Simulate a valve assignment that bypasses load-time validation.
+                self.pipe.valves.CORVUS_CHAT_URL = url
+                with self.assertRaises(ValueError) as caught:
+                    await self.call()
+                self.assertIn("Corvus endpoint must be", str(caught.exception))
+                self.assertNotIn("password", str(caught.exception))
+                self.assertEqual(self.requests, [])
+                self.assertEqual(self.client_options, [])
+
+    async def test_acceptance_endpoint_preserves_payload_and_transport_policy(self):
+        await self.call()
+        original_payload = json.loads(self.requests[0].content)
+        self.pipe.valves = adapter.Pipe.Valves(
+            INSTANCE_ID="corvus-private-test", CORVUS_CHAT_URL=ACCEPTANCE_URL
+        )
+        self.assertEqual(await self.call(), "Corvus reply")
+        self.assertEqual(str(self.requests[-1].url), ACCEPTANCE_URL)
+        self.assertEqual(json.loads(self.requests[-1].content), original_payload)
+        self.assertEqual(self.transport_options[-1], {"retries": 0})
+        self.assertFalse(self.client_options[-1]["trust_env"])
+        self.assertFalse(self.client_options[-1]["follow_redirects"])
+
+    async def test_request_metadata_and_user_valves_cannot_override_endpoint(self):
+        for configured, injected in (
+            (ACCEPTANCE_URL, "http://127.0.0.1:8096/api/chat"),
+            ("http://127.0.0.1:8096/api/chat", "http://example.invalid:80/api/chat"),
+        ):
+            with self.subTest(configured=configured):
+                self.pipe.valves.CORVUS_CHAT_URL = configured
+                self.body["metadata"] = {}
+                self.body["params"] = {}
+                self.kwargs["__user__"]["valves"] = {}
+                for source in (self.body, self.body["metadata"], self.body["params"],
+                               self.kwargs["__metadata__"], self.kwargs["__user__"]["valves"]):
+                    source.update({"CORVUS_CHAT_URL": injected, "corvus_chat_url": injected,
+                                   "endpoint": injected, "url": injected, "base_url": injected})
+                self.body["messages"][-1]["content"] = injected
+                self.assertEqual(await self.call(), "Corvus reply")
+                self.assertEqual(str(self.requests[-1].url), configured)
+                self.assertEqual(json.loads(self.requests[-1].content)["message"], injected)
+
+    async def test_suppressed_task_never_validates_or_contacts_endpoint(self):
+        self.pipe.valves.CORVUS_CHAT_URL = "https://invalid.example/api/chat"
+        self.kwargs["__task__"] = "title_generation"
+        self.assertEqual(await self.call(), "")
+        self.assertEqual(self.requests, [])
+        self.assertEqual(self.client_options, [])
+
+    async def test_acceptance_failure_never_falls_back_to_production(self):
+        self.pipe.valves.CORVUS_CHAT_URL = ACCEPTANCE_URL
+        self.failure = httpx.ReadTimeout("BACKEND_SECRET_DO_NOT_EXPOSE")
+        with self.assertRaises(ValueError) as caught:
+            await self.call()
+        self.assertEqual([str(request.url) for request in self.requests], [ACCEPTANCE_URL])
+        self.assertNotIn("BACKEND_SECRET", str(caught.exception))
+        self.assertIn("may already have been saved", str(caught.exception))
+        self.failure = None
+        self.requests.clear()
+        self.response_code = 302
+        self.raw_response = b"BACKEND_SECRET_DO_NOT_EXPOSE"
+        with self.assertRaises(ValueError):
+            await self.call()
+        self.assertEqual([str(request.url) for request in self.requests], [ACCEPTANCE_URL])
+
+    def test_fresh_corvus_process_uses_only_isolated_memory_paths(self):
+        # Verify path selection before Corvus imports, without reading any
+        # production database, loading an embedding model, or starting an API.
+        root = PIPE_PATH.parents[2]
+        with tempfile.TemporaryDirectory(prefix="corvus-ow2a-paths-") as data_dir:
+            env = os.environ.copy()
+            env["CORVUS_DATA_DIR"] = data_dir
+            env["PYTHONPATH"] = str(root)
+            script = """
+import os
+from pathlib import Path
+from memory.config import DATA_DIR, DB_PATH, LANCE_DB_PATH, ATTACHMENTS_DIR
+import memory.store as store
+import memory.attachments as attachments
+import memory.dense_index as dense
+root = Path(os.environ['CORVUS_DATA_DIR']).resolve()
+assert DATA_DIR == root
+assert DB_PATH == store.DB_PATH == root / 'corvus.db'
+assert LANCE_DB_PATH == dense.LANCE_DB_PATH == root / 'corvus-retrieval.lancedb'
+assert ATTACHMENTS_DIR == attachments.ATTACHMENTS_DIR == root / 'attachments'
+store.init_db()
+store.add_message('ow2a-isolated', 'user', 'isolated synthetic fixture')
+with store.connect() as conn:
+    assert Path(conn.execute('PRAGMA database_list').fetchone()[2]) == DB_PATH
+    assert conn.execute('SELECT session_id, role, content FROM messages').fetchall() == [
+        ('ow2a-isolated', 'user', 'isolated synthetic fixture')
+    ]
+"""
+            result = subprocess.run(
+                [sys.executable, "-c", script], cwd=root, env=env,
+                capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue((Path(data_dir) / "corvus.db").is_file())
 
     async def test_identity_survives_socket_change_and_pipe_restart(self):
         await self.call()
