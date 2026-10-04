@@ -1,0 +1,43 @@
+{
+  "container_id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf",
+  "image_id": "sha256:52c80cb880eb4482f12e6df2b0dec55326a57fdf94fabb3184b76b7afb918b1b",
+  "state": "running",
+  "health": "healthy",
+  "restart_policy": "no",
+  "network_mode": "host",
+  "cgroup_parent": "",
+  "mounts": [
+    {
+      "Type": "volume",
+      "Name": "corvus-lab-open-webui-data",
+      "Source": "/var/lib/docker/volumes/corvus-lab-open-webui-data/_data",
+      "Destination": "/app/backend/data",
+      "Driver": "local",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "volume": {
+    "CreatedAt": "2026-10-03T17:49:11-07:00",
+    "Driver": "local",
+    "Labels": {
+      "com.corvus.instance": "lab",
+      "com.corvus.stage": "OW2e-A"
+    },
+    "Mountpoint": "/var/lib/docker/volumes/corvus-lab-open-webui-data/_data",
+    "Name": "corvus-lab-open-webui-data",
+    "Options": null,
+    "Scope": "local"
+  },
+  "bind": "127.0.0.1:3003",
+  "instance_id": "corvus-lab-console:eaa8d741-998d-41f6-ae5b-9019748c0a26",
+  "admin_id": "3b0e1838-5feb-4d10-a128-8ef2edc4412d",
+  "canonical_message_count": 6,
+  "guard_installed": false,
+  "os_guard": "deferred by user",
+  "lab_api_pid": 1706007,
+  "lab_api_start_ticks": "8265215",
+  "production_pid": 5711,
+  "production_start_ticks": "2640"
+}

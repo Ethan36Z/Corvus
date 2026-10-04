@@ -1,0 +1,94 @@
+{
+  "result": "OW2e-A FINAL PRODUCT ACCEPTANCE PASSED",
+  "verified_at_utc": "2026-10-04T03:35:49.707694+00:00",
+  "acceptance_scope": "Minimum Durable Corvus Lab; operator explicitly deferred OS-level destination guard/firewall semantic persistence",
+  "boot_id_before": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+  "boot_id_after": "e8adb20c-f3df-41a5-976c-db8091ed9ccc",
+  "units": {
+    "corvus-lab-api.service": {
+      "Restart": "no",
+      "MainPID": "5432",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 20:11:24 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2634"
+    },
+    "corvus-api.service": {
+      "Restart": "on-failure",
+      "MainPID": "5373",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 20:11:23 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2596"
+    }
+  },
+  "webui_started_at": "2026-10-04T03:11:19.76389458Z",
+  "dense_state": {
+    "canonical_messages": 6,
+    "caught_up": true,
+    "indexed_messages": 6,
+    "progress_after": 6,
+    "table": "evidence_dense_v1"
+  },
+  "dense_files_preserved_sha256_size_mtime": true,
+  "dense_files_manifest_sha256": "1eba2a48f75fb3eeb8ddd7ebddf817c6c98d8cc253571c1e33819ca55de8b7f4",
+  "loopback_bindings": [
+    "127.0.0.1:8096",
+    "127.0.0.1:18096",
+    "127.0.0.1:3003"
+  ],
+  "saved_chats_sha256": {
+    "7f09c43e-aff3-49f6-8768-a4ac688bff86": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+    "efe5559e-adb7-4dff-9d7b-851751e9234c": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32"
+  },
+  "canonical_messages": 6,
+  "lab_rows_sha256": "02b015df6fe22a9ddbc68e8c9e717f2dda564f70088aa28f4f3efa3761d737ca",
+  "production_file_count": 445,
+  "production_sha256_size_mtime_matches_durable_baseline": true,
+  "production_file_manifest_sha256": "3759cefd592d68fa4ed5c9660099fc470a9d556d26aefc453ceccb9ec7a2ff49",
+  "production_worktree_clean": true,
+  "production_head": "f453ed161994c8131bf8d9ed7c43cc15914176cf",
+  "original_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307",
+  "host_config_comparison": "PASS; only Dns/DnsOptions/DnsSearch null/[] equivalence",
+  "sealed_pipe_18096_sole_model_providers_disabled": true,
+  "prior_no_fallback_acceptance_preserved_sealed_pipe_unchanged": true,
+  "lab_namespace_configuration": {
+    "InaccessiblePaths": "/home/ethan/srv/apps/small-vram-companion /home/ethan/srv/data/corvus/private /home/ethan/srv/data/corvus/demo /home/ethan/srv/data/corvus/ow2a-acceptance",
+    "ProtectSystem": "strict",
+    "NoNewPrivileges": "yes"
+  },
+  "retained_3001_3002_stopped": true,
+  "model_hindsight_container_configuration_unchanged": true,
+  "cgroup_state_unchanged": true,
+  "custom_ow2e_guard_absent": true,
+  "browser_verification": "post-reboot-browser-verification.json",
+  "strict_reboot_checker_result": "Final reboot checkpoint mismatch: firewall_state",
+  "firewall_limitation": "NON-BLOCKING / DEFERRED HARDENING: runtime nftables/IPv4 iptables serialization/hash was not stable across reboot; exact semantic equivalence was not established because the original evidence stored hashes only. No actual exposure or policy defect was demonstrated.",
+  "firewall_hash_delta": {
+    "nft_policy_sha256": {
+      "before": "b5b7d4ad3c598b673b21c793a22085c55b6cd783b922c961ccd6346fbcee63ef",
+      "after": "f06932612afa99de557aac032e281f6634fc75f295edb188cd929ef6abb93746"
+    },
+    "iptables_policy_sha256": {
+      "before": "3ac055c9c34f771718c34a15167b2de6dc3ba52ce44bea34b0418e6892454818",
+      "after": "c25defceb2dc0a663e1996cb036e62ee9057f41f74ccacdbb9070f7dec3af65f"
+    }
+  },
+  "firewall_persistent_config_services_ipv6_rule_count_match": true,
+  "checker_and_baselines_unchanged": true,
+  "restarted_services": false,
+  "reboot_performed_during_final_product_review": false,
+  "committed_or_pushed": false,
+  "final_review": {
+    "reviewed_at_utc": "2026-10-04T03:39:10.134767+00:00",
+    "secret_scan_files": 34,
+    "secret_scan_matches": 0,
+    "git_diff_check": "PASS",
+    "new_text_artifact_diff_checks": 26,
+    "diff_review": "PASS; create-only bootstrap; independently verified readiness; only DNS null/[] normalization; unresolved strict firewall result retained; final product scope documented",
+    "production_445_files_and_processes_rechecked_after_report_update": true,
+    "staged_files": 0
+  }
+}

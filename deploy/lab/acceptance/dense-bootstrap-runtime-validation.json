@@ -1,0 +1,652 @@
+{
+  "result": "OW2e-A DENSE BOOTSTRAP RUNTIME VALIDATION PASSED",
+  "before": {
+    "label": "before_restart",
+    "captured_at": "2026-10-03T19:43:09.178341-07:00",
+    "boot_id": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+    "lab_unit": {
+      "Restart": "no",
+      "MainPID": "5088",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2591"
+    },
+    "production_unit": {
+      "Restart": "on-failure",
+      "MainPID": "5078",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2558"
+    },
+    "docker_unit": {
+      "Restart": "always",
+      "MainPID": "1599",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:16 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "1986"
+    },
+    "canonical_message_count": 6,
+    "canonical_full_rows_sha256": "c7887b3de9c4188e04509af0280aa136021133dfc9a53a0a24803836c1722a8c",
+    "canonical_baseline_matches": true,
+    "dense": {
+      "tables": [],
+      "progress_rows": [],
+      "effective_progress": 0,
+      "files": {},
+      "row_count": 0,
+      "unique_ids": 0,
+      "message_ids": []
+    },
+    "saved_chats": {
+      "7f09c43e-aff3-49f6-8768-a4ac688bff86": {
+        "history_sha256": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+        "message_count": 4
+      },
+      "efe5559e-adb7-4dff-9d7b-851751e9234c": {
+        "history_sha256": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32",
+        "message_count": 2
+      }
+    },
+    "production_file_count": 445,
+    "production_data_digest": "3759cefd592d68fa4ed5c9660099fc470a9d556d26aefc453ceccb9ec7a2ff49",
+    "production_durable_baseline_matches": true,
+    "production_head": "f453ed161994c8131bf8d9ed7c43cc15914176cf",
+    "production_worktree_clean": true,
+    "production_health": {
+      "status": "OK",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "OK",
+        "caught_up": true,
+        "batches": 0,
+        "indexed": 0,
+        "progress_after": 283,
+        "error": null
+      }
+    },
+    "lab_health": {
+      "status": "DEGRADED",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "DEGRADED",
+        "caught_up": false,
+        "batches": 0,
+        "indexed": 0,
+        "progress_after": null,
+        "error": "Table 'evidence_dense_v1' was not found"
+      }
+    },
+    "webui_health": {
+      "status": true
+    },
+    "containers": {
+      "corvus-lab-open-webui": {
+        "safe": {
+          "Id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf",
+          "Image": "sha256:52c80cb880eb4482f12e6df2b0dec55326a57fdf94fabb3184b76b7afb918b1b",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "corvus-lab-open-webui-data",
+              "Source": "/var/lib/docker/volumes/corvus-lab-open-webui-data/_data",
+              "Destination": "/app/backend/data",
+              "Driver": "local",
+              "Mode": "rw",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "275a535437c93389b4bed0ad95bbb2ff46e4cd6a54d3c7be2dda8e83890547c3",
+          "environment_sha256": "39169c09f977db8a143b0936627275ee8fc71cbf746e16f64df8b77893478afa"
+        },
+        "started_at": "2026-10-04T01:52:18.494765352Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "corvus-llama": {
+        "safe": {
+          "Id": "11c56fee4894baa7a41b8760662e7bce0605823fb07fcd6fc282edf48ea0c6b6",
+          "Image": "sha256:c50a38601c8bbb6dcb2fdbe60ee336faea7c7c7e11a1d5a6396993783617d911",
+          "Mounts": [
+            {
+              "Type": "bind",
+              "Source": "/home/ethan/srv/shared/models/qwen3.5-9b",
+              "Destination": "/models",
+              "Mode": "ro",
+              "RW": false,
+              "Propagation": "rprivate"
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "a61b6d3461898056681db216a84f04c4c07eed20a333315c02280da65106e729",
+          "environment_sha256": "c2d3b8dda60e23dcd00351c0e59094de1a232d299e955ca3d2d68189c8afb405"
+        },
+        "started_at": "2026-10-04T01:52:18.489640092Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "hindsight-lab": {
+        "safe": {
+          "Id": "336680f1d0a7a4dfb531f818976e969b6e1c7e55861fec4b605401df295a8bfe",
+          "Image": "sha256:b4d3b76f363aa40cf348450e7f8f52a50653008731b99824b14623a196182e73",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-cache",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-cache/_data",
+              "Destination": "/home/hindsight/.cache",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            },
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-data",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-data/_data",
+              "Destination": "/home/hindsight/.pg0",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "e025d6701d3e69ec3e60b836569544252b7704482ea2efe4b91dcb5e67d47060",
+          "environment_sha256": "fedfe35e4676dfd16fb7f78cf7022aa7b86de4af34c4d334a268e3859eb35e2c"
+        },
+        "started_at": "2026-10-04T01:52:18.492093462Z",
+        "restart_count": 0,
+        "status": "running"
+      }
+    },
+    "private_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307"
+  },
+  "after_first_restart": {
+    "label": "after_first_restart",
+    "captured_at": "2026-10-03T19:47:11.942248-07:00",
+    "boot_id": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+    "lab_unit": {
+      "Restart": "no",
+      "MainPID": "80677",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 19:46:27 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "327076"
+    },
+    "production_unit": {
+      "Restart": "on-failure",
+      "MainPID": "5078",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2558"
+    },
+    "docker_unit": {
+      "Restart": "always",
+      "MainPID": "1599",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:16 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "1986"
+    },
+    "canonical_message_count": 6,
+    "canonical_full_rows_sha256": "c7887b3de9c4188e04509af0280aa136021133dfc9a53a0a24803836c1722a8c",
+    "canonical_baseline_matches": true,
+    "dense": {
+      "tables": [
+        "evidence_dense_v1"
+      ],
+      "progress_rows": [
+        [
+          "evidence_dense_v1",
+          6
+        ]
+      ],
+      "effective_progress": 6,
+      "files": {
+        "evidence_dense_v1.lance/_transactions/0-2830530c-08eb-4c33-ae6e-82e211c6da69.txn": {
+          "sha256": "269fe5b2a00493a43075f619b731286c76eb7c916646508841910f9e1e1b6b28",
+          "size": 460,
+          "mtime_ns": 1791081994927086551
+        },
+        "evidence_dense_v1.lance/_transactions/1-cee72f94-204c-49c4-8033-3eba59a83007.txn": {
+          "sha256": "aecbbf36d76d0e2d40005505a47e3888977aca913fe55f19999913203e7fc01e",
+          "size": 151,
+          "mtime_ns": 1791081997897190643
+        },
+        "evidence_dense_v1.lance/_versions/18446744073709551613.manifest": {
+          "sha256": "68007dff0260e28d8171c007fee78072f53ad0bcc1c8dbe0438b14a755014a3b",
+          "size": 785,
+          "mtime_ns": 1791081997898191337
+        },
+        "evidence_dense_v1.lance/_versions/18446744073709551614.manifest": {
+          "sha256": "96cab3776034d88dc08c1bc1a3081fd218b862102c1c02ab82405bc17a96a826",
+          "size": 996,
+          "mtime_ns": 1791081994927086551
+        },
+        "evidence_dense_v1.lance/_versions/latest_version_hint.json": {
+          "sha256": "732322c128ed67841ef5aa42c7cd04ffcd74a61b2d17d710cd502b713d62930d",
+          "size": 13,
+          "mtime_ns": 1791081997899040697
+        },
+        "evidence_dense_v1.lance/data/0101101101011110101101009e7fbd426393d43909fa33be24.lance": {
+          "sha256": "e1a28ecf6993892e6ace533238e94473516104611264e461bb8ddbc411958c92",
+          "size": 22798,
+          "mtime_ns": 1791081997893187868
+        }
+      },
+      "row_count": 6,
+      "unique_ids": 6,
+      "message_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "table_version": 2,
+      "schema_matches": true,
+      "embedding_dimension": 768,
+      "pinned_model": "Alibaba-NLP/gte-multilingual-base",
+      "pinned_revision": "ca1791e0bcc104f6db161f27de1340241b13c5a4",
+      "schema_version": 1,
+      "records_sha256": "a6d2ce4cf4967f3166f20940ae89654f4ff41206f7adfcb4e4d6493f30547417"
+    },
+    "saved_chats": {
+      "7f09c43e-aff3-49f6-8768-a4ac688bff86": {
+        "history_sha256": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+        "message_count": 4
+      },
+      "efe5559e-adb7-4dff-9d7b-851751e9234c": {
+        "history_sha256": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32",
+        "message_count": 2
+      }
+    },
+    "production_file_count": 445,
+    "production_data_digest": "3759cefd592d68fa4ed5c9660099fc470a9d556d26aefc453ceccb9ec7a2ff49",
+    "production_durable_baseline_matches": true,
+    "production_head": "f453ed161994c8131bf8d9ed7c43cc15914176cf",
+    "production_worktree_clean": true,
+    "production_health": {
+      "status": "OK",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "OK",
+        "caught_up": true,
+        "batches": 0,
+        "indexed": 0,
+        "progress_after": 283,
+        "error": null
+      }
+    },
+    "lab_health": {
+      "status": "OK",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "OK",
+        "caught_up": true,
+        "batches": 1,
+        "indexed": 6,
+        "progress_after": 6,
+        "error": null
+      }
+    },
+    "webui_health": {
+      "status": true
+    },
+    "containers": {
+      "corvus-lab-open-webui": {
+        "safe": {
+          "Id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf",
+          "Image": "sha256:52c80cb880eb4482f12e6df2b0dec55326a57fdf94fabb3184b76b7afb918b1b",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "corvus-lab-open-webui-data",
+              "Source": "/var/lib/docker/volumes/corvus-lab-open-webui-data/_data",
+              "Destination": "/app/backend/data",
+              "Driver": "local",
+              "Mode": "rw",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "275a535437c93389b4bed0ad95bbb2ff46e4cd6a54d3c7be2dda8e83890547c3",
+          "environment_sha256": "39169c09f977db8a143b0936627275ee8fc71cbf746e16f64df8b77893478afa"
+        },
+        "started_at": "2026-10-04T01:52:18.494765352Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "corvus-llama": {
+        "safe": {
+          "Id": "11c56fee4894baa7a41b8760662e7bce0605823fb07fcd6fc282edf48ea0c6b6",
+          "Image": "sha256:c50a38601c8bbb6dcb2fdbe60ee336faea7c7c7e11a1d5a6396993783617d911",
+          "Mounts": [
+            {
+              "Type": "bind",
+              "Source": "/home/ethan/srv/shared/models/qwen3.5-9b",
+              "Destination": "/models",
+              "Mode": "ro",
+              "RW": false,
+              "Propagation": "rprivate"
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "a61b6d3461898056681db216a84f04c4c07eed20a333315c02280da65106e729",
+          "environment_sha256": "c2d3b8dda60e23dcd00351c0e59094de1a232d299e955ca3d2d68189c8afb405"
+        },
+        "started_at": "2026-10-04T01:52:18.489640092Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "hindsight-lab": {
+        "safe": {
+          "Id": "336680f1d0a7a4dfb531f818976e969b6e1c7e55861fec4b605401df295a8bfe",
+          "Image": "sha256:b4d3b76f363aa40cf348450e7f8f52a50653008731b99824b14623a196182e73",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-cache",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-cache/_data",
+              "Destination": "/home/hindsight/.cache",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            },
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-data",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-data/_data",
+              "Destination": "/home/hindsight/.pg0",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "e025d6701d3e69ec3e60b836569544252b7704482ea2efe4b91dcb5e67d47060",
+          "environment_sha256": "fedfe35e4676dfd16fb7f78cf7022aa7b86de4af34c4d334a268e3859eb35e2c"
+        },
+        "started_at": "2026-10-04T01:52:18.492093462Z",
+        "restart_count": 0,
+        "status": "running"
+      }
+    },
+    "private_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307",
+    "persistent_readiness": {
+      "canonical_messages": 6,
+      "caught_up": true,
+      "indexed_messages": 6,
+      "progress_after": 6,
+      "table": "evidence_dense_v1"
+    }
+  },
+  "after_second_restart": {
+    "label": "after_second_restart",
+    "captured_at": "2026-10-03T19:49:45.824016-07:00",
+    "boot_id": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+    "lab_unit": {
+      "Restart": "no",
+      "MainPID": "83912",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 19:48:50 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "341374"
+    },
+    "production_unit": {
+      "Restart": "on-failure",
+      "MainPID": "5078",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2558"
+    },
+    "docker_unit": {
+      "Restart": "always",
+      "MainPID": "1599",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:16 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "1986"
+    },
+    "canonical_message_count": 6,
+    "canonical_full_rows_sha256": "c7887b3de9c4188e04509af0280aa136021133dfc9a53a0a24803836c1722a8c",
+    "canonical_baseline_matches": true,
+    "dense": {
+      "tables": [
+        "evidence_dense_v1"
+      ],
+      "progress_rows": [
+        [
+          "evidence_dense_v1",
+          6
+        ]
+      ],
+      "effective_progress": 6,
+      "files": {
+        "evidence_dense_v1.lance/_transactions/0-2830530c-08eb-4c33-ae6e-82e211c6da69.txn": {
+          "sha256": "269fe5b2a00493a43075f619b731286c76eb7c916646508841910f9e1e1b6b28",
+          "size": 460,
+          "mtime_ns": 1791081994927086551
+        },
+        "evidence_dense_v1.lance/_transactions/1-cee72f94-204c-49c4-8033-3eba59a83007.txn": {
+          "sha256": "aecbbf36d76d0e2d40005505a47e3888977aca913fe55f19999913203e7fc01e",
+          "size": 151,
+          "mtime_ns": 1791081997897190643
+        },
+        "evidence_dense_v1.lance/_versions/18446744073709551613.manifest": {
+          "sha256": "68007dff0260e28d8171c007fee78072f53ad0bcc1c8dbe0438b14a755014a3b",
+          "size": 785,
+          "mtime_ns": 1791081997898191337
+        },
+        "evidence_dense_v1.lance/_versions/18446744073709551614.manifest": {
+          "sha256": "96cab3776034d88dc08c1bc1a3081fd218b862102c1c02ab82405bc17a96a826",
+          "size": 996,
+          "mtime_ns": 1791081994927086551
+        },
+        "evidence_dense_v1.lance/_versions/latest_version_hint.json": {
+          "sha256": "732322c128ed67841ef5aa42c7cd04ffcd74a61b2d17d710cd502b713d62930d",
+          "size": 13,
+          "mtime_ns": 1791081997899040697
+        },
+        "evidence_dense_v1.lance/data/0101101101011110101101009e7fbd426393d43909fa33be24.lance": {
+          "sha256": "e1a28ecf6993892e6ace533238e94473516104611264e461bb8ddbc411958c92",
+          "size": 22798,
+          "mtime_ns": 1791081997893187868
+        }
+      },
+      "row_count": 6,
+      "unique_ids": 6,
+      "message_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "table_version": 2,
+      "schema_matches": true,
+      "embedding_dimension": 768,
+      "pinned_model": "Alibaba-NLP/gte-multilingual-base",
+      "pinned_revision": "ca1791e0bcc104f6db161f27de1340241b13c5a4",
+      "schema_version": 1,
+      "records_sha256": "a6d2ce4cf4967f3166f20940ae89654f4ff41206f7adfcb4e4d6493f30547417"
+    },
+    "saved_chats": {
+      "7f09c43e-aff3-49f6-8768-a4ac688bff86": {
+        "history_sha256": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+        "message_count": 4
+      },
+      "efe5559e-adb7-4dff-9d7b-851751e9234c": {
+        "history_sha256": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32",
+        "message_count": 2
+      }
+    },
+    "production_file_count": 445,
+    "production_data_digest": "3759cefd592d68fa4ed5c9660099fc470a9d556d26aefc453ceccb9ec7a2ff49",
+    "production_durable_baseline_matches": true,
+    "production_head": "f453ed161994c8131bf8d9ed7c43cc15914176cf",
+    "production_worktree_clean": true,
+    "production_health": {
+      "status": "OK",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "OK",
+        "caught_up": true,
+        "batches": 0,
+        "indexed": 0,
+        "progress_after": 283,
+        "error": null
+      }
+    },
+    "lab_health": {
+      "status": "OK",
+      "service": "OK",
+      "model": {
+        "status": "OK",
+        "error": null
+      },
+      "dense_recovery": {
+        "status": "OK",
+        "caught_up": true,
+        "batches": 0,
+        "indexed": 0,
+        "progress_after": 6,
+        "error": null
+      }
+    },
+    "webui_health": {
+      "status": true
+    },
+    "containers": {
+      "corvus-lab-open-webui": {
+        "safe": {
+          "Id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf",
+          "Image": "sha256:52c80cb880eb4482f12e6df2b0dec55326a57fdf94fabb3184b76b7afb918b1b",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "corvus-lab-open-webui-data",
+              "Source": "/var/lib/docker/volumes/corvus-lab-open-webui-data/_data",
+              "Destination": "/app/backend/data",
+              "Driver": "local",
+              "Mode": "rw",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "275a535437c93389b4bed0ad95bbb2ff46e4cd6a54d3c7be2dda8e83890547c3",
+          "environment_sha256": "39169c09f977db8a143b0936627275ee8fc71cbf746e16f64df8b77893478afa"
+        },
+        "started_at": "2026-10-04T01:52:18.494765352Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "corvus-llama": {
+        "safe": {
+          "Id": "11c56fee4894baa7a41b8760662e7bce0605823fb07fcd6fc282edf48ea0c6b6",
+          "Image": "sha256:c50a38601c8bbb6dcb2fdbe60ee336faea7c7c7e11a1d5a6396993783617d911",
+          "Mounts": [
+            {
+              "Type": "bind",
+              "Source": "/home/ethan/srv/shared/models/qwen3.5-9b",
+              "Destination": "/models",
+              "Mode": "ro",
+              "RW": false,
+              "Propagation": "rprivate"
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "a61b6d3461898056681db216a84f04c4c07eed20a333315c02280da65106e729",
+          "environment_sha256": "c2d3b8dda60e23dcd00351c0e59094de1a232d299e955ca3d2d68189c8afb405"
+        },
+        "started_at": "2026-10-04T01:52:18.489640092Z",
+        "restart_count": 0,
+        "status": "running"
+      },
+      "hindsight-lab": {
+        "safe": {
+          "Id": "336680f1d0a7a4dfb531f818976e969b6e1c7e55861fec4b605401df295a8bfe",
+          "Image": "sha256:b4d3b76f363aa40cf348450e7f8f52a50653008731b99824b14623a196182e73",
+          "Mounts": [
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-cache",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-cache/_data",
+              "Destination": "/home/hindsight/.cache",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            },
+            {
+              "Type": "volume",
+              "Name": "hindsight-lab-data",
+              "Source": "/var/lib/docker/volumes/hindsight-lab-data/_data",
+              "Destination": "/home/hindsight/.pg0",
+              "Driver": "local",
+              "Mode": "z",
+              "RW": true,
+              "Propagation": ""
+            }
+          ],
+          "restart": "unless-stopped",
+          "host_config_sha256": "e025d6701d3e69ec3e60b836569544252b7704482ea2efe4b91dcb5e67d47060",
+          "environment_sha256": "fedfe35e4676dfd16fb7f78cf7022aa7b86de4af34c4d334a268e3859eb35e2c"
+        },
+        "started_at": "2026-10-04T01:52:18.492093462Z",
+        "restart_count": 0,
+        "status": "running"
+      }
+    },
+    "private_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307",
+    "persistent_readiness": {
+      "canonical_messages": 6,
+      "caught_up": true,
+      "indexed_messages": 6,
+      "progress_after": 6,
+      "table": "evidence_dense_v1"
+    }
+  }
+}

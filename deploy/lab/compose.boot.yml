@@ -1,0 +1,5 @@
+# Approved boot persistence. Use together with compose.webui.yml.
+# Runtime policy promoted separately with docker update; base remains restart=no.
+services:
+  open-webui:
+    restart: unless-stopped

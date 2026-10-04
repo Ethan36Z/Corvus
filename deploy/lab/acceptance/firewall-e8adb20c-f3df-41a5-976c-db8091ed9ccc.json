@@ -1,0 +1,23 @@
+{
+  "boot_id": "e8adb20c-f3df-41a5-976c-db8091ed9ccc",
+  "persistent_config_sha256": {
+    "/etc/nftables.conf": "60dac93ffe0ea440fc4a8941a080b6fb8d2c8655d47baf856e97182a0d1ca29a",
+    "/etc/default/ufw": "07db07bb07e5ac1388707b7c59dabfbce8ad06d5001236248fbf3f93b79c2ed7",
+    "/etc/ufw/after.init": "1354ecc09be8b68eeb5d1d7b5f00af90bcbc6f53535b591546a6b4652ff5d807",
+    "/etc/ufw/after.rules": "c1be61c17e850ea16dc5a02be22e0ec79b631904c2383353da360bce2dfc6b64",
+    "/etc/ufw/after6.rules": "ee5f2e14d2ae6c33ffac9614dfc6035f33a1faae94542751738f26b2859e3e13",
+    "/etc/ufw/applications.d/cups": "83aabb512ce30fe9bc02061127284b8d39dc9f65983c3c3b34aec466fe2456e8",
+    "/etc/ufw/applications.d/openssh-server": "f363c320cecc0474122f81e1563ea28f9e7ebc5913ac049de4d6e01f8e9917d0",
+    "/etc/ufw/before.init": "a1936d13aadea73df4a8d91dfed3c0433467ab9da1c4f344a308c36e6a0559cf",
+    "/etc/ufw/before.rules": "d63bc8bb2df0d20909267b7b40cb5cc187baba6e0baf95bbf71ac14f92df8e6c",
+    "/etc/ufw/before6.rules": "e31099b46c2ae40afa92e90dbe5d575c438327e1a4374355872f5eb37db3307b",
+    "/etc/ufw/sysctl.conf": "df05de02ea325b3c6d0d22c06c3dc7ebaf3a4e06e41fb98a0671b430b7da5b7f",
+    "/etc/ufw/ufw.conf": "1c75b26d27f47cb59a4383a0b07b479d4b3493d34c4eed165b1e1860fe5ccf39",
+    "/etc/ufw/user.rules": "320f53e1ee90a7fd92f17b67f50b06b51cb20998cd52f01dbcb52e24160618bf",
+    "/etc/ufw/user6.rules": "f6696cd7741aada36ab2055dd1a9d098e23e0290ca3a67dafbbad2920e5fdf60"
+  },
+  "nft_policy_sha256": "f06932612afa99de557aac032e281f6634fc75f295edb188cd929ef6abb93746",
+  "nft_rule_count": 141,
+  "iptables_policy_sha256": "c25defceb2dc0a663e1996cb036e62ee9057f41f74ccacdbb9070f7dec3af65f",
+  "ip6tables_policy_sha256": "44745f1236fa0a967fd501f3de3851c5c5cab011476539e978d886c85f053fe6"
+}

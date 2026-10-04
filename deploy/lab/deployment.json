@@ -1,0 +1,34 @@
+{
+  "stage": "OW2e-A",
+  "baseline": "f453ed161994c8131bf8d9ed7c43cc15914176cf",
+  "image": "corvus-open-webui:0.6.5-ow2d.1",
+  "image_id": "sha256:52c80cb880eb4482f12e6df2b0dec55326a57fdf94fabb3184b76b7afb918b1b",
+  "pipe_sha256": "37d1f6ea3adab2f16f02ccb4e7e1abef9949544d871a581c791263bc8698b781",
+  "instance_id": "corvus-lab-console:eaa8d741-998d-41f6-ae5b-9019748c0a26",
+  "webui_url": "http://127.0.0.1:3003",
+  "corvus_chat_url": "http://127.0.0.1:18096/api/chat",
+  "volume": "corvus-lab-open-webui-data",
+  "data_dir": "/home/ethan/srv/data/corvus/lab",
+  "checkout": "/home/ethan/srv/apps/corvus-lab",
+  "os_destination_guard": "deferred_by_user",
+  "webui_compose": "/home/ethan/srv/apps/corvus-lab/deploy/lab/compose.webui.yml",
+  "webui_secret_file": "/home/ethan/.config/corvus-lab/webui.env",
+  "acceptance_report": "/home/ethan/srv/apps/corvus-lab/deploy/lab/ow2e-a-acceptance.md",
+  "linux_acceptance": "PASS",
+  "boot_persistence_enabled": true,
+  "boot_persistence_reboot_verified": true,
+  "boot_persistence": {
+    "lab_api_unit": "corvus-lab-api.service",
+    "lab_api_enabled": true,
+    "webui_restart_policy": "unless-stopped",
+    "compose_files": [
+      "deploy/lab/compose.webui.yml",
+      "deploy/lab/compose.boot.yml"
+    ],
+    "promotion_verification": "PASS_WITHOUT_REBOOT",
+    "reboot_plan": "deploy/lab/reboot-acceptance-plan.md",
+    "private_reboot_baseline": "/home/ethan/.config/corvus-lab/reboot-acceptance-baseline.json",
+    "reboot_product_verification": "deploy/lab/acceptance/final-product-verification.json",
+    "firewall_semantic_persistence": "deferred_hardening_runtime_hash_mismatch_unresolved"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "original3001": {
+    "db_sha256": "a7f5b6e7bf75b1fef74a658f867fb753bc24f18f63d08bb4bb55fd1435c6d567",
+    "size": 225280,
+    "mtime_ns": 1790899677010208371,
+    "quick_check": "ok",
+    "counts": {
+      "user": 1,
+      "chat": 2,
+      "function": 1,
+      "tool": 0
+    },
+    "functions": [
+      {
+        "id": "corvus_pipe",
+        "sha256": "37d1f6ea3adab2f16f02ccb4e7e1abef9949544d871a581c791263bc8698b781"
+      }
+    ]
+  },
+  "original3002": {
+    "db_sha256": "022f4d57a960753f733c1915ac1f1dbaf0f6b6ce27f365e4c2ecc285766cad82",
+    "size": 208896,
+    "mtime_ns": 1790879113808615503,
+    "quick_check": "ok",
+    "counts": {
+      "user": 1,
+      "chat": 0,
+      "function": 0,
+      "tool": 0
+    },
+    "functions": []
+  }
+}

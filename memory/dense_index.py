@@ -45,6 +45,22 @@ DENSE_SCHEMA = pa.schema([
 ])
 
 
+def ensure_dense_table():
+    """Open the pinned dense table, creating it only if absent.
+
+    exist_ok opens and validates an existing table without adding data or
+    replacing it. Creation uses the same schema as explicit rebuilds, but
+    never uses overwrite mode. Canonical SQLite and progress are untouched.
+    """
+    db = lancedb.connect(str(LANCE_DB_PATH))
+    return db.create_table(
+        TABLE_NAME,
+        schema=DENSE_SCHEMA,
+        mode="create",
+        exist_ok=True,
+    )
+
+
 def content_sha256(content):
     return hashlib.sha256(
         content.encode("utf-8")
@@ -352,6 +368,8 @@ def sync_dense_message_ids(message_ids, batch_size=64):
             "batch_size must be positive"
         )
 
+    ensure_dense_table()
+
     classification = classify_dense_message_ids(
         message_ids
     )
@@ -536,6 +554,8 @@ def sync_dense_tail_once(limit=64):
         raise ValueError(
             "limit must be positive"
         )
+
+    ensure_dense_table()
 
     progress_before = get_dense_progress()
 

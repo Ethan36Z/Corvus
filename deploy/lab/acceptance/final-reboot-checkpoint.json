@@ -1,0 +1,88 @@
+{
+  "boot_id": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+  "units": {
+    "corvus-lab-api.service": {
+      "Restart": "no",
+      "MainPID": "83912",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 19:48:50 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "341374"
+    },
+    "corvus-api.service": {
+      "Restart": "on-failure",
+      "MainPID": "5078",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2558"
+    }
+  },
+  "webui_started_at": "2026-10-04T01:52:18.494765352Z",
+  "dense_state": {
+    "canonical_messages": 6,
+    "caught_up": true,
+    "indexed_messages": 6,
+    "progress_after": 6,
+    "table": "evidence_dense_v1"
+  },
+  "dense_files": {
+    "evidence_dense_v1.lance/_transactions/0-2830530c-08eb-4c33-ae6e-82e211c6da69.txn": {
+      "size": 460,
+      "mtime_ns": 1791081994927086551,
+      "sha256": "269fe5b2a00493a43075f619b731286c76eb7c916646508841910f9e1e1b6b28"
+    },
+    "evidence_dense_v1.lance/_transactions/1-cee72f94-204c-49c4-8033-3eba59a83007.txn": {
+      "size": 151,
+      "mtime_ns": 1791081997897190643,
+      "sha256": "aecbbf36d76d0e2d40005505a47e3888977aca913fe55f19999913203e7fc01e"
+    },
+    "evidence_dense_v1.lance/_versions/18446744073709551613.manifest": {
+      "size": 785,
+      "mtime_ns": 1791081997898191337,
+      "sha256": "68007dff0260e28d8171c007fee78072f53ad0bcc1c8dbe0438b14a755014a3b"
+    },
+    "evidence_dense_v1.lance/_versions/18446744073709551614.manifest": {
+      "size": 996,
+      "mtime_ns": 1791081994927086551,
+      "sha256": "96cab3776034d88dc08c1bc1a3081fd218b862102c1c02ab82405bc17a96a826"
+    },
+    "evidence_dense_v1.lance/_versions/latest_version_hint.json": {
+      "size": 13,
+      "mtime_ns": 1791081997899040697,
+      "sha256": "732322c128ed67841ef5aa42c7cd04ffcd74a61b2d17d710cd502b713d62930d"
+    },
+    "evidence_dense_v1.lance/data/0101101101011110101101009e7fbd426393d43909fa33be24.lance": {
+      "size": 22798,
+      "mtime_ns": 1791081997893187868,
+      "sha256": "e1a28ecf6993892e6ace533238e94473516104611264e461bb8ddbc411958c92"
+    }
+  },
+  "firewall_state": {
+    "persistent_config_sha256": {
+      "/etc/nftables.conf": "60dac93ffe0ea440fc4a8941a080b6fb8d2c8655d47baf856e97182a0d1ca29a",
+      "/etc/default/ufw": "07db07bb07e5ac1388707b7c59dabfbce8ad06d5001236248fbf3f93b79c2ed7",
+      "/etc/ufw/after.init": "1354ecc09be8b68eeb5d1d7b5f00af90bcbc6f53535b591546a6b4652ff5d807",
+      "/etc/ufw/after.rules": "c1be61c17e850ea16dc5a02be22e0ec79b631904c2383353da360bce2dfc6b64",
+      "/etc/ufw/after6.rules": "ee5f2e14d2ae6c33ffac9614dfc6035f33a1faae94542751738f26b2859e3e13",
+      "/etc/ufw/applications.d/cups": "83aabb512ce30fe9bc02061127284b8d39dc9f65983c3c3b34aec466fe2456e8",
+      "/etc/ufw/applications.d/openssh-server": "f363c320cecc0474122f81e1563ea28f9e7ebc5913ac049de4d6e01f8e9917d0",
+      "/etc/ufw/before.init": "a1936d13aadea73df4a8d91dfed3c0433467ab9da1c4f344a308c36e6a0559cf",
+      "/etc/ufw/before.rules": "d63bc8bb2df0d20909267b7b40cb5cc187baba6e0baf95bbf71ac14f92df8e6c",
+      "/etc/ufw/before6.rules": "e31099b46c2ae40afa92e90dbe5d575c438327e1a4374355872f5eb37db3307b",
+      "/etc/ufw/sysctl.conf": "df05de02ea325b3c6d0d22c06c3dc7ebaf3a4e06e41fb98a0671b430b7da5b7f",
+      "/etc/ufw/ufw.conf": "1c75b26d27f47cb59a4383a0b07b479d4b3493d34c4eed165b1e1860fe5ccf39",
+      "/etc/ufw/user.rules": "320f53e1ee90a7fd92f17b67f50b06b51cb20998cd52f01dbcb52e24160618bf",
+      "/etc/ufw/user6.rules": "f6696cd7741aada36ab2055dd1a9d098e23e0290ca3a67dafbbad2920e5fdf60"
+    },
+    "nft_policy_sha256": "b5b7d4ad3c598b673b21c793a22085c55b6cd783b922c961ccd6346fbcee63ef",
+    "nft_rule_count": 141,
+    "iptables_policy_sha256": "3ac055c9c34f771718c34a15167b2de6dc3ba52ce44bea34b0418e6892454818",
+    "ip6tables_policy_sha256": "44745f1236fa0a967fd501f3de3851c5c5cab011476539e978d886c85f053fe6",
+    "services": "LoadState=loaded\nActiveState=inactive\nFragmentPath=/usr/lib/systemd/system/nftables.service\nUnitFileState=disabled\n\nLoadState=loaded\nActiveState=active\nFragmentPath=/usr/lib/systemd/system/ufw.service\nUnitFileState=enabled\n\nLoadState=not-found\nActiveState=inactive\nFragmentPath=\nUnitFileState="
+  },
+  "cgroup_state": "Slice=system.slice\nControlGroup=/system.slice/corvus-lab-api.service\nDelegate=no\nCPUQuotaPerSecUSec=infinity\nAllowedCPUs=\nAllowedMemoryNodes=\nMemoryMax=infinity\nTasksMax=34323\n\nSlice=system.slice\nControlGroup=/system.slice/corvus-api.service\nDelegate=no\nCPUQuotaPerSecUSec=infinity\nAllowedCPUs=\nAllowedMemoryNodes=\nMemoryMax=infinity\nTasksMax=34323",
+  "original_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307"
+}

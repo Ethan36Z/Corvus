@@ -1,0 +1,31 @@
+{
+  "boot_id": "e8adb20c-f3df-41a5-976c-db8091ed9ccc",
+  "browser": "headless Google Chrome",
+  "new_turn_sent": false,
+  "before_saved_chats_sha256": {
+    "7f09c43e-aff3-49f6-8768-a4ac688bff86": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+    "efe5559e-adb7-4dff-9d7b-851751e9234c": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32"
+  },
+  "chat_a": {
+    "id": "7f09c43e-aff3-49f6-8768-a4ac688bff86",
+    "loaded": true,
+    "reload_passed": true,
+    "title": "New Chat | Corvus",
+    "both_saved_replies_visible": true,
+    "rendered_text": "?\nCorvus\n\nOW2e-A synthetic acceptance. My test code is amber-cove-472. Reply with a short acknowledgement.\n\nCorvus\n\nAcknowledged. Test code amber-cove-472 received.\n\nWhat is the test code I gave you in this conversation? Keep the answer short.\n\nCorvus\n\nThe test code you provided is amber-cove-472.\n\n\n"
+  },
+  "chat_b": {
+    "id": "efe5559e-adb7-4dff-9d7b-851751e9234c",
+    "loaded": true,
+    "saved_reply_visible": true,
+    "title": "New Chat | Corvus",
+    "rendered_text": "?\nCorvus\n\nOW2e-A synthetic acceptance in a separate chat. Reply with one short greeting.\n\nCorvus\n\nHey.\n\n\n"
+  },
+  "branding_rendered": true,
+  "after_saved_chats_sha256": {
+    "7f09c43e-aff3-49f6-8768-a4ac688bff86": "73dc93326fa5bb143c192fd73f31c23fcb2556449329059d04d3a97cd2519641",
+    "efe5559e-adb7-4dff-9d7b-851751e9234c": "9b9da152aac56a68ce1f5c23f1bb848463abe2b34b398634a8520be6cf910f32"
+  },
+  "saved_chats_unchanged": true,
+  "result": "POST-REBOOT SAVED-CHAT BROWSER RELOAD PASSED"
+}

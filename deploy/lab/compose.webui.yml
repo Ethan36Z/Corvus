@@ -1,0 +1,68 @@
+name: corvus-lab-open-webui
+services:
+  open-webui:
+    image: corvus-open-webui:0.6.5-ow2d.1
+    pull_policy: never
+    container_name: corvus-lab-open-webui
+    network_mode: host
+    restart: "no"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      HOST: "127.0.0.1"
+      PORT: "3003"
+      WEBUI_URL: "http://127.0.0.1:3003"
+      WEBUI_NAME: "Corvus"
+      CUSTOM_NAME: ""
+      LICENSE_KEY: ""
+      EXTERNAL_PWA_MANIFEST_URL: ""
+      OFFLINE_MODE: "true"
+      WEBUI_AUTH: "true"
+      WEBUI_SECRET_KEY: "${CORVUS_LAB_WEBUI_SECRET_KEY:?Load the private Lab webui.env file}"
+      ENABLE_PERSISTENT_CONFIG: "false"
+      ENABLE_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "true"
+      ENABLE_API_KEY: "false"
+      ENABLE_OPENAI_API: "false"
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_DIRECT_CONNECTIONS: "false"
+      ENABLE_EVALUATION_ARENA_MODELS: "false"
+      ENABLE_TITLE_GENERATION: "false"
+      ENABLE_TAGS_GENERATION: "false"
+      ENABLE_AUTOCOMPLETE_GENERATION: "false"
+      ENABLE_WEB_SEARCH: "false"
+      ENABLE_IMAGE_GENERATION: "false"
+      ENABLE_IMAGE_PROMPT_GENERATION: "false"
+      ENABLE_CODE_EXECUTION: "false"
+      ENABLE_CODE_INTERPRETER: "false"
+      ENABLE_COMMUNITY_SHARING: "false"
+      ENABLE_MESSAGE_RATING: "false"
+      ENABLE_USER_WEBHOOKS: "false"
+      ENABLE_CHANNELS: "false"
+      ENABLE_ADMIN_EXPORT: "false"
+      USE_OLLAMA_DOCKER: "false"
+      USE_CUDA_DOCKER: "false"
+      DEFAULT_MODELS: "corvus_pipe"
+      USER_PERMISSIONS_CHAT_FILE_UPLOAD: "false"
+      USER_PERMISSIONS_CHAT_EDIT: "false"
+      USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: "false"
+      USER_PERMISSIONS_CHAT_TEMPORARY: "false"
+      USER_PERMISSIONS_CHAT_STT: "false"
+      USER_PERMISSIONS_CHAT_TTS: "false"
+      USER_PERMISSIONS_CHAT_CALL: "false"
+      USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS: "false"
+      USER_PERMISSIONS_FEATURES_WEB_SEARCH: "false"
+      USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: "false"
+      USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: "false"
+    volumes:
+      - lab-webui-data:/app/backend/data
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --max-time, "3", "http://127.0.0.1:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+volumes:
+  lab-webui-data:
+    external: true
+    name: corvus-lab-open-webui-data

@@ -1,0 +1,121 @@
+{
+  "chat_a": "7f09c43e-aff3-49f6-8768-a4ac688bff86",
+  "session_a": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+  "admin_id": "3b0e1838-5feb-4d10-a128-8ef2edc4412d",
+  "instance_id": "corvus-lab-console:eaa8d741-998d-41f6-ae5b-9019748c0a26",
+  "first_reply": "Acknowledged. Test code amber-cove-472 received.",
+  "rows_after_first": [
+    {
+      "id": 1,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "user",
+      "content": "OW2e-A synthetic acceptance. My test code is amber-cove-472. Reply with a short acknowledgement."
+    },
+    {
+      "id": 2,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "assistant",
+      "content": "Acknowledged. Test code amber-cove-472 received."
+    }
+  ],
+  "resume_reply": "The test code you provided is amber-cove-472.",
+  "rows_after_resume": [
+    {
+      "id": 1,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "user",
+      "content": "OW2e-A synthetic acceptance. My test code is amber-cove-472. Reply with a short acknowledgement."
+    },
+    {
+      "id": 2,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "assistant",
+      "content": "Acknowledged. Test code amber-cove-472 received."
+    },
+    {
+      "id": 3,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "user",
+      "content": "What is the test code I gave you in this conversation? Keep the answer short."
+    },
+    {
+      "id": 4,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "assistant",
+      "content": "The test code you provided is amber-cove-472."
+    }
+  ],
+  "chat_b": "efe5559e-adb7-4dff-9d7b-851751e9234c",
+  "session_b": "ow1:b1763979353747a58ef2223988e979a0dbe35cdb1784c275fe86c100e33f31a6",
+  "distinct_reply": "Hey.",
+  "rows_after_distinct": [
+    {
+      "id": 1,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "user",
+      "content": "OW2e-A synthetic acceptance. My test code is amber-cove-472. Reply with a short acknowledgement."
+    },
+    {
+      "id": 2,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "assistant",
+      "content": "Acknowledged. Test code amber-cove-472 received."
+    },
+    {
+      "id": 3,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "user",
+      "content": "What is the test code I gave you in this conversation? Keep the answer short."
+    },
+    {
+      "id": 4,
+      "session_id": "ow1:2e6bb7f642b8768c59a5f6280b2d13c41005e8b02ee725b6a8bd109a43968b3d",
+      "role": "assistant",
+      "content": "The test code you provided is amber-cove-472."
+    },
+    {
+      "id": 5,
+      "session_id": "ow1:b1763979353747a58ef2223988e979a0dbe35cdb1784c275fe86c100e33f31a6",
+      "role": "user",
+      "content": "OW2e-A synthetic acceptance in a separate chat. Reply with one short greeting."
+    },
+    {
+      "id": 6,
+      "session_id": "ow1:b1763979353747a58ef2223988e979a0dbe35cdb1784c275fe86c100e33f31a6",
+      "role": "assistant",
+      "content": "Hey."
+    }
+  ],
+  "b_recent_message_ids": [],
+  "a_resume_recent_message_ids": [
+    1,
+    2
+  ],
+  "attachment_rejection": {
+    "http_status": 200,
+    "response": {
+      "error": {
+        "detail": "OW1 supports ordinary text turns only; this operation is unsupported."
+      }
+    },
+    "canonical_unchanged": true
+  },
+  "unknown_model_rejection": {
+    "http_status": 400,
+    "response": {
+      "detail": "Model not found"
+    }
+  },
+  "unavailable": {
+    "chat_id": "c5d12246-9dc8-49d8-8333-c4d0f2aa7b3c",
+    "mechanism": "Temporary WebUI-only LD_PRELOAD connect failure for 127.0.0.1:18096; no firewall/service/valve changes",
+    "sanitized_error": "Corvus request failed. Corvus did not confirm this turn.",
+    "no_assistant_reply": true,
+    "no_canonical_write": true
+  },
+  "restart_persistence": {
+    "successful_chats_unchanged": true,
+    "canonical_messages_unchanged": true,
+    "normal_container_id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf"
+  }
+}

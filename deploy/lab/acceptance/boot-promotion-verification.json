@@ -1,0 +1,36 @@
+{
+  "verified_at_utc": "2026-10-04T01:43:26.310856+00:00",
+  "result": "BOOT_PROMOTION_PASS_WITHOUT_REBOOT",
+  "lab_api": {
+    "Restart": "no",
+    "MainPID": "1706007",
+    "ExecMainStartTimestamp": "Fri 2026-10-02 16:24:05 PDT",
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "enabled",
+    "start_ticks": "8265215"
+  },
+  "webui_container_id": "3150b70678f3fdb83e43b7e58f9b4f9d2db5c2c4b3776bd1a8d2266a464391bf",
+  "webui_started_at_unchanged": "2026-10-04T01:05:43.208561612Z",
+  "webui_restart_policy": "unless-stopped",
+  "lab_listeners": [
+    "127.0.0.1:18096",
+    "127.0.0.1:3003"
+  ],
+  "lab_health": "PASS",
+  "production": {
+    "Restart": "on-failure",
+    "MainPID": "5711",
+    "ExecMainStartTimestamp": "Thu 2026-10-01 17:26:59 PDT",
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "enabled",
+    "start_ticks": "2640"
+  },
+  "production_file_count": 445,
+  "production_sha256_size_mtime_unchanged": true,
+  "retained_3001_3002": "stopped; original IDs/volumes; restart=no",
+  "sudo_api_enablement": "operator_executed; independently_verified",
+  "reboot_executed": false,
+  "reboot_acceptance": "PENDING"
+}

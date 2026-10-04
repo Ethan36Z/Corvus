@@ -1,0 +1,38 @@
+{
+  "result": "PRE-REBOOT ACCEPTANCE PASSED; REBOOT NOT RUN",
+  "verified_at": "2026-10-03T20:08:18.419501-07:00",
+  "command": "python3 -B /home/ethan/srv/apps/corvus-lab/deploy/lab/check_reboot_acceptance.py --before-reboot --wait-seconds 180",
+  "boot_id": "6c9f90a3-4ce8-4515-9a72-d62eb2a700de",
+  "units": {
+    "corvus-lab-api.service": {
+      "Restart": "no",
+      "MainPID": "83912",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 19:48:50 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "341374"
+    },
+    "corvus-api.service": {
+      "Restart": "on-failure",
+      "MainPID": "5078",
+      "ExecMainStartTimestamp": "Sat 2026-10-03 18:52:22 PDT",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled",
+      "start_ticks": "2558"
+    }
+  },
+  "dense_state": {
+    "canonical_messages": 6,
+    "caught_up": true,
+    "indexed_messages": 6,
+    "progress_after": 6,
+    "table": "evidence_dense_v1"
+  },
+  "dense_files_sha256": "1eba2a48f75fb3eeb8ddd7ebddf817c6c98d8cc253571c1e33819ca55de8b7f4",
+  "original_baseline_sha256": "0013e30f9ae8a2340e2cb99905e2b8a4075fc6600096b084786a227b0f846307",
+  "production_file_count": 445,
+  "production_durable_baseline_matches": true,
+  "checker_stdout": "corvus-lab-api.service: enabled, active, PID=83912, start=Sat 2026-10-03 19:48:50 PDT\ncorvus-api.service: enabled, active, PID=5078, start=Sat 2026-10-03 18:52:22 PDT\nPASS: persistent dense table/files preserved; 6 unique rows; progress=6; firewall/cgroup state unchanged\nPASS: loopback health; fixed sole Pipe/providers; persistent image/volume/chats/sessions; 445 production file hashes/sizes/mtimes; retained 3001/3002; unchanged model/Hindsight container configuration\nPRE-REBOOT ACCEPTANCE PASS; REBOOT NOT RUN\n"
+}
