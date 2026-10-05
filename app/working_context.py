@@ -1,4 +1,4 @@
-from memory.hybrid_search import hybrid_search
+from memory.historical_memory import recall
 from memory.store import load_recent_messages
 
 
@@ -17,7 +17,7 @@ def retrieve_historical_evidence(
     query,
     exclude_message_ids=None,
     limit=5,
-    search_fn=hybrid_search,
+    search_fn=recall,
 ):
     """
     Retrieve A0 historical evidence while excluding canonical messages that
@@ -240,7 +240,7 @@ def build_working_context(
     input_token_budget=7168,
     historical_limit=5,
     page_size=64,
-    search_fn=hybrid_search,
+    search_fn=recall,
 ):
     """
     Combine bounded recent conversation context, historical evidence,
