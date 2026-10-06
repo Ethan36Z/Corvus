@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from app.conversation_runtime import process_turn
+from app.hindsight_shadow import schedule_shadow_recall
 from app.attachment_upload import (
     AttachmentUploadEmptyError,
     AttachmentUploadTooLargeError,
@@ -716,7 +717,7 @@ def build_hard_failure_response(
 
 
 @app.post("/api/chat")
-def post_chat(request: ChatRequest):
+def post_chat(request: ChatRequest, background_tasks: BackgroundTasks = None):
     session_id = request.session_id.strip()
 
     if not session_id:
@@ -823,9 +824,12 @@ def post_chat(request: ChatRequest):
             ),
         )
 
-    return build_chat_response(
+    response = build_chat_response(
         result
     )
+    if background_tasks is not None and attachment_id is None and attachment_mode == "vision":
+        schedule_shadow_recall(background_tasks, response, user_content)
+    return response
 
 
 def load_message_for_tts(message_id):
