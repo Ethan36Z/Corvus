@@ -293,6 +293,8 @@ class SchedulingTests(LabFixture):
             body_sent = asyncio.Event()
             http_started = asyncio.Event()
             release_http = asyncio.Event()
+            retain_started = asyncio.Event()
+            release_retain = asyncio.Event()
             model_messages = []
             old_row = store.load_recent_messages("old-session")[0]
 
@@ -302,6 +304,16 @@ class SchedulingTests(LabFixture):
 
             async def handler(request):
                 self.assertTrue(body_sent.is_set())
+                if request.url.path == f"/v1/default/banks/{shadow.BANK}/memories":
+                    self.assertEqual(len(self.observations()), 1)
+                    self.assertEqual(self.observations()[0]["hindsight"]["status"], "OK")
+                    retain_started.set()
+                    await release_retain.wait()
+                    return httpx.Response(200, json={
+                        "success": True, "bank_id": shadow.BANK, "items_count": 1,
+                        "async": False, "operation_id": "HINDSIGHT_ONLY_ID",
+                    })
+                self.assertEqual(request.url.path, f"/v1/default/banks/{shadow.BANK}/memories/recall")
                 http_started.set()
                 await release_http.wait()
                 return httpx.Response(200, json={"results": [memory()]})
@@ -356,8 +368,15 @@ class SchedulingTests(LabFixture):
                     self.assertFalse((self.directory / shadow.LOG_NAME).exists())
                     # The event loop can progress while the HTTP operation is suspended.
                     await asyncio.sleep(0)
+                    release_http.set()
+                    await asyncio.wait_for(retain_started.wait(), 2)
+                    self.assertFalse(task.done())  # Retain is blocked after the reply and comparison.
+                    self.assertEqual(response["reply"], "normal answer")
+                    self.assertNotIn("HINDSIGHT_ONLY_ID", json.dumps(model_messages))
+                    self.assertNotIn("HINDSIGHT_ONLY_ID", json.dumps(response))
                 finally:
                     release_http.set()
+                    release_retain.set()
                     await asyncio.wait_for(task, 2)
             record = self.observations()[0]
             self.assertEqual(record["hindsight"]["status"], "OK")
@@ -369,7 +388,9 @@ class SchedulingTests(LabFixture):
             rows = store.load_recent_messages("asgi-session")
             self.assertEqual([(row["role"], row["content"]) for row in rows],
                              [("user", "query"), ("assistant", "normal answer")])
-            self.assertEqual(len(self.observations()), 1)
+            self.assertEqual(len(self.observations()), 2)
+            self.assertEqual(self.observations()[1]["record_type"], "retain_outcome")
+            self.assertEqual(self.observations()[1]["retain"]["status"], "OK")
 
         asyncio.run(exercise())
 
