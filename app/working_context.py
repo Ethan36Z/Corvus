@@ -1,3 +1,5 @@
+from time import perf_counter
+
 from memory.historical_memory import recall
 from memory.store import load_recent_messages
 
@@ -277,12 +279,20 @@ def build_working_context(
     retrieval_error = None
 
     try:
-        historical_candidates = retrieve_historical_evidence(
-            query=current_user_content,
-            exclude_message_ids=excluded_ids,
-            limit=historical_limit,
-            search_fn=search_fn,
-        )
+        historical_recall_started = perf_counter()
+        try:
+            historical_candidates = retrieve_historical_evidence(
+                query=current_user_content,
+                exclude_message_ids=excluded_ids,
+                limit=historical_limit,
+                search_fn=search_fn,
+            )
+        finally:
+            # Retrieval/hydration/exclusions only; stop before degradation
+            # handling, prompt assembly, or model-native token counting.
+            historical_recall_elapsed_ms = round(
+                (perf_counter() - historical_recall_started) * 1000, 3,
+            )
     except Exception as exc:
         retrieval_status = "DEGRADED"
         retrieval_error = str(exc)
@@ -406,4 +416,5 @@ def build_working_context(
         ),
         "retrieval_status": retrieval_status,
         "retrieval_error": retrieval_error,
+        "historical_recall_elapsed_ms": historical_recall_elapsed_ms,
     }

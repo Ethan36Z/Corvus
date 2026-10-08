@@ -202,9 +202,19 @@ class SchedulingTests(LabFixture):
         self.assertEqual(len(tasks.tasks), 1)
         self.assertIs(tasks.tasks[0].func, shadow.run_shadow_recall)
         turn = tasks.tasks[0].args[0]
-        self.assertEqual(turn, shadow.ShadowTurn("test-session", 10, 11, "query", (1,)))
+        self.assertEqual(turn, shadow.ShadowTurn(
+            "test-session", 10, 11, "query", (1,), retrieval_status="OK",
+        ))
         response["historical_message_ids"].append(99)
+        response["recent_message_ids"].append(98)
+        response["historical_recall_elapsed_ms"] = 999
+        response["status"]["retrieval"] = "DEGRADED"
+        response["retrieval_error"] = "changed"
         self.assertEqual(turn.historical_message_ids, (1,))
+        self.assertEqual(turn.recent_message_ids, ())
+        self.assertIsNone(turn.historical_recall_elapsed_ms)
+        self.assertEqual(turn.retrieval_status, "OK")
+        self.assertIsNone(turn.retrieval_error)
         with self.assertRaises(FrozenInstanceError):
             turn.query = "changed"
 
@@ -281,7 +291,11 @@ class SchedulingTests(LabFixture):
         self.assertEqual((record["session_id"], record["user_message_id"], record["assistant_message_id"]),
                          ("test-session", 10, 11))
         self.assertEqual(record["query"], "query")
-        self.assertEqual(record["corvus"], {"historical_message_ids": [1]})
+        self.assertEqual(record["corvus"], {
+            "historical_message_ids": [1], "recent_message_ids": [],
+            "historical_recall_elapsed_ms": None, "retrieval_status": "OK",
+            "retrieval_error": None,
+        })
         self.assertEqual(record["hindsight"]["status"], "ERROR")
         self.assertEqual(record["hindsight"]["error"], "UNEXPECTED_ERROR")
         self.assertNotIn("SECRET", json.dumps(record))

@@ -614,6 +614,7 @@ def build_chat_response(
             "recent_message_ids"
         ],
         "historical_message_ids": historical_ids,
+        "historical_recall_elapsed_ms": result.get("historical_recall_elapsed_ms"),
         "retrieved_memories": retrieved_memories,
         "input_tokens": result["input_tokens"],
         "status": {
@@ -694,6 +695,7 @@ def build_hard_failure_response(
         "web_evidence_persisted_count": 0,
         "recent_message_ids": [],
         "historical_message_ids": [],
+        "historical_recall_elapsed_ms": None,
         "retrieved_memories": [],
         "input_tokens": None,
         "status": {

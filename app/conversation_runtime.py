@@ -224,6 +224,7 @@ def process_turn(
         "web_evidence_persisted_count": 0,
         "recent_message_ids": [],
         "historical_message_ids": [],
+        "historical_recall_elapsed_ms": None,
         "input_tokens": None,
         "retrieval_status": "NOT_RUN",
         "retrieval_error": None,
@@ -654,6 +655,9 @@ def process_turn(
     )
     result["retrieval_error"] = context.get(
         "retrieval_error"
+    )
+    result["historical_recall_elapsed_ms"] = context.get(
+        "historical_recall_elapsed_ms"
     )
 
     # 4. Keep retrieval/context text-only. Only

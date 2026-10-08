@@ -45,6 +45,10 @@ class ShadowTurn:
     assistant_message_id: int
     query: str
     historical_message_ids: tuple[int, ...]
+    recent_message_ids: tuple[int, ...] = ()
+    historical_recall_elapsed_ms: float | None = None
+    retrieval_status: str = "NOT_RUN"
+    retrieval_error: str | None = None
 
 
 def lab_shadow_enabled():
@@ -313,7 +317,13 @@ async def run_shadow_recall(turn):
             "user_message_id": turn.user_message_id,
             "assistant_message_id": turn.assistant_message_id,
             "query": turn.query,
-            "corvus": {"historical_message_ids": list(turn.historical_message_ids)},
+            "corvus": {
+                "historical_message_ids": list(turn.historical_message_ids),
+                "recent_message_ids": list(turn.recent_message_ids),
+                "historical_recall_elapsed_ms": turn.historical_recall_elapsed_ms,
+                "retrieval_status": turn.retrieval_status,
+                "retrieval_error": turn.retrieval_error,
+            },
             "hindsight": observation,
             "retain": _retain_observation(turn, error="RETAIN_NOT_STARTED"),
         }
@@ -369,6 +379,10 @@ def schedule_shadow_recall(background_tasks, response, query):
             assistant_message_id=response["assistant_message_id"],
             query=query,
             historical_message_ids=tuple(response["historical_message_ids"]),
+            recent_message_ids=tuple(response["recent_message_ids"]),
+            historical_recall_elapsed_ms=response.get("historical_recall_elapsed_ms"),
+            retrieval_status=status["retrieval"],
+            retrieval_error=response.get("retrieval_error"),
         )
         background_tasks.add_task(run_shadow_recall, turn)
     except Exception:

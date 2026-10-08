@@ -62,6 +62,7 @@ class HistoricalMemoryTests(unittest.TestCase):
             patch.object(hybrid, "search_dense_messages", return_value=[dense_row]) as dense,
             patch.object(hybrid, "sparse_search", return_value=[dict(self.old_row, score=-1)]) as sparse,
             patch.object(historical_memory, "hybrid_search", wraps=hybrid.hybrid_search) as provider,
+            patch.object(working_context, "perf_counter", return_value=100),
         ):
             current = self.context()
             provider.assert_called_once_with("current query", limit=20, candidate_limit=20)
