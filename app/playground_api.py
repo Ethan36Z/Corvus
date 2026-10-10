@@ -5,6 +5,10 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from app.conversation_runtime import process_turn
+from app.foreground_activity import (
+    start_foreground_publication,
+    stop_foreground_publication,
+)
 from app.hindsight_shadow import schedule_shadow_recall
 from app.attachment_upload import (
     AttachmentUploadEmptyError,
@@ -33,10 +37,14 @@ from memory.attachments import (
 
 @asynccontextmanager
 async def lifespan(app):
-    app.state.startup_recovery = (
-        prepare_runtime_startup()
-    )
-    yield
+    start_foreground_publication()
+    try:
+        app.state.startup_recovery = (
+            prepare_runtime_startup()
+        )
+        yield
+    finally:
+        stop_foreground_publication()
 
 
 app = FastAPI(

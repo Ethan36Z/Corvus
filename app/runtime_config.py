@@ -27,6 +27,10 @@ MODEL_BASE_URL = os.getenv(
     "http:" + chr(47) + chr(47) + "127.0.0.1:8095",
 ).rstrip("/")
 
+FOREGROUND_REGISTRY_DIR = (
+    os.getenv("CORVUS_FOREGROUND_REGISTRY_DIR", "").strip() or None
+)
+
 MODEL_TIMEOUT_SECONDS = _positive_int_env(
     "CORVUS_MODEL_TIMEOUT_SECONDS",
     60,
