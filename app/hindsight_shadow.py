@@ -8,14 +8,12 @@ import asyncio
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import fcntl
 import json
 import logging
 import math
 import os
 from pathlib import Path
 import sqlite3
-import stat
 import time
 
 import httpx
@@ -23,6 +21,7 @@ from starlette.concurrency import run_in_threadpool
 
 from memory.config import DATA_DIR, PROJECT_ROOT
 from memory import store
+from app.durable_jsonl import append_jsonl
 
 
 LAB_PROJECT_ROOT = Path("/home/ethan/srv/apps/corvus-lab")
@@ -152,39 +151,7 @@ def append_observation(record):
     """Durably append one derived record under flock, including its directory."""
     if not lab_shadow_enabled() or DATA_DIR.resolve() != LAB_DATA_DIR:
         raise ValueError("shadow log is Lab only")
-    data = (json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
-    fd = os.open(
-        DATA_DIR / LOG_NAME,
-        os.O_RDWR | os.O_CREAT | os.O_APPEND | os.O_CLOEXEC | os.O_NOFOLLOW,
-        0o600,
-    )
-    try:
-        if not stat.S_ISREG(os.fstat(fd).st_mode):
-            raise ValueError("shadow log must be a regular file")
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        initial_size = os.fstat(fd).st_size
-        if initial_size and os.pread(fd, 1, initial_size - 1) != b"\n":
-            raise ValueError("shadow log has an incomplete record")
-        try:
-            remaining = memoryview(data)
-            while remaining:
-                written = os.write(fd, remaining)
-                if written <= 0:
-                    raise OSError("shadow log write failed")
-                remaining = remaining[written:]
-            os.fsync(fd)
-            directory_fd = os.open(DATA_DIR, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
-        except Exception:
-            # A failed partial append must not corrupt the next mutation's gate.
-            os.ftruncate(fd, initial_size)
-            os.fsync(fd)
-            raise
-    finally:
-        os.close(fd)
+    append_jsonl(DATA_DIR / LOG_NAME, record)
 
 
 def _retain_observation(turn, status="SKIPPED", error=None):
