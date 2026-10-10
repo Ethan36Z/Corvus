@@ -19,7 +19,7 @@ from app.durable_jsonl import append_jsonl, read_jsonl
 RECORD_TYPE = "retain_ledger"
 LEDGER_VERSION = 1
 EVENTS = {"RETAIN_INTENT", "RETAIN_SUBMISSION_ACCEPTED",
-          "RETAIN_SUBMISSION_AMBIGUOUS", "RETAIN_STATUS"}
+          "RETAIN_SUBMISSION_AMBIGUOUS", "RETAIN_SUBMISSION_FAILED", "RETAIN_STATUS"}
 STATUSES = {"pending", "processing", "completed", "failed", "cancelled", "not_found"}
 TERMINAL = {"completed", "failed", "cancelled"}
 
@@ -115,6 +115,7 @@ class RetainState:
     next_retry_at: str | None = None
     retry_count: int | None = None
     error: str | None = None
+    http_status: int | None = None
     updated_at: str | None = None
 
     @property
@@ -141,6 +142,7 @@ def _validate_event(event):
                           "document_id", "contract_version", "payload_fingerprint"},
         "RETAIN_SUBMISSION_ACCEPTED": set(),
         "RETAIN_SUBMISSION_AMBIGUOUS": {"error"},
+        "RETAIN_SUBMISSION_FAILED": {"failure_kind", "error", "http_status"},
         "RETAIN_STATUS": {"status", "next_retry_at", "retry_count", "error"},
     }[kind]
     if set(event) != common | extra:
@@ -162,6 +164,13 @@ def _validate_event(event):
             raise LedgerError("invalid payload fingerprint")
     if "error" in event and event["error"] is not None:
         _text(event["error"])
+    if kind == "RETAIN_SUBMISSION_FAILED":
+        if event["failure_kind"] not in ("REJECTED", "FAILED_TO_SUBMIT"):
+            raise LedgerError("invalid submission failure kind")
+        _text(event["error"])
+        status = event["http_status"]
+        if status is not None and (type(status) is not int or not 100 <= status <= 599):
+            raise LedgerError("invalid HTTP status")
     if kind == "RETAIN_STATUS":
         if not isinstance(event["status"], str) or event["status"] not in STATUSES:
             raise LedgerError("invalid Hindsight status")
@@ -201,10 +210,14 @@ def reduce_events(records):
         state = states[operation_id]
         changes = {"updated_at": event["recorded_at"]}
         if kind == "RETAIN_SUBMISSION_ACCEPTED":
-            changes.update(submission_state="ACCEPTED", error=None)
+            changes.update(submission_state="ACCEPTED", error=None, http_status=None)
         elif kind == "RETAIN_SUBMISSION_AMBIGUOUS":
             if state.submission_state != "ACCEPTED":
-                changes.update(submission_state="AMBIGUOUS", error=event["error"])
+                changes.update(submission_state="AMBIGUOUS", error=event["error"], http_status=None)
+        elif kind == "RETAIN_SUBMISSION_FAILED":
+            changes.update(error=event["error"], http_status=event["http_status"])
+            if state.submission_state != "ACCEPTED":
+                changes["submission_state"] = event["failure_kind"]
         else:
             status = event["status"]
             if state.terminal_status == "completed" and status not in ("completed", "not_found"):
@@ -215,7 +228,7 @@ def reduce_events(records):
                            next_retry_at=event["next_retry_at"], retry_count=event["retry_count"],
                            error=event["error"])
             if status != "not_found":
-                changes["submission_state"] = "ACCEPTED"
+                changes.update(submission_state="ACCEPTED", http_status=None)
         states[operation_id] = replace(state, **changes)
     return states
 
@@ -252,6 +265,11 @@ class RetainLedger:
 
     def record_submission_ambiguous(self, operation_id, *, error=None, recorded_at=None):
         self._append("RETAIN_SUBMISSION_AMBIGUOUS", operation_id, recorded_at, error=error)
+
+    def record_submission_failed(self, operation_id, *, failure_kind, error,
+                                 http_status=None, recorded_at=None):
+        self._append("RETAIN_SUBMISSION_FAILED", operation_id, recorded_at,
+                     failure_kind=failure_kind, error=error, http_status=http_status)
 
     def record_status(self, operation_id, status, *, next_retry_at=None, retry_count=None,
                       error=None, recorded_at=None):
