@@ -1,0 +1,78 @@
+--- a/hindsight_api/engine/retain/fact_extraction.py
++++ b/hindsight_api/engine/retain/fact_extraction.py
+@@ -18,0 +19 @@
++from ...worker.exceptions import DeferOperation
+@@ -37,0 +39,20 @@
++
++
++def _raise_if_deferred(results: list[Any]) -> None:
++    """Defer the whole retain if any completed branch requests backpressure.
++
++    Keep the original exception with the latest admission date (input order
++    breaks ties). Log ordinary sibling errors with their tracebacks: they are
++    not erased, but cannot override foreground-safety control flow. A later
++    attempt still has to extract every uncommitted chunk successfully.
++    """
++    deferrals = [result for result in results if isinstance(result, DeferOperation)]
++    if not deferrals:
++        return
++    for index, result in enumerate(results):
++        if isinstance(result, Exception) and not isinstance(result, DeferOperation):
++            logging.getLogger(__name__).warning(
++                "Retain branch %s also failed while deferring: %s", index, result,
++                exc_info=(type(result), result, result.__traceback__),
++            )
++    raise max(deferrals, key=lambda error: error.exec_date)
+@@ -2505 +2526,5 @@
+-        sub_results = await asyncio.gather(*sub_tasks)
++        sub_results = await asyncio.gather(*sub_tasks, return_exceptions=True)
++        _raise_if_deferred(sub_results)
++        for result in sub_results:
++            if isinstance(result, BaseException):
++                raise result
+@@ -2621,0 +2647 @@
++    _raise_if_deferred(chunk_results)
+@@ -3421,0 +3448 @@
++    _raise_if_deferred(all_fact_results)
+--- a/hindsight_api/engine/retain/orchestrator.py
++++ b/hindsight_api/engine/retain/orchestrator.py
+@@ -30,0 +31 @@
++from .fact_extraction import _raise_if_deferred
+@@ -1449 +1450,7 @@
+-            group_results = await asyncio.gather(*(_run_group(k, gd, gc) for k, (gd, gc) in groups.items()))
++            group_results = await asyncio.gather(
++                *(_run_group(k, gd, gc) for k, (gd, gc) in groups.items()), return_exceptions=True
++            )
++            _raise_if_deferred(group_results)
++            for result in group_results:
++                if isinstance(result, BaseException):
++                    raise result
+@@ -2689,0 +2697,4 @@
++            # Do not send the end-of-stream sentinel on defer: it would let the
++            # consumer write a final facts_committed checkpoint for partial work.
++            # Previously committed chunks keep their existing hash checkpoints.
++            _raise_if_deferred(results)
+@@ -3328 +3339,2 @@
+-            await asyncio.gather(producer_task, consumer_task, return_exceptions=True)
++            pipeline_results = await asyncio.gather(producer_task, consumer_task, return_exceptions=True)
++            _raise_if_deferred(pipeline_results)
+--- a/hindsight_api/engine/consolidation/consolidator.py
++++ b/hindsight_api/engine/consolidation/consolidator.py
+@@ -36,0 +37 @@
++from ...worker.exceptions import DeferOperation
+@@ -3264,0 +3266,5 @@
++        except DeferOperation:
++            # Admission backpressure belongs to the durable worker, not the
++            # retry/bisection ladder. Keep prior batch commits and leave this
++            # batch unstamped; do not count a failed LLM attempt.
++            raise
+--- a/hindsight_api/engine/memory_engine.py
++++ b/hindsight_api/engine/memory_engine.py
+@@ -6367,0 +6368 @@
++            from .retain.fact_extraction import _raise_if_deferred
+@@ -6518,0 +6520,3 @@
++                        # A completed sibling's admission defer must win over
++                        # ordinary errors regardless of set iteration order.
++                        _raise_if_deferred([t.exception() for t in done if not t.cancelled()])
+@@ -6526,0 +6531 @@
++                    _raise_if_deferred(results)
