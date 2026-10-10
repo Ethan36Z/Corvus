@@ -3,6 +3,7 @@ from app.model_client import (
     count_input_tokens,
     generate_chat_completion,
 )
+from app.foreground_activity import track_foreground_generation
 from app.working_context import build_working_context
 from app.vision_input import (
     VisionInputError,
@@ -705,9 +706,10 @@ def process_turn(
 
     # 5. Ask the existing local model.
     try:
-        reply = generate_fn(
-            model_messages
-        )
+        with track_foreground_generation():
+            reply = generate_fn(
+                model_messages
+            )
     except ModelClientError as exc:
         result["model_status"] = exc.code
         result["error"] = str(exc)

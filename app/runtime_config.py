@@ -27,6 +27,18 @@ MODEL_BASE_URL = os.getenv(
     "http:" + chr(47) + chr(47) + "127.0.0.1:8095",
 ).rstrip("/")
 
+FOREGROUND_REGISTRY_DIR = (
+    os.getenv("CORVUS_FOREGROUND_REGISTRY_DIR", "").strip() or None
+)
+FOREGROUND_REGISTRY_PUBLISHER = (
+    os.getenv("CORVUS_FOREGROUND_REGISTRY_PUBLISHER", "").strip() or None
+)
+FOREGROUND_REGISTRY_EXPECTED_PUBLISHERS = tuple(
+    name.strip() for name in os.getenv(
+        "CORVUS_FOREGROUND_REGISTRY_EXPECTED_PUBLISHERS", "",
+    ).split(",") if name.strip()
+)
+
 MODEL_TIMEOUT_SECONDS = _positive_int_env(
     "CORVUS_MODEL_TIMEOUT_SECONDS",
     60,
