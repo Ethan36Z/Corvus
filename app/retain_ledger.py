@@ -93,6 +93,67 @@ def payload_fingerprint(bank, item, contract_version=1):
     return hashlib.sha256(data).hexdigest()
 
 
+def normalize_status_observation(operation_id, body):
+    """Keep supported Hindsight 0.10.1 status metadata, not raw task payloads.
+
+    Only operation_id/status are required. Optional values are checked when
+    supplied; missing fields are not fabricated. Child states are diagnostic,
+    never used to override the authoritative parent status.
+    """
+    if (not isinstance(body, dict) or
+        _operation_id(body.get("operation_id")) != _operation_id(operation_id) or
+        not isinstance(body.get("status"), str) or body["status"] not in STATUSES):
+        raise LedgerError("invalid operation status/identity")
+    fields = {"operation_id", "status", "operation_type", "error_message", "retry_count",
+              "next_retry_at", "created_at", "updated_at", "completed_at", "progress",
+              "child_operations"}
+    observation = {key: value for key, value in body.items() if key in fields}
+    observation["operation_id"] = _operation_id(operation_id)
+    operation_type = observation.get("operation_type")
+    if operation_type is not None and operation_type not in ("retain", "batch_retain"):
+        raise LedgerError("status is not a retain operation")
+    for field in ("error_message", "created_at", "updated_at", "completed_at", "next_retry_at"):
+        value = observation.get(field)
+        if value is not None and not isinstance(value, str):
+            raise LedgerError("invalid optional status text")
+    if observation.get("next_retry_at") is not None:
+        _timestamp(observation["next_retry_at"])
+    retry_count = observation.get("retry_count")
+    if retry_count is not None and (type(retry_count) is not int or retry_count < 0):
+        raise LedgerError("invalid retry count")
+    progress = observation.get("progress")
+    if progress is not None:
+        if not isinstance(progress, dict):
+            raise LedgerError("invalid progress")
+        _text(progress.get("stage"))
+        _text(progress.get("at"))
+        for field in ("processed", "total"):
+            value = progress.get(field)
+            if value is not None and type(value) is not int:
+                raise LedgerError("invalid progress counter")
+        detail = progress.get("detail")
+        if detail is not None and (not isinstance(detail, dict) or
+                                   any(type(v) is not int for v in detail.values())):
+            raise LedgerError("invalid progress detail")
+    children = observation.get("child_operations")
+    if children is not None:
+        if not isinstance(children, list):
+            raise LedgerError("invalid child operations")
+        for child in children:
+            if not isinstance(child, dict):
+                raise LedgerError("invalid child status")
+            _operation_id(child.get("operation_id"))
+            _text(child.get("status"))
+            if child.get("error_message") is not None and not isinstance(child["error_message"], str):
+                raise LedgerError("invalid child error")
+            for field in ("sub_batch_index", "items_count"):
+                value = child.get(field)
+                if value is not None and (type(value) is not int or value < 0):
+                    raise LedgerError("invalid child counter")
+    _json_value(observation)
+    return json.loads(json.dumps(observation, ensure_ascii=False, allow_nan=False))
+
+
 @dataclass(frozen=True)
 class RetainIntent:
     operation_id: str
@@ -117,6 +178,7 @@ class RetainState:
     error: str | None = None
     http_status: int | None = None
     updated_at: str | None = None
+    status_observation: dict | None = None
 
     @property
     def unresolved(self):
@@ -145,7 +207,8 @@ def _validate_event(event):
         "RETAIN_SUBMISSION_FAILED": {"failure_kind", "error", "http_status"},
         "RETAIN_STATUS": {"status", "next_retry_at", "retry_count", "error"},
     }[kind]
-    if set(event) != common | extra:
+    optional = {"observation"} if kind == "RETAIN_STATUS" else set()
+    if not (common | extra) <= set(event) or set(event) - (common | extra | optional):
         raise LedgerError("invalid ledger event fields")
     operation_id = _operation_id(event["operation_id"])
     if operation_id != event["operation_id"]:
@@ -163,7 +226,11 @@ def _validate_event(event):
             not re.fullmatch(r"[0-9a-f]{64}", event["payload_fingerprint"])):
             raise LedgerError("invalid payload fingerprint")
     if "error" in event and event["error"] is not None:
-        _text(event["error"])
+        if kind == "RETAIN_STATUS":
+            if not isinstance(event["error"], str):
+                raise LedgerError("invalid status error")
+        else:
+            _text(event["error"])
     if kind == "RETAIN_SUBMISSION_FAILED":
         if event["failure_kind"] not in ("REJECTED", "FAILED_TO_SUBMIT"):
             raise LedgerError("invalid submission failure kind")
@@ -179,6 +246,14 @@ def _validate_event(event):
         retry_count = event["retry_count"]
         if retry_count is not None and (type(retry_count) is not int or retry_count < 0):
             raise LedgerError("invalid retry count")
+        if "observation" in event:
+            observation = normalize_status_observation(operation_id, event["observation"])
+            if (observation["status"] != event["status"] or
+                observation.get("error_message") != event["error"] or
+                observation.get("retry_count") != event["retry_count"] or
+                (_timestamp(observation["next_retry_at"]) if observation.get("next_retry_at") is not None
+                 else None) != event["next_retry_at"]):
+                raise LedgerError("status observation contradicts event")
     return kind
 
 
@@ -226,7 +301,9 @@ def reduce_events(records):
                         else status if status in TERMINAL else None)
             changes.update(last_hindsight_status=status, terminal_status=terminal,
                            next_retry_at=event["next_retry_at"], retry_count=event["retry_count"],
-                           error=event["error"])
+                           error=event["error"], status_observation=(
+                               normalize_status_observation(operation_id, event["observation"])
+                               if "observation" in event else None))
             if status != "not_found":
                 changes.update(submission_state="ACCEPTED", http_status=None)
         states[operation_id] = replace(state, **changes)
@@ -272,10 +349,12 @@ class RetainLedger:
                      failure_kind=failure_kind, error=error, http_status=http_status)
 
     def record_status(self, operation_id, status, *, next_retry_at=None, retry_count=None,
-                      error=None, recorded_at=None):
+                      error=None, recorded_at=None, observation=None):
+        metadata = {} if observation is None else {
+            "observation": normalize_status_observation(operation_id, observation)}
         self._append("RETAIN_STATUS", operation_id, recorded_at, status=status,
                      next_retry_at=_timestamp(next_retry_at) if next_retry_at is not None else None,
-                     retry_count=retry_count, error=error)
+                     retry_count=retry_count, error=error, **metadata)
 
     def read(self):
         """Read/reduce only; never create a missing file or repair a damaged one."""
