@@ -123,6 +123,7 @@ def load(path, names, ns):
 def core():
     ns = namespace()
     load('worker/exceptions.py', ['DeferOperation', 'RetryTaskAt'], ns)
+    module('hindsight_api.worker.exceptions', DeferOperation=ns['DeferOperation'])
     ns['defer'] = ns['DeferOperation'](datetime.now(timezone.utc)+timedelta(seconds=30), 'foreground busy')
     return ns
 
@@ -524,6 +525,11 @@ class ArtifactTests(unittest.TestCase):
                 return subprocess.run([sys.executable,'-B',str(ART/'apply.py'),'--root',str(root),mode],capture_output=True,text=True)
             original={p:p.read_bytes() for p in root.rglob('*') if p.is_file()}
             self.assertEqual(cli('--check').returncode,0)
+            introduced=root/'hindsight_api/engine/foreground_admission.py'
+            introduced.write_text('# unexpected pre-existing reader\n')
+            self.assertNotEqual(cli('--apply').returncode,0)
+            self.assertEqual((root/'hindsight_api/engine/llm_wrapper.py').read_bytes(),original[root/'hindsight_api/engine/llm_wrapper.py'])
+            introduced.unlink()
             dependency=root/'hindsight_api/worker/poller.py';dependency.write_bytes(dependency.read_bytes()+b'\n# drift\n')
             self.assertNotEqual(cli('--apply').returncode,0)
             self.assertEqual((root/'hindsight_api/engine/retain/fact_extraction.py').read_bytes(),original[root/'hindsight_api/engine/retain/fact_extraction.py'])
@@ -544,6 +550,9 @@ def main():
     args=parser.parse_args()
     spec=importlib.util.spec_from_file_location('patch_apply',ART/'apply.py');apply=importlib.util.module_from_spec(spec);spec.loader.exec_module(apply)
     SOURCE=args.source.resolve();apply.verify(SOURCE,patched=True)
+    core()
+    spec = importlib.util.spec_from_file_location('hindsight_api.engine.foreground_admission', SOURCE/'hindsight_api/engine/foreground_admission.py')
+    admission = importlib.util.module_from_spec(spec);sys.modules[spec.name] = admission;spec.loader.exec_module(admission)
     suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(cls) for cls in
         (RetainTests,ConsolidationTests,BoundaryTests,OrdinaryRegressionTests,ArtifactTests))
     result=unittest.TextTestRunner(verbosity=2).run(suite)

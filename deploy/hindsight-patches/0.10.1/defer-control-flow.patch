@@ -1,3 +1,26 @@
+--- a/hindsight_api/engine/llm_wrapper.py
++++ b/hindsight_api/engine/llm_wrapper.py
+@@ -9,0 +10 @@
++from ..worker.exceptions import DeferOperation
+@@ -169,0 +171 @@
++    from .foreground_admission import check_foreground_admission
+@@ -172,0 +175,2 @@
++        # After all permits, before yielding to the provider's actual attempt.
++        check_foreground_admission()
+@@ -1311,0 +1316,3 @@
++                    from .foreground_admission import check_foreground_admission
++
++                    check_foreground_admission(attempt_scoped=False)
+@@ -1339,0 +1347,2 @@
++                except DeferOperation:
++                    raise  # Intentional backpressure is not a failed provider call.
+@@ -1457,0 +1467,3 @@
++                    from .foreground_admission import check_foreground_admission
++
++                    check_foreground_admission(attempt_scoped=False)
+@@ -1487,0 +1500,2 @@
++                except DeferOperation:
++                    raise  # Intentional backpressure is not a failed provider call.
 --- a/hindsight_api/engine/retain/fact_extraction.py
 +++ b/hindsight_api/engine/retain/fact_extraction.py
 @@ -18,0 +19 @@
@@ -76,3 +99,284 @@
 +                        _raise_if_deferred([t.exception() for t in done if not t.cancelled()])
 @@ -6526,0 +6531 @@
 +                    _raise_if_deferred(results)
+--- /dev/null
++++ b/hindsight_api/engine/foreground_admission.py
+@@ -0,0 +1,278 @@
++"""Standalone Linux registry-v2 reader and optional per-attempt admission.
++
++No Corvus imports, writes, network calls, sleeps, or canonical-data access.
++PID/start identity is checked against the record/file name and lifetime locks,
++not /proc/<host-pid>: host publishers need not share our PID namespace.
++"""
++from contextlib import contextmanager
++from datetime import datetime, timedelta, timezone
++from enum import Enum
++import fcntl
++import json
++import math
++import os
++from pathlib import Path
++import re
++import stat
++from threading import Lock
++from time import monotonic
++
++from ..worker.exceptions import DeferOperation
++
++
++class RegistryState(str, Enum):
++    IDLE = "IDLE"
++    BUSY = "BUSY"
++    UNKNOWN = "UNKNOWN"
++
++
++class RegistryError(ValueError):
++    pass
++
++
++_ID = re.compile(r"([1-9][0-9]*)-([0-9]+)-[0-9a-f]{32}\Z")
++_LOGICAL = re.compile(r"[a-z][a-z0-9_-]{0,63}\Z")
++_FLAGS = os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK
++_fd_lock = Lock()
++_fds = set()
++_cache_lock = Lock()
++_reader_cache = None
++
++
++def _before_fork():
++    _fd_lock.acquire()
++
++
++def _after_fork_parent():
++    _fd_lock.release()
++
++
++def _after_fork_child():
++    global _fd_lock, _cache_lock, _reader_cache
++    # Close inherited descriptions; never explicitly unlock the parent's flock.
++    for fd in _fds:
++        os.close(fd)
++    _fds.clear()
++    _fd_lock = Lock()
++    _cache_lock = Lock()
++    _reader_cache = None
++
++
++os.register_at_fork(before=_before_fork, after_in_parent=_after_fork_parent,
++                    after_in_child=_after_fork_child)
++
++
++@contextmanager
++def _open(name, *, directory=None, is_directory=False):
++    with _fd_lock:
++        fd = os.open(name, os.O_RDONLY | _FLAGS | (os.O_DIRECTORY if is_directory else 0), dir_fd=directory)
++        _fds.add(fd)
++    try:
++        info = os.fstat(fd)
++        if not (stat.S_ISDIR(info.st_mode) if is_directory else stat.S_ISREG(info.st_mode)):
++            raise RegistryError("unexpected registry file type")
++        if stat.S_IMODE(info.st_mode) != (0o700 if is_directory else 0o600):
++            raise RegistryError("untrusted registry permissions")
++        if directory is not None:
++            owner = os.fstat(directory)
++            if (info.st_uid, info.st_gid) != (owner.st_uid, owner.st_gid):
++                raise RegistryError("registry file owner mismatch")
++        yield fd
++    finally:
++        with _fd_lock:
++            _fds.remove(fd)
++            os.close(fd)
++
++
++def _inode(fd):
++    info = os.fstat(fd)
++    return [info.st_dev, info.st_ino]
++
++
++def _unique(pairs):
++    value = {}
++    for key, item in pairs:
++        if key in value:
++            raise RegistryError("duplicate JSON key")
++        value[key] = item
++    return value
++
++
++def _load(directory, name):
++    with _open(name, directory=directory) as fd:
++        if os.fstat(fd).st_size > 65536:
++            raise RegistryError("oversized metadata")
++        with os.fdopen(fd, "r", closefd=False) as stream:
++            value = json.load(stream, object_pairs_hook=_unique)
++    if not isinstance(value, dict):
++        raise RegistryError("metadata is not an object")
++    return value
++
++
++def _domain():
++    return {"boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
++            "time_offsets": Path("/proc/self/timens_offsets").read_text().strip()}
++
++
++def _valid_inode(value):
++    return type(value) is list and len(value) == 2 and all(type(x) is int and x >= 0 for x in value)
++
++
++def _owned(fd):
++    try:
++        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
++    except BlockingIOError:
++        return True
++    else:
++        fcntl.flock(fd, fcntl.LOCK_UN)
++        return False
++
++
++class ForegroundRegistryReader:
++    def __init__(self, path, *, expected_publishers=("lab", "production"), grace_seconds=30, clock=monotonic):
++        self.path = Path(path)
++        if isinstance(expected_publishers, str):
++            raise RegistryError("expected publishers must be a collection")
++        self.expected = frozenset(expected_publishers)
++        if not self.expected or any(not isinstance(x, str) or not _LOGICAL.fullmatch(x) for x in self.expected):
++            raise RegistryError("invalid expected publisher contract")
++        if type(grace_seconds) not in (int, float) or not math.isfinite(grace_seconds) or grace_seconds <= 0:
++            raise RegistryError("grace must be positive finite seconds")
++        self.grace = grace_seconds
++        self.clock = clock
++        self.pid = os.getpid()
++        self._mutex = Lock()
++        self._directory_identity = None
++        self._observed = {}
++        self._finished = {}
++        self._last_clock = None
++
++    def read(self):
++        """Return only IDLE/BUSY/UNKNOWN. Unknown and grace never permit work."""
++        if self.pid != os.getpid():
++            return RegistryState.UNKNOWN
++        with self._mutex:
++            try:
++                now = self.clock()
++                if (type(now) not in (int, float) or not math.isfinite(now) or now < 0 or
++                    (self._last_clock is not None and now < self._last_clock)):
++                    raise RegistryError("clock regressed/invalid")
++                self._last_clock = now
++                with _open(self.path, is_directory=True) as directory:
++                    directory_identity = _inode(directory)
++                    if self._directory_identity != directory_identity:
++                        self._observed.clear()
++                        self._finished.clear()
++                        self._directory_identity = directory_identity
++                    with _open("registry.lock", directory=directory) as guard:
++                        # A writer or any unreadable lock makes this snapshot UNKNOWN.
++                        fcntl.flock(guard, fcntl.LOCK_SH | fcntl.LOCK_NB)
++                        info = os.stat("registry.lock", dir_fd=directory, follow_symlinks=False)
++                        if _inode(guard) != [info.st_dev, info.st_ino]:
++                            raise RegistryError("registry guard replaced")
++                        header = _load(directory, "registry.json")
++                        if (type(header.get("version")) is not int or
++                            not _valid_inode(header.get("lock_inode")) or
++                            header != {"version": 2, "clock_domain": _domain(), "lock_inode": _inode(guard)}):
++                            raise RegistryError("version, boot/time domain, or guard identity mismatch")
++                        names = set(os.listdir(directory)) - {"registry.lock", "registry.json"}
++                        ids = {name.removesuffix(".json") for name in names if name.endswith(".json")}
++                        if names != {identity + suffix for identity in ids
++                                     for suffix in (".json", ".live", ".health", ".busy", ".fault")}:
++                            raise RegistryError("orphaned/unexpected files")
++                        healthy, total, finished, anchors = set(), 0, [], []
++                        for identity in sorted(ids):
++                            match = _ID.fullmatch(identity)
++                            record = _load(directory, identity + ".json")
++                            if (match is None or set(record) != {"identity", "pid", "start_ticks", "active_count",
++                                "last_finished", "busy_inode", "fault_inode", "live_inode", "health_inode", "logical_publisher"} or
++                                record["identity"] != identity or type(record["pid"]) is not int or record["pid"] != int(match[1]) or
++                                type(record["start_ticks"]) is not int or record["start_ticks"] != int(match[2]) or
++                                type(record["active_count"]) is not int or record["active_count"] < 0 or
++                                any(not _valid_inode(record[k + "_inode"]) for k in ("live", "health", "busy", "fault")) or
++                                not isinstance(record["logical_publisher"], str) or not _LOGICAL.fullmatch(record["logical_publisher"])):
++                                raise RegistryError("invalid process/publisher metadata")
++                            finish = record["last_finished"]
++                            if finish is not None:
++                                if type(finish) not in (int, float) or not math.isfinite(finish) or not 0 <= finish <= now:
++                                    raise RegistryError("invalid/future finish timestamp")
++                                finished.append(finish)
++                            previous = self._finished.get(identity)
++                            if previous is not None and (finish is None or finish < previous):
++                                raise RegistryError("finish watermark regressed")
++                            self._finished[identity] = finish
++                            self._observed.setdefault(identity, now)
++                            anchors.append(self._observed[identity])
++                            locks = {}
++                            # Open all four stable inodes together; probes never request EX or write access.
++                            from contextlib import ExitStack
++                            with ExitStack() as stack:
++                                for kind in ("live", "health", "busy", "fault"):
++                                    fd = stack.enter_context(_open(identity + "." + kind, directory=directory))
++                                    if _inode(fd) != record[kind + "_inode"]:
++                                        raise RegistryError("publisher lock identity mismatch")
++                                    locks[kind] = _owned(fd)
++                            if locks["live"]:
++                                if locks["fault"] or not locks["health"]:
++                                    raise RegistryError("degraded publisher")
++                                logical = record["logical_publisher"]
++                                if logical in healthy:
++                                    raise RegistryError("duplicate live publisher")
++                                healthy.add(logical)
++                                if locks["busy"] != (record["active_count"] > 0):
++                                    raise RegistryError("busy/count mismatch")
++                                total += record["active_count"]
++                            elif any(locks.values()):
++                                raise RegistryError("ownership without lifetime proof")
++                            # Stale valid history cannot satisfy expected health or keep BUSY;
++                            # it only preserves old completion and recovery anchors.
++                        if not self.expected <= healthy:
++                            raise RegistryError("missing healthy expected publisher")
++                        info = self.path.lstat()
++                        if directory_identity != [info.st_dev, info.st_ino] or not stat.S_ISDIR(info.st_mode):
++                            raise RegistryError("registry directory replaced")
++                        if total:
++                            return RegistryState.BUSY
++                        # Missing initial completion watermark fails closed. Observed recovery
++                        # grace is additional protection, not an invented completion timestamp.
++                        if not finished or now - max(finished + anchors) <= self.grace:
++                            return RegistryState.UNKNOWN
++                        return RegistryState.IDLE
++            except (OSError, ValueError, TypeError, OverflowError, RecursionError):
++                # Any uncertainty invalidates the old reader-local safe anchor.
++                self._observed.clear()
++                return RegistryState.UNKNOWN
++
++
++def check_foreground_admission(*, attempt_scoped=True):
++    """Optional gate. Defer immediately; the durable worker owns scheduling."""
++    global _reader_cache
++    path = os.environ.get("CORVUS_FOREGROUND_REGISTRY_DIR", "").strip()
++    if not path:
++        return  # Explicitly disabled: no registry/clock-domain I/O.
++    expected = os.environ.get("CORVUS_FOREGROUND_EXPECTED_PUBLISHERS", "lab,production")
++    grace_text = os.environ.get("CORVUS_FOREGROUND_IDLE_GRACE_SECONDS", "30")
++    grace = 30.0
++    state = RegistryState.UNKNOWN
++    try:
++        grace = float(grace_text)
++        key = (os.getpid(), path, expected, grace_text)
++        # Preserve reader-local recovery observations between attempts, across loops.
++        with _cache_lock:
++            if _reader_cache is None or _reader_cache[0] != key:
++                reader = ForegroundRegistryReader(path, expected_publishers=tuple(x.strip() for x in expected.split(',')), grace_seconds=grace)
++                _reader_cache = (key, reader)
++            reader = _reader_cache[1]
++        if attempt_scoped:
++            state = reader.read()
++    except Exception:
++        # Invalid configuration/read implementation must not become a provider failure.
++        with _cache_lock:
++            _reader_cache = None
++        state = RegistryState.UNKNOWN
++    if state is not RegistryState.IDLE:
++        delay = grace if math.isfinite(grace) and grace > 0 else 30.0
++        # Bounded polling eligibility; never sleep/back off while holding permits.
++        delay = min(delay, 30.0)
++        raise DeferOperation(datetime.now(timezone.utc) + timedelta(seconds=delay),
++                             reason="foreground admission: " + state.value)

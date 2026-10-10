@@ -21,7 +21,7 @@
     },
     "hindsight_api/engine/llm_wrapper.py": {
       "upstream_sha256": "f8a69115e51ce85ef004e22129bff98902fb5fe369f8c101a93f8fcbab12d0e4",
-      "patched_sha256": "f8a69115e51ce85ef004e22129bff98902fb5fe369f8c101a93f8fcbab12d0e4"
+      "patched_sha256": "17f235a3bee4b7679279854ec9259e518fe85139f0d1964c80d7cc24b8151f34"
     },
     "hindsight_api/engine/providers/openai_compatible_llm.py": {
       "upstream_sha256": "7c6aad58263b6b4134a7a67c2c5c289d22d106c90532f15a321fc28f6b05abae",
@@ -50,6 +50,14 @@
     "hindsight_api/engine/memory_engine.py": {
       "upstream_sha256": "b6f2af3868d283946079ec5c2a87b44379dfc37c0101f383ea192bc07e220949",
       "patched_sha256": "7163bc0260d9015e5d81d7187f30d26a6a52575eb0601b4b8c874bd563002461"
+    },
+    "hindsight_api/engine/foreground_admission.py": {
+      "upstream_sha256": null,
+      "patched_sha256": "9a101e90ed7c75a70ffd8d10ee2890fc9f5f8002a8061d75482bbdf279117316"
     }
+  },
+  "registry_protocol": {
+    "version": 2,
+    "corvus_source_sha256": "2219148a19cb806f267b310534b78a4d150536cbf5747c355530156a9490915b"
   }
 }

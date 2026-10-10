@@ -19,6 +19,10 @@ def verify(root, *, patched=False):
     field = 'patched_sha256' if patched else 'upstream_sha256'
     for name, hashes in manifest['files'].items():
         path = root / name
+        if not patched and hashes['upstream_sha256'] is None:
+            if path.exists() or path.is_symlink():
+                raise ValueError('Unexpected existing introduced file: ' + name)
+            continue
         if path.is_symlink() or not path.is_file():
             raise ValueError('Missing/unsafe source file: ' + name)
         if hashlib.sha256(path.read_bytes()).hexdigest() != hashes[field]:
