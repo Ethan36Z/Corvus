@@ -1,6 +1,7 @@
 """Integrated foreground conversation/publication without inference or /run."""
 
 import asyncio
+import fcntl
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -26,9 +27,10 @@ class PublicationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name)
         self.now = [100.0]
-        self.registry = ForegroundRegistry(self.path, clock=lambda: self.now[0])
+        self.registry = ForegroundRegistry(self.path, clock=lambda: self.now[0], expected_publishers=("lab",))
         self.tracker = activity.ForegroundActivityTracker(
-            clock=lambda: self.now[0], registry_path=self.path,
+            clock=lambda: self.now[0], registry_path=self.path, logical_publisher="lab",
+            expected_publishers=("lab",),
         )
         self.addCleanup(self.tracker.close)
         patcher = patch.object(activity, '_tracker', self.tracker)
@@ -103,6 +105,108 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(self.run_turn(generate)['reply'], 'reply')
         self.assert_registry(RegistryState.IDLE, 0)
 
+    def test_initialization_before_registration_failure_keeps_api_and_chat_available(self):
+        import app.playground_api as api
+        self.registry.initialize()
+        app = SimpleNamespace(state=SimpleNamespace())
+        persisted = []
+        def generate(messages):
+            self.assertEqual(activity.snapshot().active_foreground_count, 1)
+            self.assert_registry(RegistryState.UNKNOWN, None)
+            return 'reply despite failed init'
+        async def run():
+            with patch.object(registry_core, 'ForegroundPublisher', side_effect=PermissionError('create denied')):
+                with patch.object(api, 'prepare_runtime_startup', return_value={'status': 'OK'}) as prepare:
+                    with self.assertLogs(activity.logger, level='ERROR'):
+                        async with api.lifespan(app):
+                            prepare.assert_called_once()
+                            result = self.run_turn(generate, persisted)
+                            self.assertEqual(result['reply'], 'reply despite failed init')
+                            self.assertEqual(activity.snapshot().active_foreground_count, 0)
+        asyncio.run(run())
+        self.assertEqual(persisted, [('user', 'hello'), ('assistant', 'reply despite failed init')])
+        self.assert_registry(RegistryState.UNKNOWN, None)
+
+    def test_writer_only_permission_failure_does_not_leave_trustworthy_idle(self):
+        self.registry.initialize()
+        for path in self.path.iterdir():
+            path.chmod(0o400)  # Reader can read; writer cannot initialize/acquire its guard.
+        try:
+            with self.assertLogs(activity.logger, level='ERROR'):
+                self.tracker.start()
+            self.assertEqual(self.run_turn(lambda messages: 'reply')['reply'], 'reply')
+            self.assert_registry(RegistryState.UNKNOWN, None)
+        finally:
+            for path in self.path.iterdir():
+                path.chmod(0o600)
+
+    def test_busy_lock_and_fault_signaling_failures_still_allow_model_and_defer_background(self):
+        self.tracker.start()
+        publisher = self.tracker._publisher
+        original = fcntl.flock
+        def fail_busy(fd, flags):
+            if fd == publisher._busy_fd and flags == (fcntl.LOCK_EX | fcntl.LOCK_NB):
+                raise OSError('busy lock unavailable')
+            return original(fd, flags)
+        def generate(messages):
+            self.assert_registry(RegistryState.UNKNOWN, None)
+            self.assertEqual(activity.snapshot().active_foreground_count, 1)
+            return 'safe foreground reply'
+        with patch.object(registry_core.fcntl, 'flock', side_effect=fail_busy), patch.object(
+            publisher, '_mark_fault', side_effect=OSError('fault signaling failed'),
+        ):
+            with self.assertLogs(activity.logger, level='ERROR'):
+                self.assertEqual(self.run_turn(generate)['reply'], 'safe foreground reply')
+        self.assertIsNone(publisher._health_fd)
+        self.assertEqual(activity.snapshot().active_foreground_count, 0)
+        self.assert_registry(RegistryState.UNKNOWN, None)
+
+    def test_write_and_fault_signaling_failure_remain_unknown_during_model(self):
+        self.tracker.start()
+        def generate(messages):
+            self.assert_registry(RegistryState.UNKNOWN, None)
+            self.assertEqual(activity.snapshot().active_foreground_count, 1)
+            return 'reply'
+        with patch.object(registry_core, '_write', side_effect=OSError('disk full')), patch.object(
+            self.tracker._publisher, '_mark_fault', side_effect=OSError('signal failed'),
+        ):
+            with self.assertLogs(activity.logger, level='ERROR'):
+                self.assertEqual(self.run_turn(generate)['reply'], 'reply')
+        self.assert_registry(RegistryState.UNKNOWN, None)
+
+    def test_failed_publication_does_not_mask_foreground_model_error(self):
+        self.tracker.start()
+        def generate(messages):
+            self.assert_registry(RegistryState.UNKNOWN, None)
+            raise ModelClientError('MODEL_TIMEOUT', 'original error')
+        with patch.object(registry_core, '_write', side_effect=OSError('disk full')):
+            with self.assertLogs(activity.logger, level='ERROR'):
+                result = self.run_turn(generate)
+        self.assertEqual(result['model_status'], 'MODEL_TIMEOUT')
+        self.assertEqual(result['error'], 'original error')
+        self.assertEqual(activity.snapshot().active_foreground_count, 0)
+
+    def test_invalid_optional_configuration_cannot_block_chat(self):
+        for name in (None, 'INVALID NAME'):
+            tracker = activity.ForegroundActivityTracker(
+                registry_path=self.path, logical_publisher=name, expected_publishers=('lab',),
+            )
+            self.addCleanup(tracker.close)
+            with patch.object(activity, '_tracker', tracker):
+                with self.assertLogs(activity.logger, level='ERROR'):
+                    self.assertEqual(self.run_turn(lambda messages: 'reply')['reply'], 'reply')
+                self.assertEqual(activity.snapshot().active_foreground_count, 0)
+                self.assert_registry(RegistryState.UNKNOWN, None)
+
+    def test_restart_after_unpublished_foreground_applies_grace(self):
+        with patch.object(registry_core, 'ForegroundPublisher', side_effect=OSError('init failed')):
+            with self.assertLogs(activity.logger, level='ERROR'):
+                self.assertEqual(self.run_turn(lambda messages: 'reply')['reply'], 'reply')
+        self.tracker.close()
+        self.now[0] = 101.0
+        self.tracker.start()
+        self.assertEqual(self.assert_registry(RegistryState.IDLE, 0).idle_grace_anchor, 101.0)
+
     def test_exception_paths_balance_both_local_and_registry_state(self):
         self.tracker.start()
         for error in (ModelClientError('MODEL_TIMEOUT', 'fake timeout'),
@@ -154,23 +258,22 @@ class PublicationTests(unittest.TestCase):
                 for event in released:
                     event.set()
 
-    def test_begin_publication_failure_blocks_model_and_preserves_user_record(self):
+    def test_begin_publication_failure_preserves_foreground_and_persistence(self):
         self.tracker.start()
         roles = []
         with patch.object(registry_core, '_write', side_effect=OSError('disk full')):
             with self.assertLogs(activity.logger, level='ERROR') as logs:
-                result = self.run_turn(lambda messages: self.fail('model must not run'), roles)
-        self.assertEqual(result['model_status'], 'FOREGROUND_REGISTRY_UNAVAILABLE')
-        self.assertEqual(roles, [('user', 'hello')])  # Existing pre-generation commit contract.
-        self.assertIsNone(result['assistant_message_id'])
+                result = self.run_turn(lambda messages: 'reply', roles)
+        self.assertEqual(result['model_status'], 'OK')
+        self.assertEqual(roles, [('user', 'hello'), ('assistant', 'reply')])
+        self.assertEqual(result['assistant_message_id'], 2)
         self.assertEqual(activity.snapshot().active_foreground_count, 0)
         self.assert_registry(RegistryState.UNKNOWN, None)
-        self.assertIn('model call blocked', '\n'.join(logs.output))
+        self.assertIn('foreground continues', '\n'.join(logs.output))
         self.assertIn('disk full', '\n'.join(logs.output))
-        # A poisoned publisher is retained, not silently replaced/retried.
-        with self.assertLogs(activity.logger, level='ERROR'):
-            again = self.run_turn(lambda messages: self.fail('model must not run'))
-        self.assertEqual(again['model_status'], 'FOREGROUND_REGISTRY_UNAVAILABLE')
+        # A poisoned publisher is retained; later foreground is still usable.
+        again = self.run_turn(lambda messages: 'again')
+        self.assertEqual(again['reply'], 'again')
         self.assert_registry(RegistryState.UNKNOWN, None)
 
     def test_completion_failure_keeps_successful_reply_and_unknown(self):
@@ -217,19 +320,22 @@ class PublicationTests(unittest.TestCase):
             if not released.wait(5):
                 raise AssertionError('existing call not released')
             return 'existing reply'
+        def second_generate(messages):
+            self.assertEqual(activity.snapshot().active_foreground_count, 2)
+            self.assert_registry(RegistryState.UNKNOWN, None)
+            return 'second reply'
         with ThreadPoolExecutor(max_workers=1) as pool:
             first = pool.submit(self.run_turn, generate)
             try:
                 self.assertTrue(entered.wait(5))
                 with patch.object(registry_core, '_write', side_effect=OSError('disk full')):
                     with self.assertLogs(activity.logger, level='ERROR'):
-                        second = self.run_turn(lambda messages: self.fail('second model call blocked'))
-                self.assertEqual(second['model_status'], 'FOREGROUND_REGISTRY_UNAVAILABLE')
+                        second = self.run_turn(second_generate)
+                self.assertEqual(second['model_status'], 'OK')
                 self.assertEqual(activity.snapshot().active_foreground_count, 1)
                 self.assert_registry(RegistryState.UNKNOWN, None)
-                with self.assertLogs(activity.logger, level='ERROR'):
-                    released.set()
-                    self.assertEqual(first.result(timeout=5)['reply'], 'existing reply')
+                released.set()
+                self.assertEqual(first.result(timeout=5)['reply'], 'existing reply')
                 self.assertEqual(activity.snapshot().active_foreground_count, 0)
                 self.assert_registry(RegistryState.UNKNOWN, None)
             finally:
@@ -254,18 +360,18 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(self.run_turn(generate)['reply'], 'reply')
         self.assert_registry(RegistryState.IDLE, 0)
 
-    def test_unknown_read_or_missing_directory_blocks_initialization(self):
+    def test_unknown_read_or_missing_directory_preserves_foreground(self):
         self.registry.initialize()
         (self.path / 'unexpected').write_text('malformed registry')
-        with self.assertLogs(activity.logger, level='ERROR'):
-            result = self.run_turn(lambda messages: self.fail('model must not run'))
-        self.assertEqual(result['model_status'], 'FOREGROUND_REGISTRY_UNAVAILABLE')
+        result = self.run_turn(lambda messages: 'reply')
+        self.assertEqual(result['model_status'], 'OK')
         self.assert_registry(RegistryState.UNKNOWN, None)
         missing = self.path / 'not-provisioned'
         tracker = activity.ForegroundActivityTracker(registry_path=missing)
         with self.assertLogs(activity.logger, level='ERROR'):
-            with self.assertRaises(activity.ForegroundPublicationError):
-                tracker.start()
+            tracker.start()
+        with tracker.generation():
+            self.assertEqual(tracker.snapshot().active_foreground_count, 1)
         self.assertFalse(missing.exists())
 
     def test_shutdown_retains_busy_until_final_completion(self):
@@ -279,7 +385,7 @@ class PublicationTests(unittest.TestCase):
             with self.tracker.generation():
                 self.fail('shutting down')
         scope.__exit__(None, None, None)
-        self.assert_registry(RegistryState.IDLE, 0)
+        self.assert_registry(RegistryState.UNKNOWN, None)
         self.assertIsNone(self.tracker._publisher)
 
     def test_explicit_lifecycle_restart_gets_fresh_identity_and_preserves_watermark(self):
@@ -305,7 +411,7 @@ class PublicationTests(unittest.TestCase):
             self.assertIsNone(self.tracker._publisher)
         asyncio.run(run())
 
-    def test_api_startup_failure_closes_publisher_and_registry_failure_skips_preparation(self):
+    def test_api_startup_failure_closes_publisher_and_registry_failure_allows_preparation(self):
         import app.playground_api as api
         app = SimpleNamespace(state=SimpleNamespace())
         async def run():
@@ -316,11 +422,9 @@ class PublicationTests(unittest.TestCase):
             self.assertIsNone(self.tracker._publisher)
             (self.path / 'unexpected').write_text('bad state')
             with patch.object(api, 'prepare_runtime_startup') as prepare:
-                with self.assertLogs(activity.logger, level='ERROR'):
-                    with self.assertRaises(activity.ForegroundPublicationError):
-                        async with api.lifespan(app):
-                            self.fail('registry startup did not fail')
-                prepare.assert_not_called()
+                async with api.lifespan(app):
+                    self.assert_registry(RegistryState.UNKNOWN, None)
+                prepare.assert_called_once()
         asyncio.run(run())
 
     def test_actual_environment_configuration_and_process_restart(self):
@@ -333,12 +437,13 @@ activity.start_foreground_publication()
 p = activity._tracker._publisher
 result = {"path": FOREGROUND_REGISTRY_DIR, "identity": p.identity if p else None}
 if p:
-    result["state"] = ForegroundRegistry(FOREGROUND_REGISTRY_DIR).read().state.value
+    result["state"] = ForegroundRegistry(FOREGROUND_REGISTRY_DIR, expected_publishers=("lab",)).read().state.value
 activity.stop_foreground_publication()
 print(json.dumps(result))
 '''
         def run(value):
-            env = dict(os.environ)
+            env = dict(os.environ, CORVUS_FOREGROUND_REGISTRY_PUBLISHER='lab',
+                       CORVUS_FOREGROUND_REGISTRY_EXPECTED_PUBLISHERS='lab')
             env.pop('CORVUS_FOREGROUND_REGISTRY_DIR', None)
             if value is not None:
                 env['CORVUS_FOREGROUND_REGISTRY_DIR'] = value
@@ -360,7 +465,7 @@ import app.foreground_activity as activity
 from app.foreground_registry import ForegroundRegistry, RegistryState
 from app.runtime_config import FOREGROUND_REGISTRY_DIR
 activity.start_foreground_publication()
-reader = ForegroundRegistry(FOREGROUND_REGISTRY_DIR)
+reader = ForegroundRegistry(FOREGROUND_REGISTRY_DIR, expected_publishers=("lab",))
 up_r, up_w = os.pipe()
 down_r, down_w = os.pipe()
 with activity.track_foreground_generation():
@@ -371,6 +476,7 @@ with activity.track_foreground_generation():
         os.close(down_w)
         try:
             assert activity.snapshot().active_foreground_count == 0
+            activity._tracker._logical_publisher = "child"
             activity.start_foreground_publication()
             assert activity._tracker._publisher.identity != original_identity
             with activity.track_foreground_generation():
@@ -386,9 +492,12 @@ with activity.track_foreground_generation():
     os.close(up_w)
     os.close(down_r)
     assert os.read(up_r, 1) == b'B'
+    reader.expected_publishers = frozenset(("lab", "child"))
     assert reader.read().active_foreground_count == 2
     os.write(down_w, b'F')
     assert os.read(up_r, 1) == b'D'
+    assert reader.read().state == RegistryState.UNKNOWN
+    reader.expected_publishers = frozenset(("lab",))
     assert reader.read().active_foreground_count == 1
     assert os.waitpid(pid, 0)[1] == 0
     os.close(up_r)
@@ -398,7 +507,9 @@ activity.stop_foreground_publication()
 print('fork integration passed')
 '''
         with TemporaryDirectory() as path:
-            env = dict(os.environ, CORVUS_FOREGROUND_REGISTRY_DIR=path)
+            env = dict(os.environ, CORVUS_FOREGROUND_REGISTRY_DIR=path,
+                       CORVUS_FOREGROUND_REGISTRY_PUBLISHER="lab",
+                       CORVUS_FOREGROUND_REGISTRY_EXPECTED_PUBLISHERS="lab")
             result = subprocess.run([sys.executable, '-B', '-c', code], env=env,
                                     capture_output=True, text=True, timeout=10)
             self.assertEqual(result.returncode, 0, result.stderr)

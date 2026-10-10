@@ -25,7 +25,7 @@ import app.foreground_registry as core
 CHILD = '''
 import json, os, sys, time
 from app.foreground_registry import ForegroundPublisher, ForegroundRegistry, RegistryError, RegistryState
-p = ForegroundPublisher(ForegroundRegistry(sys.argv[1]))
+p = ForegroundPublisher(ForegroundRegistry(sys.argv[1], expected_publishers=(sys.argv[2],)), logical_publisher=sys.argv[2])
 print(p.identity, flush=True)
 def fork_sleeper():
     read_fd, write_fd = os.pipe()
@@ -71,11 +71,21 @@ class RegistryTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name)
         self.now = [100.0]
-        self.registry = ForegroundRegistry(self.path, clock=lambda: self.now[0])
+        self.registry = ForegroundRegistry(self.path, clock=lambda: self.now[0], expected_publishers=("lab",))
+        self.claims = []
         self.registry.initialize()
 
+    def next_logical(self):
+        live = {name for name, owner in self.claims if
+                (not owner._closed if isinstance(owner, ForegroundPublisher) else owner.poll() is None)}
+        name = next(name for name in ("lab", "production", "worker2", "worker3") if name not in live)
+        self.registry.expected_publishers |= {name}
+        return name
+
     def publisher(self):
-        publisher = ForegroundPublisher(self.registry)
+        name = self.next_logical()
+        publisher = ForegroundPublisher(self.registry, logical_publisher=name)
+        self.claims.append((name, publisher))
         self.addCleanup(publisher.close)
         return publisher
 
@@ -95,8 +105,9 @@ class RegistryTests(unittest.TestCase):
         return snapshot
 
     def child(self):
+        name = self.next_logical()
         child = subprocess.Popen(
-            [sys.executable, "-B", "-c", CHILD, str(self.path)],
+            [sys.executable, "-B", "-c", CHILD, str(self.path), name],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, cwd=Path(__file__).resolve().parents[1],
         )
@@ -106,6 +117,7 @@ class RegistryTests(unittest.TestCase):
             child.communicate(timeout=5)
         self.addCleanup(cleanup)
         identity = self.line(child)
+        self.claims.append((name, child))
         return child, identity
 
     def line(self, child):
@@ -121,8 +133,8 @@ class RegistryTests(unittest.TestCase):
         child.stdin.flush()
         return self.line(child)
 
-    def test_empty_initialized_registry_is_idle_and_missing_is_unknown(self):
-        snapshot = self.assert_state(RegistryState.IDLE, 0)
+    def test_empty_initialized_registry_is_unknown_until_expected_publisher_joins(self):
+        snapshot = self.assert_state(RegistryState.UNKNOWN, None)
         self.assertIsNone(snapshot.last_foreground_finished_at)
         self.assertIsNone(snapshot.idle_grace_anchor)
         self.assertEqual(ForegroundRegistry(self.path / "missing").read().state,
@@ -151,11 +163,12 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(self.assert_state(RegistryState.IDLE, 0).last_foreground_finished_at, 95.0)
         self.command(first, [1, 90.0])
         self.command(first, [0, 99.0])
-        self.assertEqual(self.assert_state(RegistryState.IDLE, 0).idle_grace_anchor, 99.0)
+        self.assertEqual(self.assert_state(RegistryState.IDLE, 0).idle_grace_anchor, 100.0)
 
     def test_concurrent_publications_and_reads_remain_consistent(self):
-        registry = ForegroundRegistry(self.path)
-        publishers = [ForegroundPublisher(registry) for _ in range(2)]
+        registry = ForegroundRegistry(self.path, expected_publishers=("lab", "production"))
+        publishers = [ForegroundPublisher(registry, logical_publisher=name)
+                      for name in ("lab", "production")]
         for p in publishers:
             self.addCleanup(p.close)
         barrier = Barrier(3)
@@ -213,12 +226,14 @@ class RegistryTests(unittest.TestCase):
         child.kill()
         child.wait(timeout=5)
         self.assertEqual(json.loads((self.path / (identity + ".json")).read_text())["active_count"], 1)
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.child()  # Replacement proves live health; stale busy ownership is gone.
         recovered = self.assert_state(RegistryState.IDLE, 0)
         self.assertEqual(recovered.recovery_grace_started_at, 100.0)
         self.now[0] = 120.0
         self.assertEqual(self.assert_state(RegistryState.IDLE, 0).idle_grace_anchor, 100.0)
         # Reader restart conservatively observes one new grace, without writing.
-        fresh = ForegroundRegistry(self.path, clock=lambda: self.now[0])
+        fresh = ForegroundRegistry(self.path, clock=lambda: self.now[0], expected_publishers=("lab",))
         self.assertEqual(fresh.read().recovery_grace_started_at, 120.0)
 
     def test_crash_of_one_publisher_preserves_other_busy_count(self):
@@ -229,6 +244,8 @@ class RegistryTests(unittest.TestCase):
         self.assert_state(RegistryState.BUSY, 5)
         child.kill()
         child.wait(timeout=5)
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.child()
         self.assert_state(RegistryState.BUSY, 2)
 
     def test_independent_restart_uses_new_identity_and_keeps_watermark(self):
@@ -344,6 +361,7 @@ class RegistryTests(unittest.TestCase):
             p.publish(2, None)
 
     def test_registry_guard_contention_fails_closed_without_waiting(self):
+        self.publisher()
         fd = os.open(self.path / "registry.lock", os.O_RDONLY)
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
@@ -369,7 +387,7 @@ class RegistryTests(unittest.TestCase):
     def test_failed_registration_leaves_unknown_not_false_idle(self):
         with patch.object(core, "_write", side_effect=OSError("disk full")):
             with self.assertRaises(OSError):
-                ForegroundPublisher(self.registry)
+                ForegroundPublisher(self.registry, logical_publisher="lab")
         self.assert_state(RegistryState.UNKNOWN, None)
 
     def test_busy_lock_with_idle_metadata_is_unknown(self):
@@ -387,6 +405,8 @@ class RegistryTests(unittest.TestCase):
         with self.assertRaises(RegistryError):
             p.publish(0, 100.0)
         p.close()
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.publisher()
         self.assert_state(RegistryState.IDLE, 0)
         self.assertEqual(self.registry.read().recovery_grace_started_at, 100.0)
 
@@ -396,8 +416,10 @@ class RegistryTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 p.publish(1, None)
         self.assert_state(RegistryState.UNKNOWN, None)
-        p.close()  # No model call was permitted, so no false crash timestamp.
-        self.assert_state(RegistryState.IDLE, 0)
+        p.close()  # Foreground may have proceeded; replacement must apply grace.
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.publisher()
+        self.assertEqual(self.assert_state(RegistryState.IDLE, 0).recovery_grace_started_at, 100.0)
 
     def test_boot_or_time_domain_mismatch_is_unknown(self):
         domain = core._domain()
@@ -448,6 +470,8 @@ class RegistryTests(unittest.TestCase):
         self.addCleanup(self.kill_descendant, descendant)
         parent.kill()
         parent.wait(timeout=5)
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.child()
         self.assert_state(RegistryState.IDLE, 0)
         os.kill(descendant, 0)  # The child is still alive; inherited locks were closed.
 
@@ -475,6 +499,8 @@ class RegistryTests(unittest.TestCase):
                                  close_fds=False)
         self.addCleanup(lambda: (child.kill(), child.wait(timeout=5)))
         p.close()
+        self.assert_state(RegistryState.UNKNOWN, None)
+        self.publisher()
         self.assert_state(RegistryState.IDLE, 0)
 
     def test_initialize_is_idempotent_and_never_replaces_lock_inode(self):

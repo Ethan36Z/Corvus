@@ -1,7 +1,8 @@
 """Linux host-local activity metadata. No default path or runtime integration.
 
-Provision/initialize explicitly, then publish *serialized* local tracker snapshots
-before allowing model calls. Failed publication must prevent a new model call.
+Provision/initialize explicitly, then publish *serialized* local tracker snapshots.
+Readers require an explicit expected logical-publisher contract. Foreground calls
+may continue on failure; missing live health makes background admission UNKNOWN.
 Readers never write; recovery grace is reader-local and resets on reader restart.
 Lock files are permanent: do not unlink, replace, or inherit their descriptors.
 """
@@ -47,6 +48,7 @@ class RegistryError(RuntimeError):
 
 
 _ID = re.compile(r"([1-9][0-9]*)-([0-9]+)-[0-9a-f]{32}\Z")
+_LOGICAL = re.compile(r"[a-z][a-z0-9_-]{0,63}\Z")
 _FLAGS = os.O_CLOEXEC | os.O_NOFOLLOW
 _publishers = weakref.WeakSet()
 _fd_lock = Lock()
@@ -197,8 +199,14 @@ def _locked(fd):
 
 
 class ForegroundRegistry:
-    def __init__(self, path, *, clock=monotonic):
+    def __init__(self, path, *, clock=monotonic, expected_publishers=()):
         self.path = Path(path)
+        if isinstance(expected_publishers, str):
+            raise RegistryError("expected publishers must be a collection of logical names")
+        self.expected_publishers = frozenset(expected_publishers)
+        if any(not isinstance(name, str) or not _LOGICAL.fullmatch(name)
+               for name in self.expected_publishers):
+            raise RegistryError("invalid expected logical publisher")
         self._pid = os.getpid()
         self._clock = clock
         self._recoveries = {}
@@ -216,7 +224,7 @@ class ForegroundRegistry:
         header = _load(directory, "registry.json")
         if (type(header.get("version")) is not int or
             not _valid_inode(header.get("lock_inode")) or
-            header != {"version": 1, "clock_domain": _domain(), "lock_inode": _inode(guard)}):
+            header != {"version": 2, "clock_domain": _domain(), "lock_inode": _inode(guard)}):
             raise RegistryError("registry version, clock domain, or lock identity mismatch")
 
     def initialize(self):
@@ -230,7 +238,7 @@ class ForegroundRegistry:
                     if set(os.listdir(directory)) != {"registry.lock"}:
                         raise RegistryError("refusing to initialize nonempty registry")
                     _write(directory, "registry.json", {
-                        "version": 1, "clock_domain": _domain(), "lock_inode": _inode(guard),
+                        "version": 2, "clock_domain": _domain(), "lock_inode": _inode(guard),
                     })
         finally:
             _close(directory)
@@ -245,53 +253,75 @@ class ForegroundRegistry:
                 directory = self._directory()
                 with _guard(directory) as guard:
                     self._header(directory, guard)
+                    if not self.expected_publishers:
+                        raise RegistryError("expected publisher contract is not configured")
                     names = set(os.listdir(directory)) - {"registry.lock", "registry.json"}
                     ids = {name.removesuffix(".json") for name in names if name.endswith(".json")}
                     expected = {identity + suffix for identity in ids
-                                for suffix in (".json", ".busy", ".fault")}
+                                for suffix in (".json", ".busy", ".fault", ".live", ".health")}
                     if names != expected:
                         raise RegistryError("orphaned or unexpected registry files")
-                    total, finished, recoveries = 0, [], []
+                    total, finished, recoveries, healthy = 0, [], [], set()
                     for identity in sorted(ids):
                         match = _ID.fullmatch(identity)
                         record = _load(directory, identity + ".json")
                         if (match is None or set(record) != {
                             "identity", "pid", "start_ticks", "active_count", "last_finished",
-                            "busy_inode", "fault_inode",
+                            "busy_inode", "fault_inode", "live_inode", "health_inode", "logical_publisher",
                         } or record["identity"] != identity or
                             type(record["pid"]) is not int or record["pid"] != int(match[1]) or
                             type(record["start_ticks"]) is not int or record["start_ticks"] != int(match[2]) or
                             type(record["active_count"]) is not int or record["active_count"] < 0 or
                             not _valid_inode(record["busy_inode"]) or
-                            not _valid_inode(record["fault_inode"])):
+                            not _valid_inode(record["fault_inode"]) or
+                            not _valid_inode(record["live_inode"]) or
+                            not _valid_inode(record["health_inode"]) or
+                            not isinstance(record["logical_publisher"], str) or
+                            not _LOGICAL.fullmatch(record["logical_publisher"])):
                             raise RegistryError("invalid publisher metadata")
                         _timestamp(record["last_finished"])
                         if record["last_finished"] is not None:
                             if record["last_finished"] > self._clock():
                                 raise RegistryError("future finish timestamp")
                             finished.append(record["last_finished"])
-                        busy_fd = _open(directory, identity + ".busy", os.O_RDONLY)
+                        # A fresh identity may replace a process whose failed
+                        # initialization left no published finish. Observe one
+                        # grace for every identity, including healthy replacements.
+                        if identity not in self._recoveries:
+                            self._recoveries[identity] = self._clock()
+                        recoveries.append(self._recoveries[identity])
+                        locks = {}
                         try:
-                            fault_fd = _open(directory, identity + ".fault", os.O_RDONLY)
-                            try:
-                                if (_inode(busy_fd) != record["busy_inode"] or
-                                    _inode(fault_fd) != record["fault_inode"]):
+                            for kind in ("busy", "fault", "live", "health"):
+                                fd = _open(directory, identity + "." + kind, os.O_RDONLY)
+                                locks[kind] = fd
+                                if _inode(fd) != record[kind + "_inode"]:
                                     raise RegistryError("publisher lock replaced")
-                                if _locked(fault_fd):
-                                    raise RegistryError("publisher publication failed")
-                                busy = _locked(busy_fd)
-                            finally:
-                                _close(fault_fd)
+                            fault = _locked(locks["fault"])
+                            live = _locked(locks["live"])
+                            health = _locked(locks["health"])
+                            busy = _locked(locks["busy"])
                         finally:
-                            _close(busy_fd)
-                        if busy:
+                            for fd in locks.values():
+                                _close(fd)
+                        if live:
+                            if fault or not health:
+                                raise RegistryError("live publisher is degraded")
+                            logical = record["logical_publisher"]
+                            if logical in healthy:
+                                raise RegistryError("duplicate live logical publisher")
+                            healthy.add(logical)
+                        elif busy or health or fault:
+                            raise RegistryError("publisher ownership without lifetime lock")
+                        if live and busy:
                             if record["active_count"] == 0:
                                 raise RegistryError("busy lock with idle metadata")
                             total += record["active_count"]
-                        elif record["active_count"] > 0:
-                            if identity not in self._recoveries:
-                                self._recoveries[identity] = self._clock()
-                            recoveries.append(self._recoveries[identity])
+                        elif live and record["active_count"] > 0:
+                            raise RegistryError("live active metadata without busy ownership")
+                    if not self.expected_publishers <= healthy:
+                        raise RegistryError("missing live healthy expected publisher: " +
+                                            ", ".join(sorted(self.expected_publishers - healthy)))
                     return RegistrySnapshot(
                         RegistryState.BUSY if total else RegistryState.IDLE, total,
                         max(finished, default=None), max(recoveries, default=None),
@@ -304,18 +334,21 @@ class ForegroundRegistry:
 
 
 class ForegroundPublisher:
-    """Explicit publisher, not wired to conversation runtime.
+    """One unique logical service/worker slot with kernel-backed live health.
 
     Call publish under the same serialization as local tracker transitions.
     Publication failure poisons this publisher: close it and recover before reuse.
     """
-    def __init__(self, registry):
+    def __init__(self, registry, *, logical_publisher):
+        if not isinstance(logical_publisher, str) or not _LOGICAL.fullmatch(logical_publisher):
+            raise RegistryError("configure a valid logical publisher name")
         self._registry = registry
         self._pid = os.getpid()
         self._mutex = Lock()
         self._closed = False
         self._failed = False
         self._fds = []
+        self._health_fd = None
         self.identity = f"{self._pid}-{_start_ticks()}-{uuid.uuid4().hex}"
         with _fd_lock:
             _publishers.add(self)
@@ -330,12 +363,22 @@ class ForegroundPublisher:
                 self._fault_fd = _open(self._directory_fd, self.identity + ".fault",
                                        os.O_RDWR | os.O_CREAT | os.O_EXCL)
                 self._fds.append(self._fault_fd)
+                self._live_fd = _open(self._directory_fd, self.identity + ".live",
+                                      os.O_RDWR | os.O_CREAT | os.O_EXCL)
+                self._fds.append(self._live_fd)
+                fcntl.flock(self._live_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                self._health_fd = _open(self._directory_fd, self.identity + ".health",
+                                        os.O_RDWR | os.O_CREAT | os.O_EXCL)
+                self._fds.append(self._health_fd)
                 self._record = {
                     "identity": self.identity, "pid": self._pid,
                     "start_ticks": _start_ticks(), "active_count": 0, "last_finished": None,
                     "busy_inode": _inode(self._busy_fd), "fault_inode": _inode(self._fault_fd),
+                    "live_inode": _inode(self._live_fd), "health_inode": _inode(self._health_fd),
+                    "logical_publisher": logical_publisher,
                 }
                 _write(self._directory_fd, self.identity + ".json", self._record)
+                fcntl.flock(self._health_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BaseException:
             self._close_fds()
             self._closed = True
@@ -348,6 +391,9 @@ class ForegroundPublisher:
             if self._closed or self._pid != os.getpid() or self._failed:
                 raise RegistryError("closed, inherited, or failed publisher")
             try:
+                # Revoke trust BEFORE any fallible admission/write operation.
+                # Closing ownership is independent of best-effort fault signaling.
+                self._revoke_health()
                 if type(active_foreground_count) is not int or active_foreground_count < 0:
                     raise RegistryError("invalid local count")
                 _timestamp(last_foreground_finished_at)
@@ -362,7 +408,8 @@ class ForegroundPublisher:
                     raise RegistryError("completion requires finish timestamp")
                 with _guard(self._directory_fd, writable=True) as guard:
                     self._registry._header(self._directory_fd, guard)
-                    for fd, suffix in ((self._busy_fd, ".busy"), (self._fault_fd, ".fault")):
+                    for fd, suffix in ((self._busy_fd, ".busy"), (self._fault_fd, ".fault"),
+                                       (self._live_fd, ".live")):
                         info = os.stat(self.identity + suffix, dir_fd=self._directory_fd, follow_symlinks=False)
                         if _inode(fd) != [info.st_dev, info.st_ino]:
                             raise RegistryError("publisher lock replaced")
@@ -374,11 +421,42 @@ class ForegroundPublisher:
                     self._record = record
                     if active_foreground_count == 0:
                         fcntl.flock(self._busy_fd, fcntl.LOCK_UN)
+                    fd = _open(self._directory_fd, self.identity + ".health", os.O_RDWR)
+                    self._health_fd = fd
+                    self._fds.append(fd)
+                    if _inode(fd) != self._record["health_inode"]:
+                        raise RegistryError("publisher health lock replaced")
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BaseException:
-                # A kernel-owned fault signal works even when metadata writes fail.
                 self._failed = True
-                fcntl.flock(self._fault_fd, fcntl.LOCK_EX)
+                self._revoke_health()
+                try:
+                    self._mark_fault()
+                except Exception:
+                    # Live-but-unhealthy remains UNKNOWN even if signaling fails.
+                    pass
                 raise
+
+    def _revoke_health(self):
+        if self._health_fd is not None:
+            fd, self._health_fd = self._health_fd, None
+            self._fds.remove(fd)
+            _close(fd)
+
+    def _mark_fault(self):
+        fcntl.flock(self._fault_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def degrade(self):
+        """Withdraw trust without needing a successful metadata/fault write."""
+        if self._pid != os.getpid() or self._closed:
+            return
+        with self._mutex:
+            self._failed = True
+            self._revoke_health()
+            try:
+                self._mark_fault()
+            except Exception:
+                pass
 
     def _close_fds(self):
         for fd in reversed(self._fds):
