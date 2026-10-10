@@ -2,7 +2,7 @@
 
 Use the existing private shadow JSONL path explicitly. Legacy records are retained
 and ignored by the reducer. An unreadable/damaged ledger raises instead of yielding
-a trusted partial state. This module is not used by the live retain path yet.
+a trusted partial state. Live retain integration is disabled by default.
 """
 
 from dataclasses import dataclass, replace

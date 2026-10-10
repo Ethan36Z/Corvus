@@ -1,4 +1,4 @@
-"""Durable single-attempt async retain submission; deliberately not wired live."""
+"""Durable single-attempt async submission; Lab lifecycle is disabled by default."""
 
 import asyncio
 from dataclasses import dataclass

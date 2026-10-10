@@ -22,6 +22,7 @@ from starlette.concurrency import run_in_threadpool
 from memory.config import DATA_DIR, PROJECT_ROOT
 from memory import store
 from app.durable_jsonl import append_jsonl
+from app.runtime_config import HINDSIGHT_ASYNC_RETAIN_ENABLED
 
 
 LAB_PROJECT_ROOT = Path("/home/ethan/srv/apps/corvus-lab")
@@ -208,14 +209,16 @@ def _load_retain_item(turn):
     }
 
 
+def _retain_eligible():
+    return (lab_shadow_enabled() and DATA_DIR.resolve() == LAB_DATA_DIR
+            and store.DB_PATH.resolve() == LAB_DATA_DIR / "corvus.db")
+
+
 async def retain_completed_turn(turn):
     """One synchronous-contract HTTP retain; no retry, including after timeout."""
     started = time.perf_counter()
     result = _retain_observation(turn)
-    if (
-        not lab_shadow_enabled() or DATA_DIR.resolve() != LAB_DATA_DIR
-        or store.DB_PATH.resolve() != LAB_DATA_DIR / "corvus.db"
-    ):
+    if not _retain_eligible():
         result["error"] = "RETAIN_NOT_ELIGIBLE"
         return result
     try:
@@ -263,6 +266,50 @@ async def retain_completed_turn(turn):
     return result
 
 
+async def _submit_durable_retain(turn):
+    """Called only after comparison fsync; observe submission, not completion."""
+    started = time.perf_counter()
+    result = _retain_observation(turn, error="RETAIN_NOT_ELIGIBLE")
+    if not _retain_eligible():
+        return result
+    # Lazy imports avoid the submission primitive's shared item-builder cycle
+    # and keep the disabled synchronous path independent of ledger/async code.
+    from app.async_retain import submit_async_retain, SubmissionStatus
+    from app.retain_ledger import RetainLedger
+
+    outcome = await submit_async_retain(turn, RetainLedger(DATA_DIR / LOG_NAME),
+                                        bank=BANK, base_url=BASE_URL)
+    result.update(status=outcome.status.value, error=outcome.error, mode="async_submission",
+                  operation_id=outcome.operation_id, outcome_durable=outcome.outcome_durable,
+                  acceptance_unknown=outcome.acceptance_unknown, http_status=outcome.http_status,
+                  ledger_error=outcome.ledger_error,
+                  elapsed_ms=round((time.perf_counter() - started) * 1000, 3))
+    log = logger.info if outcome.status == SubmissionStatus.ACCEPTED and outcome.outcome_durable else logger.warning
+    log("H1 async retain submission status=%s error=%s operation=%s outcome_durable=%s "
+        "ledger_error=%s user=%s assistant=%s; completion not observed",
+        result["status"], result["error"], outcome.operation_id, outcome.outcome_durable,
+        outcome.ledger_error, turn.user_message_id, turn.assistant_message_id)
+    return result
+
+
+async def reconcile_async_retain(*, max_operations=10, transport=None, deadline_seconds=10):
+    """Explicit bounded Lab-only entry point; no startup, timer or replay hook.
+
+    Disabled means no ledger read or status request. Enabled callers may inject
+    a mock status transport. Corrupt history/invalid limits surface to the caller.
+    """
+    if not HINDSIGHT_ASYNC_RETAIN_ENABLED:
+        return ()
+    if not _retain_eligible():
+        raise ValueError("async retain reconciliation is Lab only")
+    from app.retain_ledger import RetainLedger
+    from app.retain_reconciliation import reconcile_unresolved
+
+    return await reconcile_unresolved(RetainLedger(DATA_DIR / LOG_NAME),
+                                      max_operations=max_operations, transport=transport,
+                                      base_url=BASE_URL, deadline_seconds=deadline_seconds)
+
+
 async def run_shadow_recall(turn):
     """Sequential recall -> durable comparison -> retain -> linked outcome."""
     if not lab_shadow_enabled():
@@ -302,7 +349,8 @@ async def run_shadow_recall(turn):
         )
         return
     try:
-        retain = await retain_completed_turn(turn)
+        retain = (await _submit_durable_retain(turn) if HINDSIGHT_ASYNC_RETAIN_ENABLED
+                  else await retain_completed_turn(turn))
     except Exception:
         retain = _retain_observation(turn, "ERROR", "UNEXPECTED_ERROR")
     try:

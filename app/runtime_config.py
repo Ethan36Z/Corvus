@@ -86,6 +86,11 @@ def _choice_env(name, default, allowed):
     return value
 
 
+HINDSIGHT_ASYNC_RETAIN_ENABLED = _choice_env(
+    "CORVUS_HINDSIGHT_ASYNC_RETAIN_ENABLED", "FALSE", {"TRUE", "FALSE"},
+) == "TRUE"
+
+
 ATTACHMENT_MAX_BYTES = _positive_int_env(
     "CORVUS_ATTACHMENT_MAX_BYTES",
     32 * 1024 * 1024,
