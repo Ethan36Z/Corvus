@@ -1,6 +1,6 @@
-# H1.7d-3c — Controlled Hindsight foreground-admission rollout (rolled back)
+# H1.7d-3c — Controlled Hindsight foreground-admission rollout
 
-Date: 2026-10-10 local time. Verdict: BLOCKED during startup acceptance; automatic rollback passed. The original Hindsight runtime is restored and no real admission lifecycle was exercised.
+Date: 2026-10-10 local time. Current verdict: PASS after the explicitly authorized H1.7d-3c-r1 retry. The patched runtime is live and one durable BUSY → DEFER → IDLE/grace → same-operation COMPLETED lifecycle passed. The first-attempt history below records the prior safe automatic rollback; it is not the current runtime state.
 
 ## Strict preflight
 
@@ -86,4 +86,76 @@ Four offline recipe tests pass, covering original input preservation, exact inte
 
 Next action is to explicitly resume H1.7d-3c after fresh preflight and corrected startup acceptance, then prove one real BUSY → DEFER → IDLE/grace → same-operation COMPLETED lifecycle. Do not proceed to H1.7e bounded consolidation until that passes. The known residual race remains: an admitted memory call cannot be preempted when foreground arrives afterward; no arbitration/cancellation was implemented here.
 
-Verdict: BLOCKED — validated derived image and rollback recipe retained; live rollout was automatically rolled back and stopped before real admission acceptance.
+First-attempt verdict: BLOCKED — validated derived image and rollback recipe retained; that rollout was automatically rolled back and stopped before real admission acceptance.
+
+
+## H1.7d-3c-r1 — Timeout-only correction and successful rollout
+
+Fresh preflight verified clean Lab `lab/ow2e-console` at `0b217c7ed6067808f48470241524c3844eaf9b52`, clean Production `main` at `c315d0e767e31fde3c82ba4dfb08659a268c267a`, the exact restored original Hindsight runtime, eight documents/nine memories, ten completed operations, zero unresolved Corvus intents, healthy live publishers and trustworthy host IDLE. Lab async retain remained enabled. Peer service/model/container identities and private/canonical data matched the saved baseline.
+
+Only the rollout harness timing changed: startup health and outer admission acceptance horizons are **75 seconds**; the standalone reader observation loop is bounded at 70 seconds with one-second polling. Admission idle/recovery grace remains **30 seconds**. Neither the version-pinned patch nor runtime admission semantics/configuration changed. The historical 45-second offline adjustment above was superseded by this explicitly requested 75-second horizon.
+
+The exact existing derived image `sha256:344abefa75512314309102e9d0391a0a346a6258d538bbbd881620cc5da69689` was reused, with no rebuild/download. A network-disabled scratch verifier and live post-recreation verifier confirmed distribution 0.10.1 and all eleven patched/dependency hashes. The previously passed 55 reader/gate/control-flow tests still correspond to these identical bytes. Four runtime-preservation regression tests passed again.
+
+Docker access was available to the operator account; no sudo helper or password bypass was needed. Reviewed helpers and private snapshots are under `/tmp/corvus-h17d-3c-r1/`, with the before snapshot mode 0600. Only Hindsight was stopped/recreated. Its new container is `d10028ca1b99d0ae02d4bd43cd2a81b8bdd65248600948481bd58a8485949f99`, PID 364304, started `2026-10-11T01:24:28.356295738Z` (October 10 locally).
+
+The stopped original remains `hindsight-lab-h17d3c-rollback-336680f1d0a7`, with its full original Config, HostConfig, mounts and image reverified exactly. The current runtime validator passed: only derived image, readonly registry bind and the three admission settings differ semantically. Model routing, command/entrypoint, user, ports/network, persistent/cache volumes, restart/security/resource settings and original environment remain preserved.
+
+Startup acceptance observed reader `UNKNOWN → IDLE` after **30.026358 seconds**, recognizing both expected publishers as UID/GID 1000:1000. Docker mount inspection showed `RW=false`; opening the existing `registry.json` for write without truncation or writing failed with **EROFS (errno 30)**. Bank stayed eight documents/nine memories and all ten operation records remained unchanged before the real test. No retain/consolidation was triggered by restart.
+
+## One real durable admission acceptance
+
+A purpose-built safe seam exercised the real Lab `ForegroundActivityTracker` and registry publisher in a separate test process, without a chat request or changes to the live Lab/Production publishers. Its logical name was `lab-admission-acceptance`, with process identity `368850-59859604-14313b9f6abf41ee8a4983348974dfb8`. The configured expected set stayed `lab,production`; the protocol also recognizes trustworthy additional busy publishers. Its generation context held the actual kernel busy lock with count one, then published count zero/finish time and closed lifetime resources. Stable stale lock files were retained, not deleted or replaced. Only runtime scheduling metadata was published.
+
+Exactly one synthetic async retain POST was submitted while BUSY. No canonical Corvus turn or invented message provenance was used. Content was:
+
+> H1.7d-3c synthetic admission acceptance marker: the temporary test codename is Copper Falcon 386. This is operational test data, not a personal fact.
+
+The context explicitly identified synthetic operational acceptance, with `source=corvus-lab-admission-acceptance`, `synthetic=true`, `test=H1.7d-3c`. The exact request and client UUID were appended/fsynced before POST in the task-local `/tmp/corvus-h17d-3c-r1/admission-ledger.jsonl`, separate from the unchanged live Corvus retain ledger.
+
+- Bank: `corvus-hindsight-lab-v1`.
+- Client/parent operation UUID: `7d4326b3-fb95-4090-9434-2b228cf163e4`.
+- Executable child UUID: `46a7fb59-84de-4c45-b52f-d43fdcdb60bf`.
+- Document: `corvus-lab:h1-7d-3c:admission:7d4326b3-fb95-4090-9434-2b228cf163e4`.
+- Request fingerprint: `32807406880faea9ae53092e3ad57446bdd0831811f7100280a340a228f32d77`.
+- Final executable-payload SHA256 (sorted JSON): `aea00685b94bb04435992502eabb464565a7c591d9fecd3e2a9bd8fb18dfb0ee`.
+
+The HTTP acknowledgement validated `success=true`, `async=true`, bank, one item and the same pre-recorded operation UUID. Parent/child rows are normal durable fan-out for this one submission, not replacement operations.
+
+Timeline (UTC; all events occurred October 10 locally):
+
+1. `01:27:34.265893`: fsynced BUSY observation, active count one.
+2. `01:27:34.299540`: fsynced submission acknowledgement for the same UUID.
+3. `01:27:34.764949`: worker log `Task 46a7fb59-84de-4c45-b52f-d43fdcdb60bf deferred ... foreground admission: BUSY`. Child returned to pending, `next_retry_at=01:28:04.763870`, retry count **0**, error null. Status observation at `01:27:36.312318` still showed BUSY/pending, with no terminal completion.
+4. Publisher finish watermark was monotonic `598598.384211274`, approximately `01:27:36.333512` UTC using the paired BUSY wall/monotonic observation. The generation exception path correctly released BUSY; final metadata count is zero and all lifetime ownership was released when the test process closed.
+5. `01:28:05.041248`: natural worker eligibility encountered reader recovery grace and deliberately deferred as `UNKNOWN`, setting `next_retry_at=01:28:35.040280`, without retry consumption. Reader recovery on removal of the test publisher conservatively starts a grace anchor; the first scheduled attempt cannot bypass it.
+6. `01:28:35.335031`: the **same child** resumed naturally. The first model slot selection was `01:28:35.357765`; the only model inference dispatch was task **6503** at `01:28:35.482758`, about **59.149 seconds after finish**, beyond the unchanged 30-second grace. No model slot launch occurred during BUSY or grace. The model logs emit slot dispatch/timing rather than HTTP access lines, so proof uses actual model execution plus the worker's pre-provider defer evidence, not an assumed POST log format.
+7. `01:28:37.214542`: child completed, about **60.881 seconds after finish**; parent completed when its one child completed. Final retry counts remain **0**, with no error. Retain extracted zero facts and tracked the synthetic document. COMPLETED proves successful processing/storage, not nonzero facts or semantic quality.
+
+### Observation harness corrections, with no replacement work
+
+The one-shot test script stopped after its real BUSY defer because the status query omitted `include_payload=true`; the API correctly returned `task_payload=null`, and the harness attempted to index it. Its `finally` closed the tracker and the already-durable operation continued naturally. A separate read-only observer queried the **same** parent/child with `include_payload=true`, confirmed completion, validated content/context/metadata/document and timestamp-to-event-date conversion against the fsynced request, and inspected retained logs. No resubmission, replacement UUID, manual worker retry or extra model request was made.
+
+That observer also corrected an evidence-parser assumption: this cached llama.cpp runtime logs slot dispatches rather than `/v1/chat/completions` access lines. This changed observation only. Admission source, grace, fail-closed policy and provider behavior were unchanged. The deferred API observations do not contain a payload hash because payload inclusion was omitted; unchanged payload is supported by the verified worker `_defer_operation` SQL (which changes scheduling/claim fields only), same child identity across all worker logs, and the final stored exact original request material. No before/after payload-hash observation is claimed.
+
+The operation itself completed within approximately 61 seconds of foreground finish, within the original 180-second acceptance bound. Subsequent inspection reconstructed that timeline from retained logs; it did not restart an observation window to permit more work. The task-local ledger now also records terminal completion. The live Corvus ledger remains unchanged with zero unresolved intents.
+
+## Result, isolation and rollback
+
+Bank: **8 → 9 documents**, **9 → 9 memories**. The synthetic document is preserved. Naturally queued consolidation `ed88e44a-e221-4041-8220-f739ab1fd77d` completed with **0 processed**, no additional model inference and retry count zero. It was not manually triggered. Operations are **10 → 13**: one client parent, its one retain child and that naturally queued consolidation. All three are completed/error-free, and all ten original operation records remain unchanged. There is one logical retain submission, no duplicate, no replay, no replacement UUID, no chat request and no Reflect.
+
+Final read-only postflight reverified healthy patched Hindsight/version/source hashes, exact configured runtime and exact stopped rollback container. Host aggregate is trustworthy IDLE with active count zero and both expected publishers live/healthy. Existing registry file hashes/inodes and real publisher identities are unchanged; only the separate test publisher's own stable files/finish metadata were added. No private conversation/user data entered the registry.
+
+Lab PID **13671**, Production PID **2831871** and :8095 PID **2867**, their service/configuration, all other model-container identities, Lab canonical data, live retain ledger and Production private SQLite/dense state remain unchanged. Production HEAD/worktree are unchanged and clean. No other service/model was restarted, no systemd/runtime configuration was changed, no reboot or push occurred.
+
+Rollback remains ready and does not delete volumes or the synthetic acceptance document:
+
+```sh
+python3 -B deploy/hindsight-runtime/0.10.1/runtime.py --snapshot /tmp/corvus-h17d-3c-r1/before.json --image sha256:344abefa75512314309102e9d0391a0a346a6258d538bbbd881620cc5da69689 --rollback
+```
+
+No rollback was performed after successful acceptance. Raw private inspect/configuration snapshots and full observations remain under `/tmp/corvus-h17d-3c-r1/`; secrets are not committed.
+
+This proves no new memory inference began while foreground was already BUSY, and durable deferred work resumed under the same operation after grace. It does **not** prove preemption/arbitration against foreground arriving after admission. That residual race remains provisionally accepted; bounded consolidation is still the next engineering objective, **H1.7e**, and was not implemented here.
+
+Verdict: **PASS** — exact cached patched runtime deployed with readonly registry access and unchanged 30-second grace; one durable BUSY/defer/grace/resume lifecycle reached COMPLETED with zero retry consumption and preserved isolation.
