@@ -25,7 +25,7 @@
     },
     "hindsight_api/engine/providers/openai_compatible_llm.py": {
       "upstream_sha256": "7c6aad58263b6b4134a7a67c2c5c289d22d106c90532f15a321fc28f6b05abae",
-      "patched_sha256": "7c6aad58263b6b4134a7a67c2c5c289d22d106c90532f15a321fc28f6b05abae"
+      "patched_sha256": "a4a318b9bc3be01767593e44a88f8993d47f3d80aa5ccbd8676256e374089cec"
     },
     "hindsight_api/engine/retain/fact_extraction.py": {
       "upstream_sha256": "4a3f52813d8621e5df89f004cc0380af10a6f80654fc022ec1aaa113ac55dd24",
@@ -54,10 +54,28 @@
     "hindsight_api/engine/foreground_admission.py": {
       "upstream_sha256": null,
       "patched_sha256": "9a101e90ed7c75a70ffd8d10ee2890fc9f5f8002a8061d75482bbdf279117316"
+    },
+    "hindsight_api/engine/consolidation_budget.py": {
+      "upstream_sha256": null,
+      "patched_sha256": "722644a376409beaea30dc807f07924efdf9622a2d1d79f78b253daf19c7580a"
     }
   },
   "registry_protocol": {
     "version": 2,
     "corvus_source_sha256": "2219148a19cb806f267b310534b78a4d150536cbf5747c355530156a9490915b"
+  },
+  "consolidation_budget": {
+    "context_limit": 8192,
+    "completion_cap": 1024,
+    "minimum_completion": 512,
+    "safety_margin": 256,
+    "counter": "same-server /props + /apply-template + /tokenize, final wrapped request",
+    "scope": [
+      "consolidation",
+      "consolidation_dedup"
+    ],
+    "batch_size": 1,
+    "oversized": "DeferOperation, no fact truncation/failure",
+    "reasoning": "none; enable_thinking=false; consolidation only"
   }
 }

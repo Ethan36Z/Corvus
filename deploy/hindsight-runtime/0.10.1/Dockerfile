@@ -13,4 +13,6 @@ COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/retain/orch
 COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/consolidation/consolidator.py /app/api/hindsight_api/engine/consolidation/consolidator.py
 COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/memory_engine.py /app/api/hindsight_api/engine/memory_engine.py
 COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/foreground_admission.py /app/api/hindsight_api/engine/foreground_admission.py
+COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/providers/openai_compatible_llm.py /app/api/hindsight_api/engine/providers/openai_compatible_llm.py
+COPY --from=verified --chown=1000:1000 /app/api/hindsight_api/engine/consolidation_budget.py /app/api/hindsight_api/engine/consolidation_budget.py
 COPY patch/manifest.json patch/apply.py verify_runtime.py /opt/corvus-admission/

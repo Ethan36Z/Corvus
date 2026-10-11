@@ -331,6 +331,8 @@ def main():
     assert hashlib.sha256((REPO/'app/foreground_registry.py').read_bytes()).hexdigest()==manifest['registry_protocol']['corvus_source_sha256']
     h.core()
     spec=importlib.util.spec_from_file_location('hindsight_api.engine.foreground_admission',h.SOURCE/'hindsight_api/engine/foreground_admission.py');ad=importlib.util.module_from_spec(spec);sys.modules[spec.name]=ad;spec.loader.exec_module(ad)
+    spec=importlib.util.spec_from_file_location('hindsight_api.engine.consolidation_budget',h.SOURCE/'hindsight_api/engine/consolidation_budget.py')
+    budget=importlib.util.module_from_spec(spec);sys.modules[spec.name]=budget;spec.loader.exec_module(budget)
     suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in (ReaderTests,GateTests))
     return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
 

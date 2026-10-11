@@ -23,4 +23,4 @@ for name,data in replacements.items():
     path=root/name;path.write_bytes(data)
     os.chown(path,1000,1000)
 guard.verify(root,patched=True)
-print('PASS: original build/version/source guarded; six exact patched sources installed')
+print('PASS: original build/version/source guarded; all exact patched sources installed')

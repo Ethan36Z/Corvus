@@ -553,6 +553,8 @@ def main():
     core()
     spec = importlib.util.spec_from_file_location('hindsight_api.engine.foreground_admission', SOURCE/'hindsight_api/engine/foreground_admission.py')
     admission = importlib.util.module_from_spec(spec);sys.modules[spec.name] = admission;spec.loader.exec_module(admission)
+    spec = importlib.util.spec_from_file_location('hindsight_api.engine.consolidation_budget', SOURCE/'hindsight_api/engine/consolidation_budget.py')
+    budget = importlib.util.module_from_spec(spec);sys.modules[spec.name] = budget;spec.loader.exec_module(budget)
     suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(cls) for cls in
         (RetainTests,ConsolidationTests,BoundaryTests,OrdinaryRegressionTests,ArtifactTests))
     result=unittest.TextTestRunner(verbosity=2).run(suite)

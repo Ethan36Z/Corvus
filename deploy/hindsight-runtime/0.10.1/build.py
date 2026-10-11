@@ -12,7 +12,7 @@ PATCH=HERE.parents[1]/'hindsight-patches/0.10.1'
 MANIFEST=json.loads((PATCH/'manifest.json').read_text())
 BASE=MANIFEST['upstream_container']['image']
 BASE_TAG='corvus-hindsight-base:0.10.1-b4d3b76f363a'
-TAG='corvus-hindsight:0.10.1-h17d3b-47201c6'
+TAG='corvus-hindsight:0.10.1-h17e1-ecb692d'
 
 def run(*args):
     return subprocess.check_output(args,text=True).strip()
@@ -57,11 +57,16 @@ def main():
         # Focused tests against sources actually copied FROM the derived image.
         final=root/'final';final.mkdir();extract(image['Id'],final)
         scratch=run('docker','create','--network','none','--entrypoint','python',image['Id'],'-V')
-        try:run('docker','cp',scratch+':/app/api/hindsight_api/engine/foreground_admission.py',str(final/'hindsight_api/engine/foreground_admission.py'))
+        try:
+            for name,guard in MANIFEST['files'].items():
+                if guard['upstream_sha256'] is None:
+                    dst=final/name;dst.parent.mkdir(parents=True,exist_ok=True)
+                    run('docker','cp',scratch+':/app/api/'+name,str(dst))
         finally:run('docker','rm',scratch)
         subprocess.run(['python3','-B',str(PATCH/'test_admission.py'),'--source',str(final)],check=True)
         subprocess.run(['python3','-B',str(PATCH/'test_control_flow.py'),'--source',str(final)],check=True)
+        subprocess.run(['python3','-B',str(PATCH/'test_bounded_consolidation.py'),'--source',str(final)],check=True)
         args.output.write_text(json.dumps({'base':BASE,'tag':TAG,'derived':image['Id'],'size':image['Size'],'layers':image['RootFS']['Layers']},indent=2)+'\n')
-        print('PASS: derived image verified and 55 focused patch tests passed; '+image['Id'])
+        print('PASS: derived image verified and all focused patch tests passed; '+image['Id'])
 
 if __name__=='__main__':main()
