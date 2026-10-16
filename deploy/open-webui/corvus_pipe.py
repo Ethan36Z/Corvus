@@ -5,14 +5,16 @@ version: 0.2.0
 required_open_webui_version: 0.6.5
 """
 
+import asyncio
 import hashlib
 import json
+import math
 import re
 from typing import Literal
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 
 CORVUS_CHAT_URL = "http://127.0.0.1:8096/api/chat"
@@ -20,6 +22,65 @@ UNCERTAIN_RESULT = (
     "Corvus did not confirm this turn. It may already have been saved. "
     "Check Corvus before sending again; do not retry or regenerate automatically."
 )
+
+
+def arena_ui_payload(result):
+    """Whitelist display data only; callers contain every comparison-only failure."""
+    trial_id = result["trial_id"]
+    if str(UUID(trial_id)) != trial_id or result["fairness"] != "BEST_EFFORT_PRE_TURN":
+        raise ValueError("Invalid Arena identity")
+
+    def elapsed(value):
+        if value is None:
+            return None
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise ValueError("Invalid Arena timing")
+        return value
+
+    def evidence(rows, shadow=False):
+        if not isinstance(rows, list) or len(rows) > 100:
+            raise ValueError("Invalid Arena evidence")
+        output = []
+        for row in rows:
+            text = row["text" if shadow else "content"]
+            if not isinstance(text, str) or len(text) > 200000:
+                raise ValueError("Invalid Arena evidence text")
+            if shadow:
+                source_id = row["source_id"]
+                if not isinstance(source_id, str) or not source_id or len(source_id) > 256:
+                    raise ValueError("Invalid Arena source ID")
+                output.append({"source_id": "hindsight:" + source_id, "text": text})
+            else:
+                message_id = row["id"]
+                if type(message_id) is not int or message_id < 1:
+                    raise ValueError("Invalid canonical message ID")
+                output.append({"message_id": message_id, "text": text})
+        return output
+
+    main, shadow = result["main"], result["shadow"]
+    recall = shadow["recall"]
+    error = shadow.get("error")
+    if error not in (None, "HINDSIGHT_RECALL_UNAVAILABLE", "CANONICAL_CONTEXT_UNAVAILABLE",
+                     "SHADOW_GENERATION_FAILED", "CANONICAL_TURN_FAILED"):
+        error = "COMPARISON_UNAVAILABLE"
+    payload = {
+        "version": 1, "trial_id": trial_id, "fairness": result["fairness"],
+        "main": {"status": main["status"]["overall"],
+                 "retrieval_status": main["status"]["retrieval"],
+                 "retrieval_ms": elapsed(main.get("historical_recall_elapsed_ms")),
+                 "generation_ms": elapsed(main.get("generation_elapsed_ms")),
+                 "evidence": evidence(main.get("retrieved_memories", []))},
+        "shadow": {"status": shadow["status"], "recall_status": recall["status"],
+                   "reply": shadow.get("reply"), "error_code": error,
+                   "retrieval_ms": elapsed(recall.get("elapsed_ms")),
+                   "generation_ms": elapsed(shadow.get("generation_elapsed_ms")),
+                   "evidence": evidence(shadow.get("evidence", []), shadow=True)},
+        "evaluation": {"status": result["evaluation"]["status"],
+                       "votable": result["evaluation"]["votable"]},
+    }
+    if len(json.dumps(payload, allow_nan=False).encode("utf-8")) > 1000000:
+        raise ValueError("Arena display payload too large")
+    return payload
 
 
 def validate_corvus_chat_url(value):
@@ -91,6 +152,9 @@ class Pipe:
             default="auto", description="Corvus web mode, controlled by the administrator."
         )
         TIMEOUT_SECONDS: float = Field(default=300, ge=1, le=600)
+        ARENA_ENABLED: StrictBool = Field(
+            default=False, description="Enable Memory A/B only in the isolated Lab installation."
+        )
 
         @field_validator("CORVUS_CHAT_URL")
         @classmethod
@@ -110,6 +174,7 @@ class Pipe:
         __task_body__: dict = None,
         __files__: list = None,
         __tools__: dict = None,
+        __event_emitter__=None,
     ) -> str:
         if not isinstance(body, dict):
             raise ValueError("OW1 requires a text chat request.")
@@ -151,6 +216,12 @@ class Pipe:
         # Validate again because direct assignment can bypass Pydantic validators.
         # Request fields, metadata, and user valves never select a destination.
         chat_url = validate_corvus_chat_url(self.valves.CORVUS_CHAT_URL)
+        arena_flag = (__metadata__ or {}).get("corvus_arena", False)
+        if type(arena_flag) is not bool:
+            raise ValueError("Memory A/B requires a boolean opt-in.")
+        if arena_flag and (self.valves.ARENA_ENABLED is not True
+                           or chat_url != "http://127.0.0.1:18096/api/chat"):
+            raise ValueError("Memory A/B is not enabled for this Lab installation.")
 
         messages = body.get("messages")
         if not isinstance(messages, list) or not messages:
@@ -172,6 +243,9 @@ class Pipe:
             "message": current["content"],
             "web_mode": self.valves.WEB_MODE,
         }
+        if arena_flag:
+            chat_url = "http://127.0.0.1:18096/api/arena/chat"
+            payload.pop("web_mode")
         # No redirects, environment proxies, or HTTP transport retries. Corvus
         # can persist before the caller times out; OW1 has no idempotency key.
         try:
@@ -196,6 +270,11 @@ class Pipe:
             raise ValueError("Corvus returned an invalid response. " + UNCERTAIN_RESULT) from None
         if not isinstance(result, dict):
             raise ValueError("Corvus returned an invalid response. " + UNCERTAIN_RESULT)
+        arena_result = result
+        if arena_flag:
+            result = result.get("main", {})
+            if not isinstance(result, dict):
+                raise ValueError("Corvus returned an invalid response. " + UNCERTAIN_RESULT)
         status = result.get("status")
         reply = result.get("reply")
         if (
@@ -208,4 +287,14 @@ class Pipe:
             or not reply.strip()
         ):
             raise ValueError("Corvus did not return a confirmed reply. " + UNCERTAIN_RESULT)
+        if arena_flag:
+            # This side channel must never invalidate a successful canonical turn.
+            # One emission attempt only; never retry the event or the chat POST.
+            try:
+                if __event_emitter__ is not None:
+                    await asyncio.wait_for(__event_emitter__(
+                        {"type": "corvus:arena:v1", "data": arena_ui_payload(arena_result)}
+                    ), timeout=1.0)
+            except (Exception, asyncio.CancelledError):
+                pass
         return reply

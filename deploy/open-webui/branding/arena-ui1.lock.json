@@ -1,0 +1,40 @@
+{
+  "upstream_commit": "07d8460126a686de9a99e2662d06106e22c3f6b6",
+  "base_patch_sha256": "9100d30f5c120aa87aeb38225dd16f6b5d70c5596cbb4ffbcf9dfaa407e86c0c",
+  "image_revision": "0.6.5-arena-ui1.2",
+  "patch_sha256": "b85d927e27b10c6b11879203bc9560111a5abbb1e23dc08edd6c3f58067675b4",
+  "patched_files": {
+    "backend/open_webui/main.py": {
+      "before": "f613bdfa142657a226a546d7223086e1b1760fb1f12f22428dd143d2cb3491ef",
+      "after": "e9a9a3106f58f31621b98bd3b75ce7d183604c7c3bdd5f2d59b2e11f18420dfb"
+    },
+    "src/lib/components/chat/Chat.svelte": {
+      "before": "688ee06fc9552d3df525f0dfbafb72bd7e76d22e1dab513336169d5adb62bdc5",
+      "after": "bf556c4ca0bdafab06429108a1d452895cfe5494f372955afdcc0f0fa99f3bb9"
+    },
+    "src/lib/components/chat/MessageInput.svelte": {
+      "before": "adf077a8cb5806dfe5b6ecc3fecdf53c70ddc623e63637a1104f8406997f5cb0",
+      "after": "554564dee985a2f4db96be7cd2c2da3e8d499d3ae07e491e6b8499b8287a5451"
+    },
+    "src/lib/components/chat/Messages.svelte": {
+      "before": "ffabd51be4d88397f3e0730af0b6c105c91565c9d1628b2b070bdbf63315d6ee",
+      "after": "9478e857e4d05070b1ebdbb2ebf8c95f184a851fee23628596f14d004086a42b"
+    },
+    "src/lib/components/chat/Messages/ArenaPanel.svelte": {
+      "before": null,
+      "after": "ff19656742b204751236dbe6ac82f765f317511587bb1409c5b904fd4cae610a"
+    },
+    "src/lib/components/chat/Messages/ResponseMessage.svelte": {
+      "before": "9fedd98f1ed14b765e4b8bc70772b5d23e238ff79fa57d547c881818bf3e3603",
+      "after": "71a4a7a9eee7b5ad64b482cf95103559375ff41ddb358b9aaefced9b5ff7ea2e"
+    },
+    "src/lib/components/chat/Placeholder.svelte": {
+      "before": "79f3da2c2f4305b5b009aa310334ec26cd25fab771409a12e8d60ec8493aa0e6",
+      "after": "db71b1e43425dd1f100e16cfad3a1d349750a4e99eaf1fed49c07a04494b4f7d"
+    },
+    "src/lib/corvus-arena.ts": {
+      "before": null,
+      "after": "77a83737e3ec510e39bfc15aef16a45ff607a7cf3a4a5de0558a938e97a284c4"
+    }
+  }
+}

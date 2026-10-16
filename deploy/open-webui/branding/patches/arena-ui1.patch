@@ -1,0 +1,504 @@
+--- a/backend/open_webui/main.py
++++ b/backend/open_webui/main.py
+@@ -1110,6 +1110,11 @@
+             ),
+         }
+ 
++        # Only this opt-in bit is accepted; client metadata cannot replace identity.
++        arena_metadata = form_data.pop("metadata", None)
++        if isinstance(arena_metadata, dict) and arena_metadata.get("corvus_arena") is True:
++            metadata["corvus_arena"] = True
++
+         request.state.metadata = metadata
+         form_data["metadata"] = metadata
+ 
+--- a/src/lib/components/chat/Chat.svelte
++++ b/src/lib/components/chat/Chat.svelte
+@@ -1,5 +1,6 @@
+ <script lang="ts">
+ 	import { corvusLabel } from '$lib/corvus-branding';
++	import { arenaMetadata, acceptArenaEvent, preserveArena, createArenaSaveQueue } from '$lib/corvus-arena';
+ 	import { v4 as uuidv4 } from 'uuid';
+ 	import { toast } from 'svelte-sonner';
+ 	import mermaid from 'mermaid';
+@@ -93,6 +94,21 @@
+ 	export let chatIdProp = '';
+ 
+ 	let loading = false;
++	let arenaEnabled = false; // Tab-local only; never saved or restored.
++	$: arenaAvailable = selectedModelIds.length === 1 && selectedModelIds[0] === 'corvus_pipe' && !$temporaryChatEnabled;
++	const arenaSaves = createArenaSaveQueue();
++
++	const persistChatHistory = (token, id, body) => {
++		// Capture this chat's newest state now. Queued callbacks never read another chat.
++		if ($chatId !== id) return Promise.resolve(null);
++		const snapshot = JSON.parse(JSON.stringify({ ...body, history,
++			messages: createMessagesList(history, history.currentId) }));
++		return arenaSaves.save(id, async () => {
++			const saved = await updateChatById(token, id, snapshot);
++			if ($chatId === id) chat = saved;
++			return saved;
++		});
++	};
+ 
+ 	const eventTarget = new EventTarget();
+ 	let controlPane;
+@@ -247,6 +263,19 @@
+ 	};
+ 
+ 	const chatEventHandler = async (event, cb) => {
++		if (event?.data?.type === 'corvus:arena:v1') {
++			if (acceptArenaEvent(history, event, $chatId)) {
++				history = history;
++				const target = history.messages[event.message_id];
++				// Before completion, keep this local. A placeholder snapshot could
++				// overwrite upstream's completed reply after navigation.
++				if (target.done === true && typeof target.content === 'string' && target.content.trim()) {
++					try { await saveChatHandler(event.chat_id, history); }
++					catch { toast.error('Comparison received, but chat history could not be saved.'); }
++				}
++			}
++			return; // Do not log memory evidence or treat it as assistant content.
++		}
+ 		console.log(event);
+ 
+ 		if (event.chat_id === $chatId) {
+@@ -895,7 +924,7 @@
+ 
+ 		if ($chatId == chatId) {
+ 			if (!$temporaryChatEnabled) {
+-				chat = await updateChatById(localStorage.token, chatId, {
++				await persistChatHistory(localStorage.token, chatId, {
+ 					models: selectedModels,
+ 					messages: messages,
+ 					history: history,
+@@ -950,7 +979,7 @@
+ 
+ 		if ($chatId == chatId) {
+ 			if (!$temporaryChatEnabled) {
+-				chat = await updateChatById(localStorage.token, chatId, {
++				await persistChatHistory(localStorage.token, chatId, {
+ 					models: selectedModels,
+ 					messages: messages,
+ 					history: history,
+@@ -1191,7 +1220,7 @@
+ 			message.usage = usage;
+ 		}
+ 
+-		history.messages[message.id] = message;
++		history.messages[message.id] = preserveArena(message, history.messages[message.id]);
+ 
+ 		if (done) {
+ 			message.done = true;
+@@ -1226,7 +1255,7 @@
+ 				})
+ 			);
+ 
+-			history.messages[message.id] = message;
++			history.messages[message.id] = preserveArena(message, history.messages[message.id]);
+ 			await chatCompletedHandler(
+ 				chatId,
+ 				message.model,
+@@ -1246,6 +1275,7 @@
+ 	//////////////////////////
+ 
+ 	const submitPrompt = async (userPrompt, { _raw = false } = {}) => {
++		const arenaForTurn = arenaEnabled && arenaAvailable;
+ 		console.log('submitPrompt', userPrompt, $chatId);
+ 
+ 		const messages = createMessagesList(history, history.currentId);
+@@ -1346,14 +1376,14 @@
+ 
+ 		saveSessionSelectedModels();
+ 
+-		await sendPrompt(history, userPrompt, userMessageId, { newChat: true });
++		await sendPrompt(history, userPrompt, userMessageId, { newChat: true, corvusArena: arenaForTurn });
+ 	};
+ 
+ 	const sendPrompt = async (
+ 		_history,
+ 		prompt: string,
+ 		parentId: string,
+-		{ modelId = null, modelIdx = null, newChat = false } = {}
++		{ modelId = null, modelIdx = null, newChat = false, corvusArena = false } = {}
+ 	) => {
+ 		if (autoScroll) {
+ 			scrollToBottom();
+@@ -1386,6 +1416,7 @@
+ 					modelName: model.name ?? model.id,
+ 					modelIdx: modelIdx ? modelIdx : _modelIdx,
+ 					userContext: null,
++					...(corvusArena && model.id === 'corvus_pipe' ? { corvus_arena_requested: true } : {}),
+ 					timestamp: Math.floor(Date.now() / 1000) // Unix epoch
+ 				};
+ 
+@@ -1469,7 +1500,7 @@
+ 					const chatEventEmitter = await getChatEventEmitter(model.id, _chatId);
+ 
+ 					scrollToBottom();
+-					await sendPromptSocket(_history, model, responseMessageId, _chatId);
++					await sendPromptSocket(_history, model, responseMessageId, _chatId, corvusArena && model.id === 'corvus_pipe');
+ 
+ 					if (chatEventEmitter) clearInterval(chatEventEmitter);
+ 				} else {
+@@ -1482,7 +1513,7 @@
+ 		chats.set(await getChatList(localStorage.token, $currentChatPage));
+ 	};
+ 
+-	const sendPromptSocket = async (_history, model, responseMessageId, _chatId) => {
++	const sendPromptSocket = async (_history, model, responseMessageId, _chatId, arenaForTurn = false) => {
+ 		const responseMessage = _history.messages[responseMessageId];
+ 		const userMessage = _history.messages[responseMessage.parentId];
+ 
+@@ -1572,6 +1603,7 @@
+ 			localStorage.token,
+ 			{
+ 				stream: stream,
++				...arenaMetadata(arenaForTurn),
+ 				model: model.id,
+ 				messages: messages,
+ 				params: {
+@@ -1903,7 +1935,7 @@
+ 	const saveChatHandler = async (_chatId, history) => {
+ 		if ($chatId == _chatId) {
+ 			if (!$temporaryChatEnabled) {
+-				chat = await updateChatById(localStorage.token, _chatId, {
++				await persistChatHistory(localStorage.token, _chatId, {
+ 					models: selectedModels,
+ 					history: history,
+ 					messages: createMessagesList(history, history.currentId),
+@@ -2015,6 +2047,7 @@
+ 									{regenerateResponse}
+ 									{mergeResponses}
+ 									{chatActionHandler}
++									saveHistory={saveChatHandler}
+ 									{addMessages}
+ 									bottomPadding={files.length > 0}
+ 								/>
+@@ -2023,6 +2056,8 @@
+ 
+ 						<div class=" pb-[1rem]">
+ 							<MessageInput
++								bind:arenaEnabled
++								{arenaAvailable}
+ 								{history}
+ 								{taskIds}
+ 								{selectedModels}
+@@ -2077,6 +2112,8 @@
+ 					{:else}
+ 						<div class="overflow-auto w-full h-full flex items-center">
+ 							<Placeholder
++								bind:arenaEnabled
++								{arenaAvailable}
+ 								{history}
+ 								{selectedModels}
+ 								bind:files
+--- a/src/lib/components/chat/MessageInput.svelte
++++ b/src/lib/components/chat/MessageInput.svelte
+@@ -71,6 +71,8 @@
+ 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+ 
+ 	export let history;
++	export let arenaEnabled = false;
++	export let arenaAvailable = false;
+ 	export let taskIds = null;
+ 
+ 	export let prompt = '';
+@@ -1104,6 +1106,13 @@
+ 										</InputMenu>
+ 
+ 										<div class="flex gap-1 items-center overflow-x-auto scrollbar-none flex-1">
++                                                {#if arenaAvailable}
++                                                    <button type="button" role="switch" aria-checked={arenaEnabled}
++                                                        class="shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-full border transition {arenaEnabled ? 'bg-gray-800 text-white dark:bg-gray-100 dark:text-gray-900 border-transparent' : 'text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'}"
++                                                        on:click={() => (arenaEnabled = !arenaEnabled)}>
++                                                        Memory A/B <span class="sr-only">{arenaEnabled ? 'On' : 'Off'}</span>
++                                                    </button>
++                                                {/if}
+ 											{#if toolServers.length + selectedToolIds.length > 0}
+ 												<Tooltip
+ 													content={$i18n.t('{{COUNT}} Available Tools', {
+--- a/src/lib/components/chat/Messages.svelte
++++ b/src/lib/components/chat/Messages.svelte
+@@ -1,19 +1,16 @@
+ <script lang="ts">
+ 	import { v4 as uuidv4 } from 'uuid';
+ 	import {
+-		chats,
+ 		config,
+ 		settings,
+ 		user as _user,
+ 		mobile,
+-		currentChatPage,
+ 		temporaryChatEnabled
+ 	} from '$lib/stores';
+ 	import { tick, getContext, onMount, createEventDispatcher } from 'svelte';
+ 	const dispatch = createEventDispatcher();
+ 
+ 	import { toast } from 'svelte-sonner';
+-	import { getChatList, updateChatById } from '$lib/apis/chats';
+ 	import { copyToClipboard, extractCurlyBraceWords } from '$lib/utils';
+ 
+ 	import Message from './Messages/Message.svelte';
+@@ -42,6 +39,7 @@
+ 	export let mergeResponses: Function;
+ 
+ 	export let chatActionHandler: Function;
++	export let saveHistory: Function;
+ 	export let showMessage: Function = () => {};
+ 	export let submitMessage: Function = () => {};
+ 	export let addMessages: Function = () => {};
+@@ -95,15 +93,10 @@
+ 
+ 	const updateChat = async () => {
+ 		if (!$temporaryChatEnabled) {
++			const targetChatId = chatId;
+ 			history = history;
+-			await tick();
+-			await updateChatById(localStorage.token, chatId, {
+-				history: history,
+-				messages: messages
+-			});
+-
+-			currentChatPage.set(1);
+-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
++			// Delegate before any await so navigation cannot change the target/history pair.
++			await saveHistory(targetChatId, history);
+ 		}
+ 	};
+ 
+@@ -309,6 +302,8 @@
+ 					timestamp: Math.floor(Date.now() / 1000) // Unix epoch
+ 				};
+ 
++				delete responseMessage.corvus_arena;
++				delete responseMessage.corvus_arena_requested;
+ 				history.messages[responseMessageId] = responseMessage;
+ 				history.currentId = responseMessageId;
+ 
+@@ -323,6 +318,8 @@
+ 				await updateChat();
+ 			} else {
+ 				// Edit response message
++				delete history.messages[messageId].corvus_arena;
++				delete history.messages[messageId].corvus_arena_requested;
+ 				history.messages[messageId].originalContent = history.messages[messageId].content;
+ 				history.messages[messageId].content = content;
+ 				await updateChat();
+@@ -335,6 +332,11 @@
+ 	};
+ 
+ 	const saveMessage = async (messageId, message) => {
++		if (history.messages[messageId].role === 'assistant' &&
++			history.messages[messageId].content !== message.content) {
++			delete message.corvus_arena;
++			delete message.corvus_arena_requested;
++		}
+ 		history.messages[messageId] = message;
+ 		await updateChat();
+ 	};
+--- /dev/null
++++ b/src/lib/components/chat/Messages/ArenaPanel.svelte
+@@ -0,0 +1,56 @@
++<script lang="ts">
++	import ContentRenderer from './ContentRenderer.svelte';
++	import type { ArenaPayload } from '$lib/corvus-arena';
++	export let arena: ArenaPayload | undefined = undefined;
++	export let id = '';
++	export let history;
++	export let model = null;
++	const timing = (ms: number | null) => ms === null ? 'Unavailable' : `${Math.round(ms)} ms`;
++</script>
++
++<section aria-label="Memory A/B" class="mt-3 mb-2 w-full min-w-0 rounded-xl border border-gray-200 dark:border-gray-800 p-3 text-sm">
++	<h3 class="font-medium mb-2">Memory A/B</h3>
++	{#if arena}
++		<h4 class="font-medium text-xs text-gray-500 dark:text-gray-400 mb-1">Hindsight candidate</h4>
++		{#if arena.shadow.status === 'OK' && arena.shadow.reply}
++			<div class="min-w-0 break-words">
++				<ContentRenderer id={`${id}-hindsight`} content={arena.shadow.reply} {history} {model}
++					floatingButtons={false} save={false} />
++			</div>
++		{:else}
++			<p class="text-gray-500 dark:text-gray-400">Hindsight candidate unavailable. The Corvus reply above is unaffected.</p>
++		{/if}
++		{#if arena.evaluation.status !== 'STORED'}
++			<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Evaluation record unavailable.</p>
++		{/if}
++		<details class="mt-3 text-xs text-gray-600 dark:text-gray-400">
++			<summary class="cursor-pointer font-medium hover:text-gray-900 dark:hover:text-gray-100">Evidence &amp; timing</summary>
++			<div class="mt-2 space-y-3">
++				<p>Fairness: <span class="break-all">{arena.fairness}</span></p>
++				<div>
++					<h5 class="font-medium">Corvus RAG</h5>
++					<p>Status: {arena.main.status}; retrieval: {arena.main.retrieval_status}</p>
++					<p>Retrieval: {timing(arena.main.retrieval_ms)} · Generation: {timing(arena.main.generation_ms)}</p>
++					{#each arena.main.evidence as row}
++						<div class="mt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-2">
++							<p>Message {row.message_id}</p><p class="whitespace-pre-wrap break-words">{row.text}</p>
++						</div>
++					{:else}<p class="mt-1">No historical evidence.</p>{/each}
++				</div>
++				<div>
++					<h5 class="font-medium">Hindsight</h5>
++					<p>Status: {arena.shadow.status}; recall: {arena.shadow.recall_status}</p>
++					<p>Retrieval: {timing(arena.shadow.retrieval_ms)} · Generation: {timing(arena.shadow.generation_ms)}</p>
++					{#if arena.shadow.error_code}<p>{arena.shadow.error_code}</p>{/if}
++					{#each arena.shadow.evidence as row}
++						<div class="mt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-2">
++							<p class="break-all">{row.source_id}</p><p class="whitespace-pre-wrap break-words">{row.text}</p>
++						</div>
++					{:else}<p class="mt-1">No historical evidence.</p>{/each}
++				</div>
++			</div>
++		</details>
++	{:else}
++		<p class="text-gray-500 dark:text-gray-400">Comparison unavailable. The Corvus reply above is unaffected.</p>
++	{/if}
++</section>
+--- a/src/lib/components/chat/Messages/ResponseMessage.svelte
++++ b/src/lib/components/chat/Messages/ResponseMessage.svelte
+@@ -46,6 +46,8 @@
+ 	import Citations from './Citations.svelte';
+ 	import CodeExecutions from './CodeExecutions.svelte';
+ 	import ContentRenderer from './ContentRenderer.svelte';
++	import ArenaPanel from './ArenaPanel.svelte';
++	import type { ArenaPayload } from '$lib/corvus-arena';
+ 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
+ 	import FileItem from '$lib/components/common/FileItem.svelte';
+ 
+@@ -98,6 +100,8 @@
+ 			usage?: unknown;
+ 		};
+ 		annotation?: { type: string; rating: number };
++		corvus_arena?: ArenaPayload;
++		corvus_arena_requested?: boolean;
+ 	}
+ 
+ 	export let chatId = '';
+@@ -825,6 +829,8 @@
+ 										}}
+ 										on:update={(e) => {
+ 											const { raw, oldContent, newContent } = e.detail;
++											delete history.messages[message.id].corvus_arena;
++											delete history.messages[message.id].corvus_arena_requested;
+ 
+ 											history.messages[message.id].content = history.messages[
+ 												message.id
+@@ -847,6 +853,10 @@
+ 										}}
+ 									/>
+ 								{/if}
++
++                                {#if message.corvus_arena || (message.corvus_arena_requested && message.done)}
++                                    <ArenaPanel arena={message.corvus_arena} id={message.id} {history} {model} />
++                                {/if}
+ 
+ 								{#if message?.error}
+ 									<Error content={message?.error?.content ?? message.content} />
+--- a/src/lib/components/chat/Placeholder.svelte
++++ b/src/lib/components/chat/Placeholder.svelte
+@@ -29,6 +29,8 @@
+ 	export let selectedModels: [''];
+ 
+ 	export let history;
++	export let arenaEnabled = false;
++	export let arenaAvailable = false;
+ 
+ 	export let prompt = '';
+ 	export let files = [];
+@@ -180,6 +182,8 @@
+ 
+ 			<div class="text-base font-normal @md:max-w-3xl w-full py-3 {atSelectedModel ? 'mt-2' : ''}">
+ 				<MessageInput
++					bind:arenaEnabled
++					{arenaAvailable}
+ 					{history}
+ 					{selectedModels}
+ 					bind:files
+--- /dev/null
++++ b/src/lib/corvus-arena.ts
+@@ -0,0 +1,83 @@
++/** Memory A/B display data only; never add this object to provider messages. */
++export type ArenaPayload = {
++	version: 1;
++	trial_id: string;
++	fairness: 'BEST_EFFORT_PRE_TURN';
++	main: {
++		status: string; retrieval_status: string; retrieval_ms: number | null;
++		generation_ms: number | null; evidence: { message_id: number; text: string }[];
++	};
++	shadow: {
++		status: string; recall_status: string; reply: string | null; error_code: string | null;
++		retrieval_ms: number | null; generation_ms: number | null;
++		evidence: { source_id: string; text: string }[];
++	};
++	evaluation: { status: string; votable: boolean };
++};
++
++export const arenaMetadata = (enabled = false) =>
++	enabled === true ? { metadata: { corvus_arena: true } } : {};
++
++const record = (v: any) => v !== null && typeof v === 'object' && !Array.isArray(v);
++const keys = (v: any, expected: string[]) => record(v) &&
++	Object.keys(v).sort().join(',') === [...expected].sort().join(',');
++const text = (v: any) => typeof v === 'string' && v.length <= 200000;
++const elapsed = (v: any) => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0);
++const evidence = (rows: any, shadow = false) => Array.isArray(rows) && rows.length <= 100 &&
++	rows.every((r) => keys(r, [shadow ? 'source_id' : 'message_id', 'text']) && text(r.text) &&
++		(shadow ? typeof r.source_id === 'string' && /^hindsight:.{1,256}$/.test(r.source_id)
++			: Number.isInteger(r.message_id) && r.message_id > 0));
++
++export function validArenaPayload(v: any): v is ArenaPayload {
++	if (!keys(v, ['version', 'trial_id', 'fairness', 'main', 'shadow', 'evaluation'])) return false;
++	if (v.version !== 1 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v.trial_id) ||
++		v.fairness !== 'BEST_EFFORT_PRE_TURN') return false;
++	const m = v.main, s = v.shadow, e = v.evaluation;
++	return keys(m, ['status', 'retrieval_status', 'retrieval_ms', 'generation_ms', 'evidence']) &&
++		['OK', 'DEGRADED'].includes(m.status) && ['OK', 'ERROR', 'EMPTY'].includes(m.retrieval_status) &&
++		elapsed(m.retrieval_ms) && elapsed(m.generation_ms) && evidence(m.evidence) &&
++		keys(s, ['status', 'recall_status', 'reply', 'error_code', 'retrieval_ms', 'generation_ms', 'evidence']) &&
++		['OK', 'ERROR', 'SKIPPED'].includes(s.status) && ['OK', 'ERROR'].includes(s.recall_status) &&
++		(s.reply === null || text(s.reply)) && (s.status !== 'OK' || (text(s.reply) && !!s.reply.trim())) &&
++		[null, 'HINDSIGHT_RECALL_UNAVAILABLE', 'CANONICAL_CONTEXT_UNAVAILABLE', 'SHADOW_GENERATION_FAILED',
++			'CANONICAL_TURN_FAILED', 'COMPARISON_UNAVAILABLE'].includes(s.error_code) &&
++		elapsed(s.retrieval_ms) && elapsed(s.generation_ms) && evidence(s.evidence, true) &&
++		keys(e, ['status', 'votable']) && ['STORED', 'UNAVAILABLE'].includes(e.status) &&
++		typeof e.votable === 'boolean' && (!e.votable || (e.status === 'STORED' && s.status === 'OK'));
++}
++
++export function acceptArenaEvent(history: any, event: any, chatId: string): boolean {
++	if (event?.data?.type !== 'corvus:arena:v1' || event.chat_id !== chatId ||
++		typeof event.message_id !== 'string' || !validArenaPayload(event.data.data)) return false;
++	const message = history.messages[event.message_id];
++	if (!message || message.role !== 'assistant' || message.model !== 'corvus_pipe' ||
++		message.corvus_arena_requested !== true || message.corvus_arena) return false;
++	if (Object.values(history.messages).some((m: any) => m.corvus_arena?.trial_id === event.data.data.trial_id)) return false;
++	message.corvus_arena = JSON.parse(JSON.stringify(event.data.data));
++	return true;
++}
++
++/** Completion callbacks can hold an older message object across an await. */
++export function preserveArena(message: any, latest: any) {
++	if (latest?.corvus_arena) message.corvus_arena = latest.corvus_arena;
++	if (latest?.corvus_arena_requested) message.corvus_arena_requested = true;
++	return message;
++}
++
++export const hasArena = (history: any) => Object.values(history?.messages ?? {})
++	.some((m: any) => m.corvus_arena_requested || m.corvus_arena);
++
++/** Per-chat single writer, owned by Chat from component start. Failures release the queue. */
++export function createArenaSaveQueue() {
++	const tails = new Map<string, Promise<void>>();
++	return {
++		pending: (id: string) => tails.has(id),
++		save<T>(id: string, write: () => Promise<T>): Promise<T> {
++			const result = (tails.get(id) ?? Promise.resolve()).then(write);
++			const tail = result.then(() => {}, () => {});
++			tails.set(id, tail);
++			void tail.then(() => { if (tails.get(id) === tail) tails.delete(id); });
++			return result;
++		}
++	};
++}
