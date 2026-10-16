@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
+from app import arena
 from app.conversation_runtime import process_turn
 from app.foreground_activity import (
     start_foreground_publication,
@@ -840,6 +841,25 @@ def post_chat(request: ChatRequest, background_tasks: BackgroundTasks = None):
     if background_tasks is not None and attachment_id is None and attachment_mode == "vision":
         schedule_shadow_recall(background_tasks, response, user_content)
     return response
+
+
+@app.post("/api/arena/chat")
+async def post_arena_chat(request: arena.ArenaChatRequest, background_tasks: BackgroundTasks):
+    arena.require_lab_arena()
+    try:
+        response = await arena.run_arena_turn(request, build_response=build_chat_response)
+    except Exception as exc:
+        return JSONResponse(status_code=500, content=build_hard_failure_response(
+            request.session_id, exc,
+        ))
+    # Only the real canonical reply enters the unchanged H1 scheduling path.
+    schedule_shadow_recall(background_tasks, response["main"], request.message)
+    return response
+
+
+@app.post("/api/arena/vote")
+def post_arena_vote(request: arena.ArenaVoteRequest):
+    return arena.record_arena_vote(request)
 
 
 def load_message_for_tts(message_id):
