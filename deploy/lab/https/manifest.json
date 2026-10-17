@@ -1,0 +1,24 @@
+{
+  "name": "Corvus",
+  "short_name": "Corvus",
+  "description": "Corvus conversation interface.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#343541",
+  "orientation": "natural",
+  "icons": [
+    {
+      "src": "/static/web-app-manifest-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/web-app-manifest-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}

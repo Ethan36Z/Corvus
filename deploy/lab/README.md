@@ -2,6 +2,9 @@
 
 Canonical Linux URL: http://127.0.0.1:3003.
 
+Prepared remote HTTPS configuration is documented in [https/README.md](https/README.md).
+It is not deployed; keep the existing local Compose stack until separately authorized.
+
 Admin: admin@corvus-lab.invalid. Read the password locally from the private
 /home/ethan/.config/corvus-lab/admin-bootstrap.json file. Authentication signing
 secret is separately retained in mode-0600 webui.env in the same directory.

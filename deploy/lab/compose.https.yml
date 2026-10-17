@@ -1,0 +1,14 @@
+# PREPARED ONLY. Append after webui + boot + arena-ui2; never use for local HTTP.
+services:
+  open-webui:
+    image: corvus-open-webui:0.6.5-arena-ui2.1-https-r03b
+    pull_policy: never
+    build:
+      context: ./https
+      dockerfile: Dockerfile
+    environment:
+      WEBUI_URL: "https://lab-corvus.foxluma.com"
+      WEBUI_AUTH_COOKIE_SECURE: "true"
+      WEBUI_SESSION_COOKIE_SECURE: "true"
+      WEBUI_AUTH_COOKIE_SAME_SITE: "lax"
+      WEBUI_SESSION_COOKIE_SAME_SITE: "lax"
