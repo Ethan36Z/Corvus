@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from copy import deepcopy
+from datetime import date
 from functools import partial
 from hashlib import sha256
 import json
@@ -344,6 +345,54 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(records[-1]["choice"], "neither")
         self.assertEqual(len(records), 5)
         self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
+
+    def test_daily_preferences_only_latest_actual_votes(self):
+        arena.append_arena_trial(self.trial)
+        self.assertEqual(arena.daily_preferences(date(2026, 10, 16), "America/Los_Angeles"),
+                         {"date": "2026-10-16", "rag": 0, "hindsight": 0, "total_votes": 0})
+        with patch.object(arena, "append_jsonl", side_effect=OSError("failed vote")):
+            with self.assertRaises(HTTPException):
+                self.vote("rag")
+        self.assertEqual(arena.daily_preferences(date(2026, 10, 16), "America/Los_Angeles")["total_votes"], 0)
+        second = str(uuid4())
+        arena.append_arena_trial(dict(self.trial, trial_id=second))
+        for trial_id, choice, timestamp in (
+            (self.trial_id, "rag", "2026-10-16T07:30:00+00:00"),
+            (self.trial_id, "hindsight", "2026-10-16T08:00:00+00:00"),
+            (second, "rag", "2026-10-16T08:30:00+00:00"),
+        ):
+            with patch.object(arena, "_now", return_value=timestamp):
+                arena.record_arena_vote(arena.ArenaVoteRequest(trial_id=trial_id, choice=choice))
+        self.assertEqual(arena.daily_preferences(date(2026, 10, 16), "America/Los_Angeles"),
+                         {"date": "2026-10-16", "rag": 1, "hindsight": 1, "total_votes": 2})
+        with patch.object(arena, "_now", return_value="2026-10-17T07:30:00+00:00"):
+            self.vote("tie")
+        self.assertEqual(arena.daily_preferences(date(2026, 10, 16), "America/Los_Angeles"),
+                         {"date": "2026-10-16", "rag": 1, "hindsight": 0, "total_votes": 1})
+        self.assertEqual(arena.daily_preferences(date(2026, 10, 17), "America/Los_Angeles"),
+                         {"date": "2026-10-17", "rag": 0, "hindsight": 0, "total_votes": 0})
+
+    def test_daily_preferences_dst_fall_back_uses_local_vote_day(self):
+        arena.append_arena_trial(self.trial)
+        second = str(uuid4())
+        arena.append_arena_trial(dict(self.trial, trial_id=second))
+        for trial_id, choice, timestamp in (
+            (self.trial_id, "rag", "2026-11-01T08:30:00+00:00"),  # 01:30 PDT
+            (self.trial_id, "hindsight", "2026-11-01T09:30:00+00:00"),  # 01:30 PST
+            (second, "rag", "2026-11-02T07:30:00+00:00"),  # Nov 1, 23:30 PST
+        ):
+            with patch.object(arena, "_now", return_value=timestamp):
+                arena.record_arena_vote(arena.ArenaVoteRequest(trial_id=trial_id, choice=choice))
+        zone = "America/Los_Angeles"
+        self.assertEqual(arena.daily_preferences(date(2026, 11, 1), zone),
+                         {"date": "2026-11-01", "rag": 1, "hindsight": 1, "total_votes": 2})
+        self.assertEqual(arena.daily_preferences(date(2026, 11, 2), zone)["total_votes"], 0)
+        with patch.object(arena, "_now", return_value="2026-11-02T08:30:00+00:00"):
+            arena.record_arena_vote(arena.ArenaVoteRequest(trial_id=second, choice="hindsight"))
+        self.assertEqual(arena.daily_preferences(date(2026, 11, 1), zone),
+                         {"date": "2026-11-01", "rag": 0, "hindsight": 1, "total_votes": 1})
+        self.assertEqual(arena.daily_preferences(date(2026, 11, 2), zone),
+                         {"date": "2026-11-02", "rag": 0, "hindsight": 1, "total_votes": 1})
 
     def test_concurrent_votes_are_complete_and_linked(self):
         arena.append_arena_trial(self.trial)

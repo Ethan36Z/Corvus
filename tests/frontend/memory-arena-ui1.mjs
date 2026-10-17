@@ -1,4 +1,4 @@
-/** Run against a checksum-verified, prepared --arena-ui1 source tree. No HTTP. */
+/** Run against a checksum-verified UI-1 or UI-2 source tree. No HTTP. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import vm from 'node:vm';
@@ -17,8 +17,8 @@ const read = (p) => readFile(join(root, p), 'utf8');
 const transpile = (code) => ts.transpileModule(code, {
  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, verbatimModuleSyntax: true }
 }).outputText;
-await writeFile(join(output, 'arena.mjs'), transpile(await read('src/lib/corvus-arena.ts')));
-const { arenaMetadata, validArenaPayload, acceptArenaEvent, preserveArena, hasArena, createArenaSaveQueue } =
+await writeFile(join(output, 'arena.mjs'), transpile((await read('src/lib/corvus-arena.ts')).replace("import { WEBUI_BASE_URL } from './constants';", "const WEBUI_BASE_URL = '';")));
+const { arenaMetadata, validArenaPayload, acceptArenaEvent, preserveArena, hasArena, createArenaSaveQueue, arenaTrialIdsFromSavedHistory } =
  await import(pathToFileURL(join(output, 'arena.mjs')));
 const trial = '25415702-8bac-4f1a-9dd8-5eba47de0ff4';
 const fixture = () => ({ version: 1, trial_id: trial, fairness: 'BEST_EFFORT_PRE_TURN',
@@ -119,7 +119,9 @@ async function compileSSR(source, name) {
 await writeFile(join(output,'StubContentRenderer.mjs'), `import {create_ssr_component,escape} from 'svelte/internal';
 export default create_ssr_component(($$result,props)=>'<div data-candidate="true">'+escape(props.content)+'</div>');`);
 const panelSource=await read('src/lib/components/chat/Messages/ArenaPanel.svelte');
-const Panel=await compileSSR(panelSource.replace("'./ContentRenderer.svelte'","'./StubContentRenderer.mjs'"),'ArenaPanel');
+await writeFile(join(output,'StubToast.mjs'), 'export const toast={error:()=>{}};');
+const Panel=await compileSSR(panelSource.replace("'./ContentRenderer.svelte'","'./StubContentRenderer.mjs'")
+ .replace("'$lib/corvus-arena'", "'./arena.mjs'").replace("'svelte-sonner'", "'./StubToast.mjs'"),'ArenaPanel');
 const render=(arena)=>Panel.render({arena,id:'assistant',history:history(),model:null}).html;
 
 test('ArenaPanel success, escaped evidence, collapsed details, and no duplicate main or voting',()=>{
@@ -198,6 +200,7 @@ function integration() {
   params:{},chatFiles:[], $currentChatPage:1,
   currentChatPage:{set(){}},chats:{set(){}},getChatList:async()=>[],
   createMessagesList:h=>Object.values(h.messages),createArenaSaveQueue,acceptArenaEvent,preserveArena,
+  arenaTrialIdsFromSavedHistory,persistedArenaTrialIds:new Set(),
   tick:async()=>{},$settings:{},$config:{},navigator:{},autoScroll:false,
   getMessageContentParts:()=>[],eventTarget:{dispatchEvent(){}},CustomEvent:class {},
   $models:[{id:'corvus_pipe'}],$socket:{id:'socket'},chatCompleted:async()=>null,

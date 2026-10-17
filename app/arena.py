@@ -1,13 +1,14 @@
 """Lab-only human evaluation; canonical turns and the H1 lifecycle stay separate."""
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from hashlib import sha256
 from inspect import signature
 import json
 from time import perf_counter
 from typing import Literal
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, StrictStr, field_validator
@@ -15,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app import hindsight_shadow
 from app.conversation_runtime import process_turn
-from app.durable_jsonl import append_jsonl
+from app.durable_jsonl import append_jsonl, read_jsonl
 from app.foreground_activity import track_foreground_generation
 from app.model_client import count_input_tokens, generate_chat_completion
 from app.working_context import _compose_working_messages, build_working_context
@@ -113,6 +114,29 @@ def record_arena_vote(request):
     except Exception:
         raise HTTPException(status_code=503, detail="Arena evaluation storage unavailable") from None
     return {key: record[key] for key in ("trial_id", "choice", "recorded_at")}
+
+
+def daily_preferences(day: date, time_zone: str):
+    """Count each trial's latest actual preference vote on its local vote day."""
+    require_lab_arena()
+    try:
+        zone = ZoneInfo(time_zone)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid time zone") from None
+    try:
+        records = read_jsonl(hindsight_shadow.DATA_DIR / LOG_NAME)
+        _trial_states(records)
+        latest = {}
+        for row in records:
+            if row["record_type"] == "vote":
+                latest[row["trial_id"]] = row
+        counts = {"rag": 0, "hindsight": 0}
+        for row in latest.values():
+            if row["choice"] in counts and datetime.fromisoformat(row["recorded_at"]).astimezone(zone).date() == day:
+                counts[row["choice"]] += 1
+    except Exception:
+        raise HTTPException(status_code=503, detail="Arena evaluation storage unavailable") from None
+    return {"date": day.isoformat(), **counts, "total_votes": sum(counts.values())}
 
 
 def build_shadow_messages(system_prompt, recent_messages, query, evidence, *,

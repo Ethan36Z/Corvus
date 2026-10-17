@@ -77,6 +77,31 @@ def arena_artifact_checks():
     return lock
 
 
+def arena_ui2_artifact_checks():
+    lock = json.loads((HERE / "arena-ui2.lock.json").read_text())
+    ui1 = arena_artifact_checks()
+    require(lock["upstream_commit"] == ui1["upstream_commit"], "UI-2 upstream changed")
+    require(lock["ui1_patch_sha256"] == ui1["patch_sha256"], "UI-2 base patch changed")
+    patch = HERE / "patches/arena-ui2.patch"
+    require(sha(patch) == lock["patch_sha256"], "UI-2 patch checksum mismatch")
+    paths = re.findall(r"^\+\+\+ b/(.+)$", patch.read_text(), re.M)
+    require(set(paths) == set(lock["patched_files"]), "UI-2 patch scope mismatch")
+    require(all(p.startswith("src/") or p == "backend/open_webui/main.py" for p in paths),
+            "Unexpected UI-2 patch target")
+    dockerfile = (HERE.parent / "Dockerfile.arena-ui2").read_text()
+    ui1_dockerfile = HERE.parent / "Dockerfile.arena-ui1"
+    ui2_dockerfile = HERE.parent / "Dockerfile.arena-ui2"
+    base = lock_data()
+    require(base["runtime_image"] in dockerfile and base["builder_image"] in dockerfile,
+            "UI-2 Dockerfile image pin mismatch")
+    require(lock["image_revision"] in dockerfile, "UI-2 image revision mismatch")
+    require(sha(ui1_dockerfile) == lock["ui1_dockerfile_sha256"],
+            "UI-1 Dockerfile checksum mismatch")
+    require(sha(ui2_dockerfile) == lock["ui2_dockerfile_sha256"],
+            "UI-2 Dockerfile checksum mismatch")
+    return lock
+
+
 def artifact_checks():
     lock = lock_data()
     require(lock["upstream"]["commit"] == "07d8460126a686de9a99e2662d06106e22c3f6b6", "Unexpected upstream commit")
@@ -118,12 +143,14 @@ def scan_text(path, text):
     return findings
 
 
-def source_checks(root, arena_ui1=False):
+def source_checks(root, arena_ui1=False, arena_ui2=False):
     lock = artifact_checks()
     root = Path(root)
     expected = dict(lock["patched_files"])
-    if arena_ui1:
+    if arena_ui1 or arena_ui2:
         expected.update(arena_artifact_checks()["patched_files"])
+    if arena_ui2:
+        expected.update(arena_ui2_artifact_checks()["patched_files"])
     for path, metadata in expected.items():
         require(sha(root / path) == metadata["after"], f"Patched source checksum mismatch: {path}")
     require(sha(root / "package-lock.json") == lock["upstream"]["package_lock_sha256"], "npm lock changed")
@@ -143,7 +170,7 @@ def source_checks(root, arena_ui1=False):
     return {"patched_files": len(expected), "application_branding_findings": 0}
 
 
-def prepare_source(destination, archive_path=None, arena_ui1=False):
+def prepare_source(destination, archive_path=None, arena_ui1=False, arena_ui2=False):
     lock = artifact_checks()
     destination = Path(destination)
     require(not destination.exists() or not any(destination.iterdir()), "Source destination must be empty")
@@ -173,7 +200,7 @@ def prepare_source(destination, archive_path=None, arena_ui1=False):
         patch = str(HERE / "patches/ow2d-corvus.patch")
         for args in [["--check"], []]:
             subprocess.run(["git", "apply", "--whitespace=error", *args, patch], cwd=destination, check=True)
-        if arena_ui1:
+        if arena_ui1 or arena_ui2:
             arena = arena_artifact_checks()
             for path, metadata in arena["patched_files"].items():
                 require((sha(destination / path) if (destination / path).exists() else None) == metadata["before"],
@@ -181,15 +208,25 @@ def prepare_source(destination, archive_path=None, arena_ui1=False):
             patch = str(HERE / "patches/arena-ui1.patch")
             for args in [["--check"], []]:
                 subprocess.run(["git", "apply", "--whitespace=error", *args, patch], cwd=destination, check=True)
-    return source_checks(destination, arena_ui1=arena_ui1)
+        if arena_ui2:
+            arena = arena_ui2_artifact_checks()
+            for path, metadata in arena["patched_files"].items():
+                require(sha(destination / path) == metadata["before"], f"Unexpected UI-2 base source: {path}")
+            patch = str(HERE / "patches/arena-ui2.patch")
+            for args in [["--check"], []]:
+                subprocess.run(["git", "apply", "--unidiff-zero", "--whitespace=error", *args, patch],
+                               cwd=destination, check=True)
+    return source_checks(destination, arena_ui1=arena_ui1, arena_ui2=arena_ui2)
 
 
-def image_checks(root, arena_ui1=False):
+def image_checks(root, arena_ui1=False, arena_ui2=False):
     lock = lock_data()
     root = Path(root)
     expected = dict(lock["patched_files"])
-    if arena_ui1:
+    if arena_ui1 or arena_ui2:
         expected.update(arena_artifact_checks()["patched_files"])
+    if arena_ui2:
+        expected.update(arena_ui2_artifact_checks()["patched_files"])
     for path, metadata in expected.items():
         if path.startswith("backend/"):
             require(sha(root / "app" / path) == metadata["after"], f"Runtime source changed: {path}")
@@ -225,19 +262,22 @@ def main():
     modes.add_argument("--prepare-source", type=Path)
     parser.add_argument("--archive", type=Path, help="Use a local checksum-verified archive instead of downloading")
     parser.add_argument("--arena-ui1", action="store_true", help="Apply/verify the separate Lab-only Arena overlay")
+    parser.add_argument("--arena-ui2", action="store_true", help="Apply/verify the Lab-only vote overlay")
     args = parser.parse_args()
     try:
         if args.prepare_source:
-            result = prepare_source(args.prepare_source, args.archive, arena_ui1=args.arena_ui1)
+            result = prepare_source(args.prepare_source, args.archive, arena_ui1=args.arena_ui1, arena_ui2=args.arena_ui2)
         elif args.source:
-            result = source_checks(args.source, arena_ui1=args.arena_ui1)
+            result = source_checks(args.source, arena_ui1=args.arena_ui1, arena_ui2=args.arena_ui2)
         elif args.image_root:
-            result = image_checks(args.image_root, arena_ui1=args.arena_ui1)
+            result = image_checks(args.image_root, arena_ui1=args.arena_ui1, arena_ui2=args.arena_ui2)
         else:
             lock = artifact_checks()
             result = {"version": lock["upstream"]["version"], "patch_targets": len(patch_paths()), "assets": len(lock["assets"])}
             if args.arena_ui1:
                 result["arena_image_revision"] = arena_artifact_checks()["image_revision"]
+            if args.arena_ui2:
+                result["arena_image_revision"] = arena_ui2_artifact_checks()["image_revision"]
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"Branding verification FAILED: {error}\n")
     print(json.dumps({"status": "PASS", **result}, indent=2))

@@ -1,0 +1,38 @@
+{
+  "upstream_commit": "07d8460126a686de9a99e2662d06106e22c3f6b6",
+  "ui1_patch_sha256": "b85d927e27b10c6b11879203bc9560111a5abbb1e23dc08edd6c3f58067675b4",
+  "image_revision": "0.6.5-arena-ui2.1",
+  "patch_sha256": "f66d2cf7a26907796f65089942f44a35d2a6a92ffae9b258d5080359ae9bbd33",
+  "patched_files": {
+    "backend/open_webui/main.py": {
+      "before": "e9a9a3106f58f31621b98bd3b75ce7d183604c7c3bdd5f2d59b2e11f18420dfb",
+      "after": "ef004613b0c228ca0a55d08616aeba76adadb1c1f53713f05b20a492453701c2"
+    },
+    "src/lib/components/chat/Chat.svelte": {
+      "before": "bf556c4ca0bdafab06429108a1d452895cfe5494f372955afdcc0f0fa99f3bb9",
+      "after": "8d1cac9a7cf676e7275747df6d55d31d55bc45660819c48b1770b2ff2c4eadcd"
+    },
+    "src/lib/components/chat/Messages.svelte": {
+      "before": "9478e857e4d05070b1ebdbb2ebf8c95f184a851fee23628596f14d004086a42b",
+      "after": "87df58137e6a45267a456396a30f2eb2b43db6ca96fe9dddcba35479b17a14f9"
+    },
+    "src/lib/components/chat/Messages/ArenaPanel.svelte": {
+      "before": "ff19656742b204751236dbe6ac82f765f317511587bb1409c5b904fd4cae610a",
+      "after": "5b48bb09e01ee465c8bb88353fbcca0bc00db4887b53a06087988fc3d9731bec"
+    },
+    "src/lib/components/chat/Messages/Message.svelte": {
+      "before": "1aee549db7d114fe2c58d91f9bb53edd5d76c413512e3794b5a3fcb57b5743c7",
+      "after": "039353da2c66eb57289077736caa6d7191d9ad0de87c66dabf8020eecdc8ab33"
+    },
+    "src/lib/components/chat/Messages/ResponseMessage.svelte": {
+      "before": "71a4a7a9eee7b5ad64b482cf95103559375ff41ddb358b9aaefced9b5ff7ea2e",
+      "after": "48cfca12c0e8fc857a3078a5c0f7e7abda6616f82ac704c1ee037c184cac409b"
+    },
+    "src/lib/corvus-arena.ts": {
+      "before": "77a83737e3ec510e39bfc15aef16a45ff607a7cf3a4a5de0558a938e97a284c4",
+      "after": "b8b75d24fb5a38c2f537d82b454105182a2ed68c941f9abb6655146df88e9f12"
+    }
+  },
+  "ui1_dockerfile_sha256": "2367f7bdde7db43eb5b06c9f387d7e6a24d3a98cccfbb29981998736dbceced5",
+  "ui2_dockerfile_sha256": "90e6be6038af6cc87177778449c18eefe216a81b210da5cfceb81a49bba556f7"
+}

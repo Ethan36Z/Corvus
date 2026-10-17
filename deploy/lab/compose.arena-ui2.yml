@@ -1,0 +1,8 @@
+# Prepared Lab-only UI-2 override; not deployed. Combine with compose.webui.yml.
+services:
+  open-webui:
+    image: corvus-open-webui:0.6.5-arena-ui2.1
+    pull_policy: never
+    build:
+      context: ../open-webui
+      dockerfile: Dockerfile.arena-ui2

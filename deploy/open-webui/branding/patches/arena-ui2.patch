@@ -1,0 +1,232 @@
+diff --git a/backend/open_webui/main.py b/backend/open_webui/main.py
+index 456c39e..8010445 100644
+--- a/backend/open_webui/main.py
++++ b/backend/open_webui/main.py
+@@ -20,0 +21,2 @@ import requests
++import httpx
++from uuid import UUID
+@@ -1178,0 +1181,76 @@ async def chat_completed(
++def persist_corvus_arena_vote(chat_id: str, message_id: str, trial_id: str,
++                              choice: str, user_id: str) -> bool:
++    """Patch one saved JSON field atomically; never replace a chat snapshot."""
++    if engine.dialect.name != "sqlite":
++        return False  # The isolated Lab installation uses SQLite.
++    prefix = f'$.history.messages."{message_id}"'
++    paths = {name: f"{prefix}.{suffix}" for name, suffix in (
++        ("vote", "corvus_arena.vote"), ("trial", "corvus_arena.trial_id"),
++        ("done", "done"), ("requested", "corvus_arena_requested"),
++        ("status", "corvus_arena.evaluation.status"),
++        ("votable", "corvus_arena.evaluation.votable"),
++        ("model", "model"), ("role", "role"))}
++    statement = text("""
++        UPDATE chat SET chat = json_set(chat, :vote, :choice), updated_at = :updated_at
++        WHERE id = :chat_id AND user_id = :user_id
++          AND json_extract(chat, :trial) = :trial_id
++          AND json_extract(chat, :done) = 1
++          AND json_extract(chat, :requested) = 1
++          AND json_extract(chat, :status) = 'STORED'
++          AND json_extract(chat, :votable) = 1
++          AND json_extract(chat, :model) = 'corvus_pipe'
++          AND json_extract(chat, :role) = 'assistant'
++    """)
++    with engine.begin() as connection:
++        result = connection.execute(statement, {**paths, "choice": choice,
++            "updated_at": int(time.time()), "chat_id": chat_id,
++            "user_id": user_id, "trial_id": trial_id})
++        return result.rowcount == 1
++
++
++@app.post("/api/chat/actions/corvus_arena_vote")
++async def corvus_arena_vote(form_data: dict, user=Depends(get_verified_user)):
++    # A fixed Action target, not a user-selected URL or a general proxy.
++    if set(form_data) != {"chat_id", "message_id", "trial_id", "choice"}:
++        raise HTTPException(status_code=422, detail="Invalid Arena vote")
++    chat_id, message_id = form_data["chat_id"], form_data["message_id"]
++    trial_id, choice = form_data["trial_id"], form_data["choice"]
++    try:
++        if not all(isinstance(v, str) and v for v in (chat_id, message_id, trial_id)):
++            raise ValueError()
++        if (str(UUID(trial_id)) != trial_id or str(UUID(message_id)) != message_id
++                or choice not in ("rag", "hindsight")):
++            raise ValueError()
++    except (ValueError, TypeError, AttributeError):
++        raise HTTPException(status_code=422, detail="Invalid Arena vote") from None
++    chat = Chats.get_chat_by_id_and_user_id(chat_id, user.id)
++    message = ((chat.chat.get("history") or {}).get("messages") or {}).get(message_id) if chat else None
++    arena = message.get("corvus_arena") if isinstance(message, dict) else None
++    if (not isinstance(arena, dict) or not isinstance(arena.get("evaluation"), dict)
++            or message.get("role") != "assistant"
++            or message.get("model") != "corvus_pipe" or message.get("done") is not True
++            or message.get("corvus_arena_requested") is not True
++            or arena.get("trial_id") != trial_id
++            or arena["evaluation"].get("status") != "STORED"
++            or (arena.get("evaluation") or {}).get("votable") is not True):
++        raise HTTPException(status_code=403, detail="Arena trial unavailable")
++    try:
++        async with httpx.AsyncClient(timeout=httpx.Timeout(10, connect=3),
++                                     follow_redirects=False, trust_env=False,
++                                     transport=httpx.AsyncHTTPTransport(retries=0)) as client:
++            response = await client.post("http://127.0.0.1:18096/api/arena/vote",
++                                         json={"trial_id": trial_id, "choice": choice})
++        response.raise_for_status()
++        result = response.json()
++        if result.get("trial_id") != trial_id or result.get("choice") != choice:
++            raise ValueError("Unexpected Arena vote response")
++    except Exception:
++        raise HTTPException(status_code=502, detail="Arena vote unavailable") from None
++    try:
++        marker_persisted = persist_corvus_arena_vote(chat_id, message_id, trial_id,
++                                                      choice, user.id)
++    except Exception:
++        marker_persisted = False
++    return {**result, "marker_persisted": marker_persisted}
++
++
+diff --git a/src/lib/components/chat/Chat.svelte b/src/lib/components/chat/Chat.svelte
+index 2d11dc1..10ec267 100644
+--- a/src/lib/components/chat/Chat.svelte
++++ b/src/lib/components/chat/Chat.svelte
+@@ -3 +3 @@
+-	import { arenaMetadata, acceptArenaEvent, preserveArena, createArenaSaveQueue } from '$lib/corvus-arena';
++	import { arenaMetadata, acceptArenaEvent, preserveArena, createArenaSaveQueue, arenaTrialIdsFromSavedHistory } from '$lib/corvus-arena';
+@@ -99,0 +100 @@
++	let persistedArenaTrialIds = new Set<string>();
+@@ -108 +109,4 @@
+-			if ($chatId === id) chat = saved;
++			if ($chatId === id) {
++				chat = saved;
++				persistedArenaTrialIds = arenaTrialIdsFromSavedHistory(saved?.chat?.history);
++			}
+@@ -143 +147 @@
+-	let chat = null;
++	let chat: any = null;
+@@ -743,0 +748 @@
++		persistedArenaTrialIds = new Set();
+@@ -813 +818,3 @@
+-		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
++		const loadedChatId = $chatId;
++		persistedArenaTrialIds = new Set();
++		chat = await getChatById(localStorage.token, loadedChatId).catch(async (error) => {
+@@ -817,0 +825,4 @@
++		if ($chatId === loadedChatId) {
++			persistedArenaTrialIds = arenaTrialIdsFromSavedHistory(chat?.chat?.history);
++		}
++
+@@ -1920,0 +1932 @@
++			persistedArenaTrialIds = arenaTrialIdsFromSavedHistory(chat?.chat?.history);
+@@ -2038,0 +2051 @@
++									{persistedArenaTrialIds}
+diff --git a/src/lib/components/chat/Messages.svelte b/src/lib/components/chat/Messages.svelte
+index c6d2b30..3d91dd7 100644
+--- a/src/lib/components/chat/Messages.svelte
++++ b/src/lib/components/chat/Messages.svelte
+@@ -30,0 +31 @@
++export let persistedArenaTrialIds: ReadonlySet<string> = new Set();
+@@ -437,0 +439 @@
++							{persistedArenaTrialIds}
+diff --git a/src/lib/components/chat/Messages/ArenaPanel.svelte b/src/lib/components/chat/Messages/ArenaPanel.svelte
+index 2c8ef81..3c36390 100644
+--- a/src/lib/components/chat/Messages/ArenaPanel.svelte
++++ b/src/lib/components/chat/Messages/ArenaPanel.svelte
+@@ -3 +3,2 @@
+-	import type { ArenaPayload } from '$lib/corvus-arena';
++	import { recordArenaPreference, savedArenaEligible, type ArenaPayload } from '$lib/corvus-arena';
++	import { toast } from 'svelte-sonner';
+@@ -5,0 +7 @@
++	export let chatId = '';
+@@ -7 +9,15 @@
+-	export let model = null;
++	export let persistedArenaTrialIds: ReadonlySet<string> = new Set();
++	export let model: any = null;
++	export let readOnly = false;
++	let voting = false;
++	const vote = async (choice: 'rag' | 'hindsight') => {
++		if (voting || !arena || !savedArenaEligible(persistedArenaTrialIds, arena) || readOnly) return;
++		voting = true;
++		try {
++			const result = await recordArenaPreference(localStorage.token, chatId, id, arena,
++				history, choice);
++			arena = result.arena;
++			if (!result.persisted) toast.error('Vote recorded, but chat history could not be saved.');
++		} catch { toast.error('Vote could not be recorded.'); }
++		finally { voting = false; }
++	};
+@@ -25,0 +42,10 @@
++		{#if savedArenaEligible(persistedArenaTrialIds, arena) && !readOnly}
++			<div class="mt-3 flex flex-wrap gap-2" aria-label="Which memory answer did you prefer?">
++				<button type="button" disabled={voting} aria-pressed={arena.vote === 'rag'}
++					class="rounded-lg border px-3 py-2 text-sm {arena.vote === 'rag' ? 'bg-gray-800 text-white dark:bg-gray-100 dark:text-gray-900' : 'border-gray-300 dark:border-gray-600'}"
++					on:click={() => vote('rag')}>Prefer RAG</button>
++				<button type="button" disabled={voting} aria-pressed={arena.vote === 'hindsight'}
++					class="rounded-lg border px-3 py-2 text-sm {arena.vote === 'hindsight' ? 'bg-gray-800 text-white dark:bg-gray-100 dark:text-gray-900' : 'border-gray-300 dark:border-gray-600'}"
++					on:click={() => vote('hindsight')}>Prefer Hindsight</button>
++			</div>
++		{/if}
+diff --git a/src/lib/components/chat/Messages/Message.svelte b/src/lib/components/chat/Messages/Message.svelte
+index 9a30abf..1190ca5 100644
+--- a/src/lib/components/chat/Messages/Message.svelte
++++ b/src/lib/components/chat/Messages/Message.svelte
+@@ -18,0 +19 @@
++export let persistedArenaTrialIds: ReadonlySet<string> = new Set();
+@@ -71,0 +73 @@
++				{persistedArenaTrialIds}
+diff --git a/src/lib/components/chat/Messages/ResponseMessage.svelte b/src/lib/components/chat/Messages/ResponseMessage.svelte
+index 41f8012..c46fefd 100644
+--- a/src/lib/components/chat/Messages/ResponseMessage.svelte
++++ b/src/lib/components/chat/Messages/ResponseMessage.svelte
+@@ -108,0 +109 @@
++export let persistedArenaTrialIds: ReadonlySet<string> = new Set();
+@@ -858 +859 @@
+-                                    <ArenaPanel arena={message.corvus_arena} id={message.id} {history} {model} />
++                                    <ArenaPanel arena={message.corvus_arena} id={message.id} {chatId} {history} {persistedArenaTrialIds} {model} readOnly={readOnly || !message.done} />
+diff --git a/src/lib/corvus-arena.ts b/src/lib/corvus-arena.ts
+index 3f69ac8..1674887 100644
+--- a/src/lib/corvus-arena.ts
++++ b/src/lib/corvus-arena.ts
+@@ -1,0 +2,2 @@
++import { WEBUI_BASE_URL } from './constants';
++
+@@ -4,0 +7 @@ export type ArenaPayload = {
++	vote?: 'rag' | 'hindsight';
+@@ -17,0 +21,41 @@ export type ArenaPayload = {
++export async function voteArena(token: string, chatId: string, messageId: string,
++	trialId: string, choice: 'rag' | 'hindsight') {
++	const response = await fetch(`${WEBUI_BASE_URL}/api/chat/actions/corvus_arena_vote`, {
++		method: 'POST',
++		headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
++		body: JSON.stringify({ chat_id: chatId, message_id: messageId, trial_id: trialId, choice })
++	});
++	if (!response.ok) throw new Error('Arena vote unavailable');
++	const result = await response.json();
++	if (result?.trial_id !== trialId || result?.choice !== choice) throw new Error('Invalid Arena vote response');
++	return result;
++}
++
++export async function recordArenaPreference(token: string, chatId: string, messageId: string,
++	arena: ArenaPayload, history: any, choice: 'rag' | 'hindsight') {
++	const result = await voteArena(token, chatId, messageId, arena.trial_id, choice);
++	const selected = { ...arena, vote: choice };
++	if (history?.messages?.[messageId]?.corvus_arena?.trial_id === arena.trial_id) {
++		history.messages[messageId].corvus_arena = selected;
++	}
++	return { arena: selected, persisted: result.marker_persisted === true };
++}
++
++/** Copy only IDs from a successful server load/save, never retain mutable history. */
++export function arenaTrialIdsFromSavedHistory(savedHistory: any): Set<string> {
++	return new Set<string>(Object.values(savedHistory?.messages ?? {})
++		.filter((message: any) => message?.role === 'assistant' &&
++			message?.model === 'corvus_pipe' && message?.done === true &&
++			message?.corvus_arena_requested === true &&
++			message?.corvus_arena?.evaluation?.status === 'STORED' &&
++			message?.corvus_arena?.evaluation?.votable === true &&
++			typeof message?.corvus_arena?.trial_id === 'string')
++		.map((message: any) => message.corvus_arena.trial_id));
++}
++
++export function savedArenaEligible(persistedArenaTrialIds: ReadonlySet<string>,
++	arena: ArenaPayload | undefined): boolean {
++	return arena?.evaluation?.status === 'STORED' && arena.evaluation.votable === true &&
++		persistedArenaTrialIds.has(arena.trial_id);
++}
++

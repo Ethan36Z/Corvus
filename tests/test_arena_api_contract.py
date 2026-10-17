@@ -1,6 +1,7 @@
 """HTTP Arena contracts via in-process ASGI, without startup or live services."""
 
 from copy import deepcopy
+from datetime import date
 import unittest
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -103,6 +104,17 @@ class ArenaApiTests(unittest.IsolatedAsyncioTestCase):
                             {"trial_id": trial_id, "choice": "rag", "comment": "x"}):
                 self.assertEqual((await self.client.post("/api/arena/vote", json=payload)).status_code, 422)
             self.assertEqual(vote.call_count, 1)
+
+    async def test_daily_preferences_contract(self):
+        expected = {"date": "2026-10-16", "rag": 2, "hindsight": 1, "total_votes": 3}
+        route = next(r for r in api.app.routes if r.path == "/api/arena/preferences/daily")
+        self.assertEqual(route.methods, {"GET"})
+        with patch.object(arena, "daily_preferences", return_value=expected) as aggregate:
+            response = api.get_arena_daily_preferences(date.fromisoformat("2026-10-16"),
+                                                       "America/Los_Angeles")
+        self.assertEqual(response, expected)
+        self.assertEqual(aggregate.call_args.args[0].isoformat(), "2026-10-16")
+        self.assertEqual(aggregate.call_args.args[1], "America/Los_Angeles")
 
     async def test_normal_chat_retains_original_forwarding_and_never_calls_arena(self):
         result = {"synthetic": "runtime result"}

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from datetime import date
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
@@ -860,6 +861,11 @@ async def post_arena_chat(request: arena.ArenaChatRequest, background_tasks: Bac
 @app.post("/api/arena/vote")
 def post_arena_vote(request: arena.ArenaVoteRequest):
     return arena.record_arena_vote(request)
+
+
+@app.get("/api/arena/preferences/daily")
+def get_arena_daily_preferences(date: date, time_zone: str):
+    return arena.daily_preferences(date, time_zone)
 
 
 def load_message_for_tts(message_id):

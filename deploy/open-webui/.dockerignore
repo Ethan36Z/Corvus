@@ -2,6 +2,7 @@
 *
 !Dockerfile.corvus
 !Dockerfile.arena-ui1
+!Dockerfile.arena-ui2
 !corvus_pipe.py
 !branding/
 !branding/**
