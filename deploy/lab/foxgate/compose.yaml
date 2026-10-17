@@ -1,0 +1,74 @@
+# Preparation only. Deploy from /home/ethan/srv/infrastructure/lab-access.
+name: foxgate-lab
+
+services:
+  auth:
+    image: foxgate-auth@sha256:2d7745847cb4f5875496830082bd9bcd5bbc5aa1d0c8733e18a07646d4772523
+    pull_policy: never
+    restart: unless-stopped
+    network_mode: host
+    user: "1000:1000"
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    environment:
+      FOXGATE_LISTEN_ADDR: "127.0.0.1:8101"
+      FOXGATE_COOKIE_SECURE: "true"
+      FOXGATE_HTPASSWD_FILE: /run/secrets/gated.htpasswd
+      FOXGATE_SESSION_KEY_FILE: /run/secrets/session-hmac.key
+      FOXGATE_LOGIN_TEMPLATE: /app/templates/login.html
+    volumes:
+      - type: bind
+        source: /home/ethan/srv/shared/secrets/lab-access/gated.htpasswd
+        target: /run/secrets/gated.htpasswd
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /home/ethan/srv/shared/secrets/lab-access/session-hmac.key
+        target: /run/secrets/session-hmac.key
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD, /app/foxgate-auth, healthcheck]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
+
+  gateway:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    pull_policy: never
+    restart: unless-stopped
+    network_mode: host
+    user: "1000:1000"
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    entrypoint: [/usr/sbin/nginx]
+    command: [-g, "daemon off;"]
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    depends_on:
+      auth:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ./nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./nginx/gated-locations.conf
+        target: /etc/nginx/foxgate/gated-locations.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, "wget --spider -S -T 3 --header='Host: lab-corvus.foxluma.com' http://127.0.0.1:8100/ 2>&1 | grep -q '401 Unauthorized'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
