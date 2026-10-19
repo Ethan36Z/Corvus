@@ -1,9 +1,50 @@
-# Lab activation candidate — rolled back
+# Lab activation — credential repair prepared offline
 
 This backend-only candidate is **not approved for reactivation**. The first live
 public synthetic transcription returned HTTP 503. The original Lab WebUI image,
 environment, host network and existing data volume were restored; only the new
 owned STT services/networks were removed. R7 frontend artifacts were reused.
+
+## Credential repair (offline only)
+
+The original failed attempt below remains historical evidence. This worktree
+repairs credential distribution without rebuilding or deleting either candidate
+image. It has not been deployed and requires a new activation authorization.
+
+Use the exact images pinned by `credential_repair.py`. The bridge keeps its
+original UID-10001 validator. `webui_protocol()` verifies the shared module's
+exact source SHA and changes only `metadata.st_uid != 10001` to
+`metadata.st_uid != 0`. Save the returned public source to a read-only artifact
+outside Git and supply `CORVUS_STT_WEBUI_PROTOCOL_FILE`; Compose mounts it over
+only the WebUI protocol module. No authentication, transport, bounds, target,
+recorder, TTS, Pipe or Arena logic changes. Recheck this artifact against the
+pinned generator before any later recreation; a read-only mount protects the
+container side, not an operator editing the host source.
+
+`distribute()` copies the existing independent credential (no rotation) inside a
+network-disabled provisioning helper. Mount only the existing credential read-only,
+the repair source read-only and a new empty mode-0700 output directory writable.
+Run the helper as root with only the temporary DAC_OVERRIDE/CHOWN/FOWNER capabilities
+needed for copying across owners. Those capabilities are never assigned to either
+consumer. Its output has separate `webui/credential` (UID/GID 0, 0400) and
+`bridge/credential` (UID/GID 10001, 0400), each within a matching-owner 0700 directory,
+under the existing protected operator directory. It verifies both copies equal
+in memory without printing or hashing them. Do not overwrite the old secret,
+backups or output files; preserve source and output paths outside Git.
+
+Supply the respective files using `CORVUS_STT_WEBUI_SECRET_FILE` and
+`CORVUS_STT_BRIDGE_SECRET_FILE`. The old shared `CORVUS_STT_SECRET_FILE` is no
+longer used by this overlay. Mounts remain read-only, fixed container paths,
+with missing-source creation disabled. Secret validators still require a regular
+64-byte lowercase-hex file at the fixed no-symlink path and exact owner/0400 mode.
+The private module/Compose patches do not enable admissions or permission.
+
+Validation must use these exact images under their existing UIDs and dropped
+capabilities. Use only an isolated network-disabled namespace and synthetic WAV,
+with the existing R1 upstream opener mocked. Test both admission states, correct
+and incorrect bridge authentication, missing and opposite-owner unreadable
+credentials. Never mount Lab data or contact live Whisper. Actual isolated tests
+passed for this repair; see the separate sanitized credential-repair report.
 
 ## Verified blocker
 

@@ -6,7 +6,7 @@ services:
       USER_PERMISSIONS_CHAT_STT: ${CORVUS_STT_PERMISSION:-false}
     volumes:
       - type: bind
-        source: ${CORVUS_STT_SECRET_FILE:?independent protected service credential required}
+        source: ${CORVUS_STT_WEBUI_SECRET_FILE:?root-owned WebUI credential required}
         target: /run/secrets/corvus_stt_bridge
         read_only: true
         bind: {create_host_path: false}
@@ -15,11 +15,17 @@ services:
         target: /run/secrets/corvus_stt_admissions
         read_only: true
         bind: {create_host_path: false}
+      # Exact image reused; specialize only its fixed credential owner check.
+      - type: bind
+        source: ${CORVUS_STT_WEBUI_PROTOCOL_FILE:?validated WebUI owner validator required}
+        target: /app/backend/open_webui/routers/corvus_stt_protocol.py
+        read_only: true
+        bind: {create_host_path: false}
   corvus-stt-bridge:
     image: ${CORVUS_STT_ACTIVE_BRIDGE_IMAGE:?reviewed backend image required}
     volumes:
       - type: bind
-        source: ${CORVUS_STT_SECRET_FILE:?independent protected service credential required}
+        source: ${CORVUS_STT_BRIDGE_SECRET_FILE:?UID-10001 bridge credential required}
         target: /run/secrets/corvus_stt_bridge
         read_only: true
         bind: {create_host_path: false}
