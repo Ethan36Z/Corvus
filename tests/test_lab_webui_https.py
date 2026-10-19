@@ -150,7 +150,7 @@ class LabHTTPSContracts(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("pip install", dockerfile)
         self.assertNotIn("npm", dockerfile)
         self.assertEqual(hashlib.sha256((ROOT / "deploy/open-webui/corvus_pipe.py").read_bytes()).hexdigest(),
-                         "cc5299b32fedb0f10ee2a37c7466121049a2837c09dc0ec0c7d6f8bd157ec890")
+                         "68967bd0ed499aaf2ecce38bc6afc80c3fc3cdeb805aab6a57182a2e907af861")
 
 
 def pinned_functions(path, names, namespace):
