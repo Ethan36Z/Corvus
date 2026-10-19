@@ -9,6 +9,7 @@ that code is not published by this reporting branch.
 | --- | --- | --- | --- | --- | --- | --- |
 | W1 | 2026-10-18 | Compare DDGS and SearXNG retrieval and assess grounded conversational synthesis | `W1_BLOCKED_WITH_REASON` | [Live validation](2026-10-18-w1-live-validation.md) | Stopped after one DDGS plan; unexpected destination blocked; no SearXNG search or Qwen turns; no comparative reliability conclusion | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
 | W1.1 | 2026-10-18 | Repair isolated provider selection, fail-stop controls and cumulative accounting | `W1_1_READY_FOR_RESUME` | [Control repair](2026-10-18-w1-1-control-repair.md) | 15 offline tests passed; no live validation; new authorization required; SearXNG internal HTTP traffic cannot be strictly capped through its query interface | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
+| W1.2a | 2026-10-18 | Evaluate Chinese/English grounded synthesis from verified cached official documentation | `W1_2A_BLOCKED_WITH_REASON` | [Grounded synthesis](2026-10-18-w1-2a-grounded-synthesis.md) | Two HTTP-error attempts; zero answers or quality scores; English template rejects second system message; no model-capability conclusion | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
 
 ## Future entries
 
