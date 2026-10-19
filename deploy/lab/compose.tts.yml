@@ -1,0 +1,13 @@
+# PREPARED ONLY. Append after webui + boot + arena-ui2 + https. Not deployed.
+services:
+  open-webui:
+    image: corvus-open-webui:0.6.5-arena-ui2.1-https-tts1
+    pull_policy: never
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    environment:
+      AUDIO_TTS_ENGINE: "corvus-kokoro"
+      AUDIO_TTS_MODEL: "kokoro"
+      AUDIO_TTS_VOICE: "af_mica"
+      USER_PERMISSIONS_CHAT_TTS: "true"
