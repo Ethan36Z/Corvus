@@ -147,76 +147,27 @@ def _build_multipart_body(
     )
 
 
-def transcribe_attachment(
-    attachment_id,
+def transcribe_audio_bytes(
+    audio_bytes,
     *,
+    filename,
+    media_type,
     language="auto",
     prompt=STT_PROMPT,
     base_url=STT_BASE_URL,
     timeout=STT_TIMEOUT_SECONDS,
     opener=urllib.request.urlopen,
-    add_artifact_fn=add_attachment_artifact,
 ):
-    attachment_id = str(
-        attachment_id
-    ).strip()
+    """Return Whisper text without reading or persisting canonical evidence.
 
-    if not attachment_id:
-        raise TranscriptionError(
-            "TRANSCRIPTION_ATTACHMENT_INVALID",
-            "attachment_id must not be empty",
-        )
-
-    attachment = get_attachment(
-        attachment_id
-    )
-
-    if attachment is None:
-        raise TranscriptionError(
-            "TRANSCRIPTION_ATTACHMENT_NOT_FOUND",
-            "attachment not found",
-        )
-
-    media_type = (
-        attachment["media_type"]
-        .strip()
-        .lower()
-    )
-
-    if not media_type.startswith(
-        "audio/"
-    ):
-        raise TranscriptionError(
-            "TRANSCRIPTION_MEDIA_INVALID",
-            (
-                "attachment media type is not audio: "
-                f"{media_type}"
-            ),
-        )
-
-    try:
-        audio_bytes = (
-            read_attachment_bytes(
-                attachment_id
-            )
-        )
-    except FileNotFoundError as exc:
-        raise TranscriptionError(
-            "TRANSCRIPTION_AUDIO_UNAVAILABLE",
-            "audio attachment is unavailable",
-        ) from exc
-    except (IOError, ValueError) as exc:
-        raise TranscriptionError(
-            "TRANSCRIPTION_AUDIO_INVALID",
-            "audio attachment failed integrity verification",
-        ) from exc
-
+    Reuses the existing A3 multipart protocol and error semantics. Callers own
+    audio validation, endpoint policy and any evidence/artifact persistence.
+    This transport does not resolve the shared server's conversion-file risk.
+    """
     body, boundary = (
         _build_multipart_body(
             audio_bytes=audio_bytes,
-            filename=attachment[
-                "original_filename"
-            ],
+            filename=filename,
             media_type=media_type,
             language=language,
             prompt=prompt,
@@ -314,7 +265,83 @@ def transcribe_attachment(
             "STT server returned no usable transcript",
         )
 
-    transcript = transcript.strip()
+    return transcript.strip()
+
+
+def transcribe_attachment(
+    attachment_id,
+    *,
+    language="auto",
+    prompt=STT_PROMPT,
+    base_url=STT_BASE_URL,
+    timeout=STT_TIMEOUT_SECONDS,
+    opener=urllib.request.urlopen,
+    add_artifact_fn=add_attachment_artifact,
+):
+    attachment_id = str(
+        attachment_id
+    ).strip()
+
+    if not attachment_id:
+        raise TranscriptionError(
+            "TRANSCRIPTION_ATTACHMENT_INVALID",
+            "attachment_id must not be empty",
+        )
+
+    attachment = get_attachment(
+        attachment_id
+    )
+
+    if attachment is None:
+        raise TranscriptionError(
+            "TRANSCRIPTION_ATTACHMENT_NOT_FOUND",
+            "attachment not found",
+        )
+
+    media_type = (
+        attachment["media_type"]
+        .strip()
+        .lower()
+    )
+
+    if not media_type.startswith(
+        "audio/"
+    ):
+        raise TranscriptionError(
+            "TRANSCRIPTION_MEDIA_INVALID",
+            (
+                "attachment media type is not audio: "
+                f"{media_type}"
+            ),
+        )
+
+    try:
+        audio_bytes = (
+            read_attachment_bytes(
+                attachment_id
+            )
+        )
+    except FileNotFoundError as exc:
+        raise TranscriptionError(
+            "TRANSCRIPTION_AUDIO_UNAVAILABLE",
+            "audio attachment is unavailable",
+        ) from exc
+    except (IOError, ValueError) as exc:
+        raise TranscriptionError(
+            "TRANSCRIPTION_AUDIO_INVALID",
+            "audio attachment failed integrity verification",
+        ) from exc
+
+    transcript = transcribe_audio_bytes(
+        audio_bytes,
+        filename=attachment["original_filename"],
+        media_type=media_type,
+        language=language,
+        prompt=prompt,
+        base_url=base_url,
+        timeout=timeout,
+        opener=opener,
+    )
 
     artifact_id = add_artifact_fn(
         attachment_id,
