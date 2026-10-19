@@ -1,0 +1,39 @@
+# Candidate only. Never merge into an active stack without activation review.
+services:
+  corvus-whisper-dictation:
+    profiles: [stt-private-review]
+    image: sha256:caf0cd77c922e9c53f10a9bc17c2f74cc2295d12e7b0f96b630fb3b3c55a0026
+    pull_policy: never
+    restart: "no"
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    cpus: 8.0
+    mem_limit: 1088m
+    memswap_limit: 1088m
+    ulimits:
+      core: {soft: 0, hard: 0}
+    logging: {driver: none}
+    entrypoint: [/bin/sh, -c]
+    command:
+      - exec /app/build/bin/whisper-server --host 0.0.0.0 --port 8080 -m /models/ggml-small.bin -t 8 -l auto --no-gpu >/dev/null 2>&1
+    volumes:
+      - type: bind
+        source: ${CORVUS_STT_MODEL_FILE:?existing ggml-small.bin file required}
+        target: /models/ggml-small.bin
+        read_only: true
+        bind: {create_host_path: false}
+    networks: [dictation-private]
+    healthcheck:
+      test: [CMD, /bin/bash, -c, "exec 3<>/dev/tcp/127.0.0.1/8080; printf 'GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; read -r line <&3; [[ $$line == 'HTTP/1.1 200'* ]]"]
+      interval: 30s
+      timeout: 2s
+      start_period: 30s
+      retries: 2
+networks:
+  dictation-private:
+    name: corvus-stt-dictation-private
+    internal: true
+    labels: {corvus.scope: stt-r6-private-candidate}

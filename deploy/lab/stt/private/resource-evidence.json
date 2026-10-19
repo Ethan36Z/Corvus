@@ -1,0 +1,42 @@
+{
+  "scope": "isolated synthetic silence, pinned model, no live service",
+  "cpu_quota": 8,
+  "inference_threads": 8,
+  "memory_limit_bytes": 1140850688,
+  "reference_peak_bytes": 712343552,
+  "confirmed_peak_bytes": 695803904,
+  "memory_policy": "ceil(1.5 * reference_peak / 64MiB) * 64MiB + 64MiB reserve",
+  "startup_seconds": 0.438,
+  "startup_peak_bytes": 594104320,
+  "cases": [
+    {
+      "synthetic_seconds": 1,
+      "wav_bytes": 32044,
+      "http_status": 200,
+      "response_bytes": 27,
+      "wall_seconds": 3.987,
+      "cpu_seconds": 31.515
+    },
+    {
+      "synthetic_seconds": 120,
+      "wav_bytes": 3840044,
+      "http_status": 200,
+      "response_bytes": 75,
+      "wall_seconds": 9.999,
+      "cpu_seconds": 79.416
+    }
+  ],
+  "oom_kill": 0,
+  "memory_swap_max": 0,
+  "memory_swap_current": 0,
+  "filesystem_diff": [
+    "A /models",
+    "A /models/ggml-small.bin"
+  ],
+  "filesystem_explanation": "Docker model bind mount scaffolding, not audio writes; rootfs readonly and sole model bind readonly",
+  "limitations": [
+    "silence only, no speech accuracy or peak worst-case guarantee",
+    "8 CPU quota may contend with A3 and other workloads",
+    "core=0 does not establish host dump suppression"
+  ]
+}

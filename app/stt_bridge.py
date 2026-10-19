@@ -3,6 +3,8 @@
 The exported ASGI app is unconditionally inert (no token or transcriber). Only
 explicit in-process test injection exercises a working request chain at R2.
 """
+import asyncio
+import contextlib
 import hmac
 import urllib.request
 
@@ -12,7 +14,8 @@ from starlette.responses import Response
 from app.stt_protocol import MAX_AUDIO, MAX_RESPONSE, PRIVATE, REQUEST_SECONDS, fail, read_bounded, text_payload, validate_audio
 from app.transcription import transcribe_audio_bytes
 
-WHISPER_BASE = 'http://corvus-whisper:8080'
+WHISPER_BASE = 'http://corvus-whisper-dictation:8080'
+INFERENCE_SECONDS = 25
 WHISPER_URL = WHISPER_BASE + '/inference'
 
 
@@ -57,7 +60,7 @@ def whisper_opener(request, timeout):
 
 def whisper_text(audio):
     return transcribe_audio_bytes(audio, filename='dictation.wav', media_type='audio/wav',
-        language='auto', base_url=WHISPER_BASE, timeout=REQUEST_SECONDS, opener=whisper_opener)
+        language='auto', base_url=WHISPER_BASE, timeout=INFERENCE_SECONDS, opener=whisper_opener)
 
 
 def create_app(*, token=None, transcriber=None):
@@ -66,8 +69,13 @@ def create_app(*, token=None, transcriber=None):
         raise ValueError('invalid bridge credential configuration')
     bridge = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, redirect_slashes=False)
 
+    # One event-loop worker / one in-flight body+inference. No admission queue.
+    # Keep ownership until the real synchronous worker settles, even on timeout.
+    slot = None
+
     @bridge.post('/v1/transcribe')
     async def transcribe(request: Request):
+        nonlocal slot
         if token is None:
             raise fail(503, 'Lab transcription is disabled.')
         auth = request.headers.getlist('authorization')
@@ -81,17 +89,57 @@ def create_app(*, token=None, transcriber=None):
             raise fail(503, 'Lab transcription is disabled.')
         if request.url.query or request.headers.get('content-type', '').lower() != 'audio/wav':
             raise fail(415, 'Unsupported audio request.')
-        audio = validate_audio(await read_bounded(request, MAX_AUDIO))
+        if slot is not None:
+            raise fail(429, 'Transcription is busy.')
+        owner = object()
+        slot = owner
+        worker = None
+        disconnect = None
+        stop_polling = asyncio.Event()
+
+        def release(task):
+            nonlocal slot
+            if slot is owner:
+                slot = None
+            # Consume late exceptions without logging provider text.
+            if not task.cancelled():
+                task.exception()
+
+        async def disconnected():
+            while not stop_polling.is_set():
+                if await request.is_disconnected():
+                    return
+                await asyncio.sleep(0.1)
+
         try:
-            # R1 uses a synchronous bounded urllib call. This worker owns no canonical
-            # state. Cancellation cannot kill its Python thread: see the R2 limitations.
+            audio = validate_audio(await read_bounded(request, MAX_AUDIO))
             from starlette.concurrency import run_in_threadpool
-            text = await run_in_threadpool(transcriber, audio)
-            return Response(text_payload(text), media_type='application/json', headers=PRIVATE)
+            worker = asyncio.create_task(run_in_threadpool(transcriber, audio))
+            disconnect = asyncio.create_task(disconnected())
+            done, _ = await asyncio.wait({worker, disconnect}, timeout=INFERENCE_SECONDS,
+                                         return_when=asyncio.FIRST_COMPLETED)
+            if disconnect in done:
+                raise fail(499, 'Transcription cancelled.')
+            if worker not in done:
+                raise fail(504, 'Transcription timed out.')
+            return Response(text_payload(worker.result()), media_type='application/json', headers=PRIVATE)
         except HTTPException:
             raise
         except Exception:
             raise fail(502, 'Transcription failed.') from None
+        finally:
+            if disconnect is not None:
+                stop_polling.set()
+                disconnect.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await disconnect
+            if worker is not None and not worker.done():
+                worker.add_done_callback(release)
+            else:
+                if worker is not None:
+                    release(worker)
+                elif slot is owner:
+                    slot = None
 
     return bridge
 
