@@ -13,6 +13,8 @@ that code is not published by this reporting branch.
 | W1.2a-R1 | 2026-10-18 | Retry Chinese/English single-source explanation with Corvus’s existing composer | `W1_2A_R1_PASS_WITH_CONSTRAINTS` | [Grounded synthesis retry](2026-10-18-w1-2a-r1-grounded-synthesis.md) | Two complete answers; mixed grounding with unsupported material claims; qualitative single-source judgments only | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
 | W1.2a-R2 | 2026-10-18 | Test a minimal grounding-instruction revision without losing useful natural explanation | `W1_2A_R2_PASS_WITH_CONSTRAINTS` | [Grounding instruction comparison](2026-10-18-w1-2a-r2-grounding-improvement.md) | Mixed grounding change; English dependency/performance claims remain; two single-source samples only; return to real retrieval evaluation | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
 
+| W1.2b | 2026-10-18 | Compare explicit DuckDuckGo and Google CSE on one frozen sqlite3 parameter query | `W1_2B_VALIDATED` | [Bounded provider comparison](2026-10-18-w1-2b-provider-comparison.md) | Two plans, two fetched pages, zero inference; DDGS selected older insufficient evidence; Google CSE more relevant in this sample only; SearXNG internal HTTP count unmeasured | `975645963291ec992d64df0474a3ee9d0ba33dcd` |
+
 ## Future entries
 
 Follow the [archive conventions](../README.md). Add one sanitized report per
