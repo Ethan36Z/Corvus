@@ -1,0 +1,30 @@
+# Authorized activation overlay; append after the reviewed R6/R7 files.
+services:
+  open-webui:
+    image: ${CORVUS_STT_ACTIVE_WEBUI_IMAGE:?reviewed backend image required}
+    environment:
+      USER_PERMISSIONS_CHAT_STT: ${CORVUS_STT_PERMISSION:-false}
+    volumes:
+      - type: bind
+        source: ${CORVUS_STT_SECRET_FILE:?independent protected service credential required}
+        target: /run/secrets/corvus_stt_bridge
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CORVUS_STT_ADMISSIONS_FILE:?protected operator admission file required}
+        target: /run/secrets/corvus_stt_admissions
+        read_only: true
+        bind: {create_host_path: false}
+  corvus-stt-bridge:
+    image: ${CORVUS_STT_ACTIVE_BRIDGE_IMAGE:?reviewed backend image required}
+    volumes:
+      - type: bind
+        source: ${CORVUS_STT_SECRET_FILE:?independent protected service credential required}
+        target: /run/secrets/corvus_stt_bridge
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CORVUS_STT_ADMISSIONS_FILE:?protected operator admission file required}
+        target: /run/secrets/corvus_stt_admissions
+        read_only: true
+        bind: {create_host_path: false}
