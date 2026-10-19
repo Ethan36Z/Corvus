@@ -8,6 +8,7 @@ it does not imply deployment, new test execution or browser acceptance.
 | --- | --- | --- | --- | --- | --- | --- |
 | Multimodal reuse decision | 2026-10-18 | Select existing engines, UI and minimum adapters for the next daily-use MVP | `MULTIMODAL_REUSE_DECISION` | [Multimodal reuse decision](2026-10-18-multimodal-reuse-decision.md) | Read-only audit; no inference or fresh tests; audio-cache privacy, ownership and protocol gaps remain; Mac/iPhone acceptance pending | `50a63850f83506724aaff4c2af4f50811d00d646` |
 | TTS-1 | 2026-10-18 | Prepare private Read Aloud integration with existing Kokoro and WebUI controls | `TTS1_IMPLEMENTED_WITH_CONSTRAINTS` | [Kokoro offline integration](2026-10-18-tts1-kokoro-offline-integration.md) | 22 focused tests passed; local image built, not deployed; existing branding/Arena lock mismatch; live audio/browser/privacy acceptance pending | `50a63850f83506724aaff4c2af4f50811d00d646` |
+| TTS-1.1 | 2026-10-19 | Verify W2.1 Pipe ancestry and correct stale packaging pins without weakening checks | `TTS1_DEPLOYMENT_BASELINE_READY` | [Packaging baseline review](2026-10-19-tts1-packaging-baseline-review.md) | Two local pin corrections; 41 affected and 22 TTS tests passed; no deployment/live acceptance; code remains unpushed | `3793b13d1f6855d5df7a3b139d47036b1879e4e0` |
 
 ## Future entries
 
