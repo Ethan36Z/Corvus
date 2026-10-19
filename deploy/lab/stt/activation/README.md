@@ -1,9 +1,11 @@
-# Lab activation — credential repair prepared offline
+# Lab activation, credential repair and controlled acceptance
 
-This backend-only candidate is **not approved for reactivation**. The first live
+The original uncorrected candidate must not be reactivated. The first live
 public synthetic transcription returned HTTP 503. The original Lab WebUI image,
 environment, host network and existing data volume were restored; only the new
 owned STT services/networks were removed. R7 frontend artifacts were reused.
+The credential repair and separately authorized Retry 3 acceptance are described
+below; historical failure instructions are not a statement of current runtime.
 
 ## Credential repair (offline only)
 
@@ -108,3 +110,37 @@ recording cache, no content logs, fixed authenticated routing, bounds and scoped
 failure. It does not solve host/client swap, crash/core dumps, hibernation,
 browser decoder allocation/persistence, synchronous worker cancellation, or
 legacy A3 converter retention. No target-device acceptance is claimed.
+
+## Retry 3 live acceptance and Mac handoff
+
+`live_acceptance.py` preserves the previous operational acceptance script and
+fixed native target. It imports the existing protected operational runner from
+`CORVUS_STT_OPERATIONS_DIR` (default `/tmp/corvus-stt-retry3`); no credentials or
+real private configuration are placed in this source tree. It is an operator
+script, not a new deployed service or endpoint.
+
+Mixed-language successful text gets a quality classification. A keyword miss
+alone does not throw a system exception: known public equivalent renderings are
+ACCEPTED, demonstrably unrelated public outro text is QUALITY_FAIL, and unresolved
+meaning is QUALITY_REVIEW_REQUIRED. Only status/reason/concept flags are retained,
+never raw transcript. Primary-language checks and all protocol/auth/storage/resource
+hard gates remain. SYSTEM_FAILURE closes admission and invokes scoped rollback.
+
+The existing script also completes the previously unrun live provider-unavailable,
+provider-deadline and client-cancellation/admission-recovery checks. Fault injection
+is restricted to the exact owned new engine ID. A client cancellation is not
+represented as synchronous engine/thread termination. Invalid credential/audio
+probes cannot run inference. No canonical chat is submitted.
+
+Once deployment hard gates pass, keep the two STT services and admission running
+for Mac user acceptance. Pending browser/device acceptance is not a rollback
+condition. Use the Lab HTTPS origin, legitimate Lab FoxGate login followed by the
+independent WebUI login, and the existing recorder/composer. Only the user can
+confirm real microphone, editable review and manual Send acceptance. Never collect
+passwords/tokens or claim STT_LAB_USER_ACCEPTED before that user confirmation.
+
+The pinned `/api/config` endpoint authenticates from the native `token` cookie;
+Bearer alone returns the public configuration without audio/permission fields.
+`native_config()` uses the existing protected short-lived acceptance token only
+for that native cookie and emits booleans. It never prints the response or token.
+This fixes the operational checker mismatch; it does not change WebUI auth.
