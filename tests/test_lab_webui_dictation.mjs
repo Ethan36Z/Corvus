@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 import path from 'node:path';
 
-const root = process.argv[2] || '/tmp/corvus-stt-r3-prepared';
+const root = process.argv[2] || '/tmp/corvus-stt-r4-prepared';
 const original = process.argv[3] || '/tmp/corvus-arena-ui1/source';
 const require = createRequire('/tmp/corvus-arena-ui1/work/package.json');
 const svelte = require('svelte/compiler');
@@ -19,7 +19,7 @@ const voice = await readFile(path.join(root, voicePath), 'utf8');
 const composer = await readFile(path.join(root, composerPath), 'utf8');
 const apiSource = await readFile(path.join(root, apiPath), 'utf8');
 const js = (text) => stripTypeScriptTypes(text, { mode: 'strip' });
-const helperJS = js(helper).replace(/export /g, '');
+const helperJS = js(helper).replace(/export /g, '') + '\nconst normalizeRecording = (()=>{ ' + js(await readFile(path.join(root, 'src/lib/utils/corvus-normalize.ts'), 'utf8')).replace(/export /g, '') + '; return normalizeRecording; })();';
 const own = (value) => JSON.parse(JSON.stringify(value));
 const turn = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -32,8 +32,8 @@ function wav(rate = 16000) {
  return new Blob([b],{type:'audio/wav'});
 }
 
-function environment({ mime='audio/wav', chunk=wav(), answer, permission, engine='' } = {}) {
- const events=[], calls=[], errors=[], logs=[], tracks=[], contexts=[], recorders=[], pending=[], intervals=new Set();
+function environment({ mime='audio/wav', chunk=wav(), answer, permission, decoder, engine='' } = {}) {
+ const events=[], calls=[], errors=[], logs=[], tracks=[], contexts=[], recorders=[], pending=[], intervals=new Set(),ticks=[];
  let destroy;
  const stream={ getTracks: () => tracks };
  tracks.push({ stopped:0, stop() {this.stopped++;} });
@@ -52,7 +52,17 @@ function environment({ mime='audio/wav', chunk=wav(), answer, permission, engine
   }
  }
  const settings={speechAutoSend:true};
- const sandbox={ Blob, File, AbortController, DataView, Uint8Array,
+ class OfflineContext {
+  constructor(channels, length, rate) {assert.equal(rate,16000);}
+  async decodeAudioData(bytes) {
+   if(decoder) return await decoder(bytes);
+   const v=new DataView(bytes), channels=v.getUint16(22,true), rate=v.getUint32(24,true);
+   const frames=Math.round(v.getUint32(40,true)/(channels*2)*16000/rate);
+   return {sampleRate:16000,length:frames,numberOfChannels:channels,getChannelData:()=>new Float32Array(frames)};
+  }
+ }
+ const sandbox={ Blob, File, AbortController, DOMException, DataView, Uint8Array, setTimeout, clearTimeout,
+  OfflineAudioContext:OfflineContext,
   createEventDispatcher:()=> (event,detail)=>events.push({event,detail}),
   getContext:()=>({}), onMount:()=>{}, onDestroy:(fn)=>destroy=fn, tick:async()=>{},
   $config:{audio:{stt:{engine}}},$settings:settings,$i18n:{t:(text)=>text},
@@ -64,7 +74,7 @@ function environment({ mime='audio/wav', chunk=wav(), answer, permission, engine
    assert.deepEqual(own(options),{audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
    return permission ? await permission(stream):stream;
   }}}, AudioContext:Context,MediaRecorder:Recorder,
-  setInterval:()=> {const n=intervals.size+1;intervals.add(n);return n;},clearInterval:(n)=>intervals.delete(n),
+  setInterval:(fn)=> {ticks.push(fn);const n=intervals.size+1;intervals.add(n);return n;},clearInterval:(n)=>intervals.delete(n),
   window:{requestAnimationFrame:()=>0},document:{getElementById:()=>({focus(){}})},
   console:{log:(...v)=>logs.push(v),error:(...v)=>logs.push(v),debug:(...v)=>logs.push(v)},
  };
@@ -74,7 +84,7 @@ function environment({ mime='audio/wav', chunk=wav(), answer, permission, engine
  script=script.replace(/\$:\s*if \(recording\) \{\s*startRecording\(\);\s*\} else \{\s*stopRecording\(\);\s*\}/,'');
  script=script.replace(/\$:\s*maxVisibleItems =[^;]+;/,'');
  vm.runInContext(helperJS+'\n'+js(script)+`\nglobalThis.component={startRecording,stopRecording,confirmRecording,transcribeHandler,recordingBlob,validateDictationWav,setRecording:(v)=>recording=v};`,context);
- return {component:context.component,events,calls,errors,logs,tracks,contexts,recorders,pending,settings,intervals,
+ return {component:context.component,events,calls,errors,logs,tracks,contexts,recorders,pending,settings,intervals,ticks,
   destroy:()=>destroy(), async start(){context.component.setRecording(true);await context.component.startRecording();},
   async finish(){await turn();await Promise.all(pending);}};
 }
@@ -104,7 +114,7 @@ test('actual WebM/MP4 MIME and matching extensions preserved; never forged WAV',
 test('unsupported compressed/unknown/corrupt WAV fail closed before native API',async()=>{
  for(const [mime,chunk] of [['audio/webm',new Blob(['webm'],{type:'audio/webm'})],
   ['audio/mp4',new Blob(['mp4'],{type:'audio/mp4'})],['audio/wav',new Blob(['not wav'],{type:'audio/wav'})],
-  ['audio/wav',wav(48000)]]){
+  ['audio/wav',wav(192000)]]){
   const e=environment({mime,chunk});await e.start();await e.component.confirmRecording();await e.finish();
   assert.equal(e.calls.length,0);assert.ok(e.errors.length);assert.equal(e.events.filter(x=>x.event==='confirm').length,0);
  }
@@ -147,7 +157,7 @@ test('cancel during permission acquisition closes late tracks without recorder/A
 
 test('cancel during mocked HTTP aborts and suppresses late transcript',async()=>{
  let resolve;const e=environment({answer:()=>new Promise(r=>resolve=r)});
- await e.start();await e.component.confirmRecording();await turn();
+ await e.start();await e.component.confirmRecording();for(let n=0;n<30 && !e.calls.length;n++) await new Promise(r=>setTimeout(r,2));
  assert.equal(e.calls.length,1);const signal=e.calls[0][2];
  await e.component.stopRecording();assert.equal(signal.aborted,true);
  resolve({text:'LATE_PRIVATE_TRANSCRIPT'});await e.finish();
@@ -191,4 +201,27 @@ test('stale cancelled recorder callbacks cannot release a subsequent recording',
  assert.equal(e.recorders[1].state,'recording');assert.equal(e.contexts[1].closed,0);
  assert.equal(e.calls.length,0);
  await e.component.stopRecording();await e.finish();
+});
+
+
+test('supported encoded container reaches same composer contract after mocked normalization',async()=>{
+ const fixtures=JSON.parse(await readFile(new URL('fixtures/stt-r4-synthetic.json',import.meta.url),'utf8'));
+ for(const [key,mime] of [['webmOpus','audio/webm;codecs=opus'],['trailingMoov','audio/mp4;codecs=mp4a.40.2']]){
+  const e=environment({mime,chunk:new Blob([Buffer.from(fixtures[key],'base64')],{type:mime}),decoder:async()=>({sampleRate:16000,length:160,numberOfChannels:1,getChannelData:()=>new Float32Array(160)})});
+  await e.start();await e.component.confirmRecording();await e.finish();assert.equal(e.calls.length,1);
+  assert.equal(e.calls[0][1].type,'audio/wav');assert.equal(await e.component.validateDictationWav(e.calls[0][1]),true);
+  assert.equal(e.events[0].event,'confirm');assert.equal(e.events.filter(x=>x.event==='submit').length,0);
+ }
+});
+test('cancel while decode is pending drops late PCM and makes no API call',async()=>{
+ let resolve;const e=environment({decoder:()=>new Promise(r=>resolve=r)});
+ await e.start();await e.component.confirmRecording();await turn();await e.component.stopRecording();
+ resolve({sampleRate:16000,length:160,numberOfChannels:1,getChannelData:()=>new Float32Array(160)});await e.finish();
+ assert.equal(e.calls.length,0);assert.equal(e.events.length,0);assert.equal(e.logs.length,0);
+});
+test('encoded accumulation and recording duration caps cancel without submission',async()=>{
+ const e=environment();await e.start();e.recorders[0].ondataavailable({data:new Blob([new Uint8Array(8*1024*1024+1)])});await e.finish();
+ assert.equal(e.calls.length,0);assert.equal(e.events[0].event,'cancel');assert.equal(e.tracks[0].stopped,1);
+ const d=environment();await d.start();for(let i=0;i<120;i++)d.ticks[0]();await d.finish();
+ assert.equal(d.calls.length,0);assert.equal(d.events[0].event,'cancel');assert.equal(d.tracks[0].stopped,1);
 });

@@ -7,6 +7,7 @@ VOICE = 'src/lib/components/chat/MessageInput/VoiceRecording.svelte'
 COMPOSER = 'src/lib/components/chat/MessageInput.svelte'
 API = 'src/lib/apis/audio/index.ts'
 HELPER = 'src/lib/utils/corvus-dictation.ts'
+NORMALIZER = 'src/lib/utils/corvus-normalize.ts'
 PINS = {
     VOICE: '91713f5f7ec32cb1382cd735362f4f3da7389e6c85e1b38f28a2cbb62cd275d6',
     COMPOSER: 'adf077a8cb5806dfe5b6ecc3fecdf53c70ddc623e63637a1104f8406997f5cb0',
@@ -17,6 +18,7 @@ VOICE_LOGIC = '''	let cancelled = false;
 	let generation = 0;
 	let transcriptionController;
 	let audioContext;
+	let encodedBytes = 0;
 
 	const releaseMedia = () => {
 		stopDurationCounter();
@@ -29,20 +31,17 @@ VOICE_LOGIC = '''	let cancelled = false;
 		}
 	};
 
-	const transcribeHandler = async ({ blob, filename }) => {
+	const transcribeHandler = async ({ blob }) => {
 		const take = generation;
-		if (!(await validateDictationWav(blob))) {
-			if (!cancelled && take === generation) {
-				toast.error($i18n.t('This recording format is not supported for private dictation.'));
-				dispatch('cancel');
-			}
-			return;
-		}
-		if (cancelled || take !== generation) return;
+		if (cancelled) return;
 		const controller = new AbortController();
 		transcriptionController = controller;
 		try {
-			const file = blobToFile(blob, filename);
+			const wav = await normalizeRecording(blob, controller.signal);
+			if (cancelled || take !== generation || controller.signal.aborted) return;
+			if (!(await validateDictationWav(wav))) throw new Error('Invalid normalized audio.');
+			if (cancelled || take !== generation || controller.signal.aborted) return;
+			const file = blobToFile(wav, 'recording.wav');
 			const res = await transcribeAudio(localStorage.token, file, controller.signal);
 			if (!cancelled && take === generation && !controller.signal.aborted
 				&& typeof res?.text === 'string' && res.text.trim()) {
@@ -50,7 +49,7 @@ VOICE_LOGIC = '''	let cancelled = false;
 			}
 		} catch {
 			if (!cancelled && take === generation && !controller.signal.aborted) {
-				toast.error($i18n.t('Dictation is unavailable.'));
+				toast.error($i18n.t('Dictation is unavailable for this recording.'));
 			}
 		} finally {
 			if (transcriptionController === controller) transcriptionController = null;
@@ -84,11 +83,19 @@ VOICE_LOGIC = '''	let cancelled = false;
 				if (cancelled || take !== generation) return;
 				loading = false;
 				audioChunks = [];
+				encodedBytes = 0;
 				startDurationCounter();
 				analyseAudio(stream);
 			};
 			mediaRecorder.ondataavailable = (event) => {
-				if (!cancelled && take === generation && event.data.size) audioChunks.push(event.data);
+				if (!cancelled && take === generation && event.data.size) {
+					encodedBytes += event.data.size;
+					if (encodedBytes > 8 * 1024 * 1024) {
+						void stopRecording();
+						toast.error($i18n.t('Recording limit reached.'));
+						dispatch('cancel');
+					} else audioChunks.push(event.data);
+				}
 			};
 			mediaRecorder.onstop = async () => {
 				if (take !== generation) return;
@@ -108,7 +115,7 @@ VOICE_LOGIC = '''	let cancelled = false;
 					if (take === generation) { loading = false; recording = false; }
 				}
 			};
-			mediaRecorder.start();
+			mediaRecorder.start(1000);
 		} catch {
 			if (take === generation) {
 				releaseMedia();
@@ -169,7 +176,8 @@ def patch_sources(sources):
         if hashlib.sha256(sources[path].encode()).hexdigest() != digest:
             raise ValueError('Expected exact reviewed 0.6.5 source: '+path)
     voice = sources[VOICE]
-    voice = voice.replace("\timport { transcribeAudio } from '$lib/apis/audio';", "\timport { transcribeAudio } from '$lib/apis/audio';\n\timport { recordingBlob, validateDictationWav } from '$lib/utils/corvus-dictation';")
+    voice = voice.replace("\timport { transcribeAudio } from '$lib/apis/audio';", "\timport { transcribeAudio } from '$lib/apis/audio';\n\timport { recordingBlob, validateDictationWav } from '$lib/utils/corvus-dictation';\n\timport { normalizeRecording } from '$lib/utils/corvus-normalize';")
+    voice = voice.replace('durationSeconds++;', "durationSeconds++;\n\t\t\tif (durationSeconds >= 120) { void stopRecording(); toast.error($i18n.t('Recording limit reached.')); dispatch('cancel'); }")
     voice = voice.replace('const audioContext = new AudioContext();', 'audioContext = new AudioContext();')
     a, b = voice.index('\tconst transcribeHandler ='), voice.index('\tlet resizeObserver;')
     voice = voice[:a]+VOICE_LOGIC+voice[b:]
@@ -183,7 +191,8 @@ def patch_sources(sources):
     a, b = api.index('export const transcribeAudio ='), api.index('export const synthesizeOpenAISpeech =')
     api = api[:a]+API_LOGIC+api[b:]
     return {VOICE: voice, COMPOSER: composer, API: api,
-            HELPER: Path(__file__).with_name('dictation.ts').read_text()}
+            HELPER: Path(__file__).with_name('dictation.ts').read_text(),
+            NORMALIZER: Path(__file__).with_name('normalize.ts').read_text()}
 
 
 if __name__ == '__main__':
