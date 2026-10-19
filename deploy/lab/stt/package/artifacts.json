@@ -1,0 +1,40 @@
+{
+  "baseline_commit": "c0b818fa2c72a4eeb6f8691f5e25f06eea8b87e1",
+  "base_image": "sha256:72252f095805fa8aebb6ed17e7fb44c3746e9d2a289ec3ff395769aad0c44e3b",
+  "builder_image": "sha256:35d1e2d251585b806c41f71d0933d7ba3afb6374ee3745523c2ae406480f6bc7",
+  "images": {
+    "bridge": "sha256:538fbebfc017b2cd628e540cb4a537aee99b7704cc637e9932f1801d1e4a997b",
+    "webui": "sha256:6a1d1843c52be7b5a1a66d503a8c16514f617d4a478ddd9dc6e09b45858487db"
+  },
+  "checks": {
+    "bridge": {
+      "kind": "bridge",
+      "tests": 19,
+      "memory_peak": 158208000,
+      "swap_max": "0"
+    },
+    "webui": {
+      "kind": "webui",
+      "tests": 1,
+      "memory_peak": 80822272,
+      "swap_max": "0"
+    }
+  },
+  "bridge_memory_limit_bytes": 268435456,
+  "bridge_memory_policy": "1.5 * observed 158208000 byte packaging-test peak, rounded up to 32 MiB = 256 MiB; not a proven worst-case speech bound",
+  "whisper_memory_limit_bytes": 1140850688,
+  "whisper_cpu_quota": 8,
+  "gates": "disabled; STT permission false",
+  "frontend_compiled": true,
+  "confirmed_bridge_peak_256m_bytes": 156794880,
+  "cached_dependency_version_entries_verified": 989,
+  "network_check": {
+    "private_dns_and_r1_multipart": true,
+    "loopback_bridge_http_status": 503,
+    "whisper_published_ports": {},
+    "internal_network_members": 2,
+    "ingress_members": 1,
+    "models_loaded": 0,
+    "live_gates_enabled": false
+  }
+}

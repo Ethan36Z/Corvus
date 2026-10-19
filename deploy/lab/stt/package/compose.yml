@@ -1,0 +1,54 @@
+# Append AFTER the retained Lab stack AND ../private/compose.yml. Candidate only.
+# Both STT live gates and native STT permission remain disabled.
+services:
+  open-webui:
+    image: sha256:6a1d1843c52be7b5a1a66d503a8c16514f617d4a478ddd9dc6e09b45858487db
+    pull_policy: never
+    build:
+      context: ${CORVUS_STT_R7_CONTEXT:?validated offline package context required}/webui
+      dockerfile: Dockerfile
+      network: none
+      pull: false
+    environment:
+      USER_PERMISSIONS_CHAT_STT: "false"
+    logging: {driver: none}
+  corvus-stt-bridge:
+    profiles: [stt-private-review]
+    image: sha256:538fbebfc017b2cd628e540cb4a537aee99b7704cc637e9932f1801d1e4a997b
+    pull_policy: never
+    build:
+      context: ${CORVUS_STT_R7_CONTEXT:?validated offline package context required}/bridge
+      dockerfile: Dockerfile
+      network: none
+      pull: false
+    labels: {io.corvus.stt.owner: r7-lab}
+    restart: "no"
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    cpus: 1.0
+    # Final measured import/test bound is recorded in artifacts.json.
+    mem_limit: 256m
+    memswap_limit: 256m
+    ulimits:
+      core: {soft: 0, hard: 0}
+    logging: {driver: none}
+    ports:
+      - target: 8106
+        published: "18106"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    networks: [dictation-ingress, dictation-private]
+    healthcheck: {disable: true}
+# Network and the 8-CPU/1088-MiB no-convert service are reused from R6 verbatim.
+  corvus-whisper-dictation:
+    labels: {io.corvus.stt.owner: r7-lab}
+networks:
+  dictation-private:
+    labels: {io.corvus.stt.owner: r7-lab}
+  dictation-ingress:
+    name: corvus-stt-dictation-ingress
+    internal: false
+    labels: {io.corvus.stt.owner: r7-lab}

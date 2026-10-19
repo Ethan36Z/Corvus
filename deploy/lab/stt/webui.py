@@ -13,7 +13,8 @@ from open_webui.routers.corvus_stt_protocol import (
     fail, read_bounded, text_payload, validate_audio,
 )
 
-BRIDGE_URL = 'http://corvus-stt-bridge:8106/v1/transcribe'
+# Lab WebUI already uses host networking; keep its TTS/Pipe paths unchanged.
+BRIDGE_URL = 'http://127.0.0.1:18106/v1/transcribe'
 
 
 async def bridge_text(audio, *, token):

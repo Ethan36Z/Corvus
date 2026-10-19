@@ -10,7 +10,7 @@ HELPER = 'src/lib/utils/corvus-dictation.ts'
 NORMALIZER = 'src/lib/utils/corvus-normalize.ts'
 PINS = {
     VOICE: '91713f5f7ec32cb1382cd735362f4f3da7389e6c85e1b38f28a2cbb62cd275d6',
-    COMPOSER: 'adf077a8cb5806dfe5b6ecc3fecdf53c70ddc623e63637a1104f8406997f5cb0',
+    COMPOSER: '554564dee985a2f4db96be7cd2c2da3e8d499d3ae07e491e6b8499b8287a5451',
     API: '47f9b585a019c13d98f1559c674d81e1b14c943a217f072bb0695b7407e379e1',
 }
 
