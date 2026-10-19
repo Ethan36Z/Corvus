@@ -43,7 +43,7 @@ passed=[];total=0;skipped=[]
 for filename in names:
  signal.alarm(30)
  spec=importlib.util.spec_from_file_location('w2_'+filename[:-3],CODE/'tests'/filename);module=importlib.util.module_from_spec(spec);sys.modules[spec.name]=module;spec.loader.exec_module(module)
- if filename=='test_open_webui_pipe.py':
+ if filename in ('test_open_webui_pipe.py','test_web_mvp.py'):
   for obj in vars(module).values():
    if isinstance(obj,type) and issubclass(obj,unittest.TestCase) and hasattr(obj,'test_fresh_corvus_process_uses_only_isolated_memory_paths'):
     method=getattr(obj,'test_fresh_corvus_process_uses_only_isolated_memory_paths');method.__unittest_skip__=True;method.__unittest_skip_why__='Offline guard forbids subprocesses; remaining Pipe tests run in process'

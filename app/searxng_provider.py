@@ -92,6 +92,7 @@ class SearXNGProvider:
         language=None,
         engine_bang=None,
         time_range=None,
+        diagnostics_callback=None,
     ):
         if not isinstance(
             base_url,
@@ -138,6 +139,7 @@ class SearXNGProvider:
                 "SearXNG category must not be empty"
             )
 
+        self.diagnostics_callback = diagnostics_callback
         self.category = category
 
         if language is None:
@@ -206,6 +208,7 @@ class SearXNGProvider:
                 self.timeout_seconds
             ),
             fetch_json=self._fetch_json,
+            diagnostics_callback=self.diagnostics_callback,
             category=category,
             language=language,
             engine_bang=engine_bang,
@@ -261,6 +264,9 @@ class SearXNGProvider:
                 "SearXNG response must "
                 "be a JSON object"
             )
+
+        if self.diagnostics_callback is not None:
+            self.diagnostics_callback(payload)
 
         results = payload.get(
             "results"

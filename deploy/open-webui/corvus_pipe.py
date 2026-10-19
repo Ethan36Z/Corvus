@@ -277,12 +277,23 @@ class Pipe:
                 raise ValueError("Corvus returned an invalid response. " + UNCERTAIN_RESULT)
         status = result.get("status")
         reply = result.get("reply")
+        # Deterministic Web fallbacks are canonical replies without generation.
+        # They still require this session, a confirmed assistant commit and NORMAL persistence.
+        fallback_confirmed = (
+            isinstance(status, dict)
+            and not arena_flag
+            and result.get("web_presentation_outcome") in ("SOURCES_WITH_LIMITATIONS", "SEARCH_FAILED")
+            and result.get("web_acceptance_status") == "EVIDENCE_INSUFFICIENT"
+            and status.get("model") == "NOT_CALLED"
+        )
         if (
             result.get("session_id") != session_id
             or not isinstance(status, dict)
             or status.get("overall") not in ("OK", "DEGRADED")
-            or status.get("model") != "OK"
+            or (status.get("model") != "OK" and not fallback_confirmed)
             or status.get("persistence") != "NORMAL"
+            or (fallback_confirmed and (type(result.get("assistant_message_id")) is not int
+                                        or result["assistant_message_id"] <= 0))
             or not isinstance(reply, str)
             or not reply.strip()
         ):

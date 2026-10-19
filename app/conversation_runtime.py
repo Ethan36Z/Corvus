@@ -33,8 +33,11 @@ from app.ddgs_provider import (
     DDGSProvider,
 )
 from app.runtime_config import (
+    WEB_MVP_ENABLED,
     WEB_PROVIDER,
 )
+from app.web_mvp import prepare_web_mvp, failed_preparation, present_grounded_answer
+
 from memory.attachments import (
     link_attachment_to_message,
 )
@@ -118,6 +121,10 @@ def process_turn(
     web_intent_decide_fn=(
         decide_web_intent
     ),
+    web_mvp_enabled=WEB_MVP_ENABLED,
+    web_requirements=None,
+    web_source_facts_fn=lambda page: None,
+    prepare_web_mvp_fn=prepare_web_mvp,
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -235,6 +242,10 @@ def process_turn(
         "reply": None,
         "error": None,
     }
+
+    mvp_active = bool(web_mvp_enabled) and attachment_id is None
+    mvp_prepared = None
+    deterministic_reply = None
 
     # 1. Canonical user evidence comes first.
     user_message_id = add_message_fn(
@@ -418,7 +429,7 @@ def process_turn(
     # For voice turns, model_user_content is the STT
     # derived perception, while the canonical message
     # remains the raw-audio marker.
-    if web_should_ground:
+    if web_should_ground or (mvp_active and result["web_intent_source"] == "DECISION_FAILED"):
         if used_web_evidence:
             message = (
                 "Web grounding mode cannot be combined "
@@ -439,66 +450,88 @@ def process_turn(
 
         search_query = model_user_content
 
-        try:
-            rewritten_query = (
-                web_query_rewrite_fn(
+        if mvp_active:
+            result["web_query_rewrite_status"] = "NOT_REQUESTED"
+        else:
+            try:
+                rewritten_query = (
+                    web_query_rewrite_fn(
+                        model_user_content
+                    )
+                )
+
+                if not isinstance(
+                    rewritten_query,
+                    str,
+                ):
+                    raise ValueError(
+                        "Web query rewrite must "
+                        "return text"
+                    )
+
+                rewritten_query = " ".join(
+                    rewritten_query.split()
+                )
+
+                if not rewritten_query:
+                    raise ValueError(
+                        "Web query rewrite must "
+                        "not be empty"
+                    )
+
+                search_query = (
+                    rewritten_query
+                )
+
+                result[
+                    "web_query_rewrite_status"
+                ] = "OK"
+
+            except Exception as exc:
+                result[
+                    "web_query_rewrite_status"
+                ] = "FALLBACK_ORIGINAL"
+
+                result[
+                    "web_query_rewrite_error"
+                ] = str(exc)
+
+                search_query = (
                     model_user_content
                 )
-            )
-
-            if not isinstance(
-                rewritten_query,
-                str,
-            ):
-                raise ValueError(
-                    "Web query rewrite must "
-                    "return text"
-                )
-
-            rewritten_query = " ".join(
-                rewritten_query.split()
-            )
-
-            if not rewritten_query:
-                raise ValueError(
-                    "Web query rewrite must "
-                    "not be empty"
-                )
-
-            search_query = (
-                rewritten_query
-            )
-
-            result[
-                "web_query_rewrite_status"
-            ] = "OK"
-
-        except Exception as exc:
-            result[
-                "web_query_rewrite_status"
-            ] = "FALLBACK_ORIGINAL"
-
-            result[
-                "web_query_rewrite_error"
-            ] = str(exc)
-
-            search_query = (
-                model_user_content
-            )
 
         result["web_search_query"] = (
             search_query
         )
 
         try:
-            grounding = (
-                prepare_web_grounding_fn(
-                    search_query,
-                    provider_builder=(
-                        web_provider_builder_fn
-                    ),
+            if mvp_active:
+                if result["web_intent_source"] == "DECISION_FAILED":
+                    result["web_intent_error"] = "WEB_INTENT_FAILED"
+                    mvp_prepared = failed_preparation(search_query, "WEB_INTENT_FAILED")
+                else:
+                    try:
+                        mvp_prepared = prepare_web_mvp_fn(
+                            search_query, provider_builder=web_provider_builder_fn,
+                            requirements=web_requirements, source_facts=web_source_facts_fn,
+                        )
+                    except Exception:
+                        # No backend exception text or private data enters the reply.
+                        mvp_prepared = failed_preparation(search_query)
+                grounding = mvp_prepared
+                deterministic_reply = mvp_prepared.deterministic_reply
+                result["web_acceptance_status"] = mvp_prepared.evidence_status
+                result["web_coverage_missing"] = list(mvp_prepared.missing)
+                result["web_discovery_status"] = mvp_prepared.retrieval_status
+                result["web_sources"] = [
+                    {"url": source.url, "identity": source.identity,
+                     "refs": list(source.refs), "verification": source.verification}
+                    for source in mvp_prepared.sources
+                ]
+            else:
+                grounding = prepare_web_grounding_fn(
+                    search_query, provider_builder=web_provider_builder_fn,
                 )
-            )
 
             grounding_status = str(
                 grounding.status
@@ -533,8 +566,8 @@ def process_turn(
         ] = grounding_selected_result_id
 
         if (
-            grounding_status != "READY"
-            or not grounding_evidence
+            deterministic_reply is None
+            and (grounding_status != "READY" or not grounding_evidence)
         ):
             message = (
                 "Web grounding did not produce "
@@ -598,132 +631,147 @@ def process_turn(
             "web_evidence_prompt_chars"
         ] = packed_web_evidence.packed_chars
 
-    # 5. Build this turn's temporary Working Context.
-    try:
-        system_prompt = system_prompt_fn()
-
-        if attachment_mode == "voice":
-            system_prompt = (
-                f"{system_prompt}\n\n"
-                f"{VOICE_TRANSCRIPT_SYSTEM_NOTE}"
-            )
-
-        context_kwargs = {
-            "session_id": session_id,
-            "current_user_message_id": (
-                user_message_id
-            ),
-            "current_user_content": (
-                model_user_content
-            ),
-            "system_prompt": system_prompt,
-            "count_tokens": count_tokens_fn,
-        }
-
-        if web_evidence_content:
-            context_kwargs[
-                "web_evidence_content"
-            ] = web_evidence_content
-
-        context = build_context_fn(
-            **context_kwargs
-        )
-    except ModelClientError as exc:
-        result["model_status"] = exc.code
-        result["error"] = str(exc)
-        return result
-    except ValueError as exc:
-        result["model_status"] = "CONTEXT_INVALID"
-        result["error"] = str(exc)
-        return result
-    except Exception as exc:
-        result["model_status"] = "CONTEXT_FAILED"
-        result["error"] = str(exc)
-        return result
-
-    result["recent_message_ids"] = context[
-        "recent_message_ids"
-    ]
-    result["historical_message_ids"] = context[
-        "historical_message_ids"
-    ]
-    result["input_tokens"] = context[
-        "input_tokens"
-    ]
-    result["retrieval_status"] = context.get(
-        "retrieval_status",
-        "OK",
-    )
-    result["retrieval_error"] = context.get(
-        "retrieval_error"
-    )
-    result["historical_recall_elapsed_ms"] = context.get(
-        "historical_recall_elapsed_ms"
-    )
-
-    # 4. Keep retrieval/context text-only. Only
-    # the final model-facing current user message
-    # becomes multimodal.
-    model_messages = context["messages"]
-
-    if (
-        attachment_id is not None
-        and attachment_mode == "vision"
-    ):
+    if deterministic_reply is None:
+        # 5. Build this turn's temporary Working Context.
         try:
-            vision_input = (
-                build_vision_messages_fn(
-                    model_messages,
-                    attachment_id,
+            system_prompt = system_prompt_fn()
+
+            if attachment_mode == "voice":
+                system_prompt = (
+                    f"{system_prompt}\n\n"
+                    f"{VOICE_TRANSCRIPT_SYSTEM_NOTE}"
                 )
+
+            context_kwargs = {
+                "session_id": session_id,
+                "current_user_message_id": (
+                    user_message_id
+                ),
+                "current_user_content": (
+                    model_user_content
+                ),
+                "system_prompt": system_prompt,
+                "count_tokens": count_tokens_fn,
+            }
+
+            if web_evidence_content:
+                context_kwargs[
+                    "web_evidence_content"
+                ] = web_evidence_content
+
+            context = build_context_fn(
+                **context_kwargs
             )
-        except VisionInputError as exc:
-            result["attachment_status"] = (
-                "VISION_INPUT_FAILED"
-            )
-            result["attachment_error"] = str(
-                exc
-            )
-            result["model_status"] = (
-                "VISION_INPUT_INVALID"
-            )
+        except ModelClientError as exc:
+            result["model_status"] = exc.code
+            result["error"] = str(exc)
+            return result
+        except ValueError as exc:
+            result["model_status"] = "CONTEXT_INVALID"
             result["error"] = str(exc)
             return result
         except Exception as exc:
-            result["attachment_status"] = (
-                "VISION_INPUT_FAILED"
-            )
-            result["attachment_error"] = str(
-                exc
-            )
-            result["model_status"] = (
-                "VISION_INPUT_FAILED"
-            )
+            result["model_status"] = "CONTEXT_FAILED"
             result["error"] = str(exc)
             return result
 
-        model_messages = vision_input[
-            "messages"
+        result["recent_message_ids"] = context[
+            "recent_message_ids"
         ]
+        result["historical_message_ids"] = context[
+            "historical_message_ids"
+        ]
+        result["input_tokens"] = context[
+            "input_tokens"
+        ]
+        result["retrieval_status"] = context.get(
+            "retrieval_status",
+            "OK",
+        )
+        result["retrieval_error"] = context.get(
+            "retrieval_error"
+        )
+        result["historical_recall_elapsed_ms"] = context.get(
+            "historical_recall_elapsed_ms"
+        )
 
-        result["attachment_status"] = "READY"
+        # 4. Keep retrieval/context text-only. Only
+        # the final model-facing current user message
+        # becomes multimodal.
+        model_messages = context["messages"]
 
-    # 5. Ask the existing local model.
-    try:
-        with track_foreground_generation():
-            reply = generate_fn(
-                model_messages
+        if (
+            attachment_id is not None
+            and attachment_mode == "vision"
+        ):
+            try:
+                vision_input = (
+                    build_vision_messages_fn(
+                        model_messages,
+                        attachment_id,
+                    )
+                )
+            except VisionInputError as exc:
+                result["attachment_status"] = (
+                    "VISION_INPUT_FAILED"
+                )
+                result["attachment_error"] = str(
+                    exc
+                )
+                result["model_status"] = (
+                    "VISION_INPUT_INVALID"
+                )
+                result["error"] = str(exc)
+                return result
+            except Exception as exc:
+                result["attachment_status"] = (
+                    "VISION_INPUT_FAILED"
+                )
+                result["attachment_error"] = str(
+                    exc
+                )
+                result["model_status"] = (
+                    "VISION_INPUT_FAILED"
+                )
+                result["error"] = str(exc)
+                return result
+
+            model_messages = vision_input[
+                "messages"
+            ]
+
+            result["attachment_status"] = "READY"
+
+        # 5. Ask the existing local model.
+        try:
+            with track_foreground_generation():
+                reply = generate_fn(
+                    model_messages
+                )
+        except ModelClientError as exc:
+            result["model_status"] = exc.code
+            result["error"] = str(exc)
+            return result
+
+    else:
+        reply = deterministic_reply
+
+    if mvp_prepared is not None and deterministic_reply is None:
+        try:
+            reply = present_grounded_answer(
+                reply, mvp_prepared, chinese=any('\u3400' <= ch <= '\u9fff' for ch in user_content),
             )
-    except ModelClientError as exc:
-        result["model_status"] = exc.code
-        result["error"] = str(exc)
-        return result
-
-    result["model_status"] = "OK"
+        except Exception:
+            result["model_status"] = "WEB_PRESENTATION_FAILED"
+            result["error"] = "Web source presentation failed; no automatic retry."
+            return result
+    result["model_status"] = "OK" if deterministic_reply is None else "NOT_CALLED"
     result["reply"] = reply
 
     if used_web_evidence:
         result["web_evidence_status"] = "USED"
+    elif deterministic_reply is not None:
+        result["web_evidence_status"] = "NOT_USED"
 
     if (
         attachment_id is not None
@@ -748,6 +796,9 @@ def process_turn(
     result["assistant_message_id"] = (
         assistant_message_id
     )
+    # Presentation outcome is confirmed only after the canonical assistant commit.
+    if mvp_prepared is not None:
+        result["web_presentation_outcome"] = mvp_prepared.outcome
 
     # 7. Persist exactly the same Used Web Evidence
     # set that was supplied to the successful model

@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from app import arena
+from app.web_acceptance import EvidenceRequirements
 from app.conversation_runtime import process_turn
 from app.foreground_activity import (
     start_foreground_publication,
@@ -457,6 +458,7 @@ class ChatRequest(BaseModel):
     attachment_id: str | None = None
     attachment_mode: str = "vision"
     web_mode: str = "auto"
+    web_requirements: EvidenceRequirements | None = None
 
 
 def load_messages_by_ids(message_ids):
@@ -554,6 +556,10 @@ def build_chat_response(
         overall = "OK"
 
     return {
+        **({key: result[key] for key in (
+            "web_presentation_outcome", "web_acceptance_status", "web_coverage_missing",
+            "web_discovery_status", "web_sources",
+        )} if result.get("web_presentation_outcome") else {}),
         "reply": result["reply"],
         "session_id": result["session_id"],
         "user_message_id": result[
@@ -820,7 +826,10 @@ def post_chat(request: ChatRequest, background_tasks: BackgroundTasks = None):
             )
 
     try:
+        explicit_web = ({"web_requirements": request.web_requirements}
+                        if request.web_requirements is not None else {})
         result = process_turn(
+            **explicit_web,
             session_id=session_id,
             user_content=user_content,
             attachment_id=attachment_id,

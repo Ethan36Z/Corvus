@@ -129,6 +129,7 @@ class EvidenceAcceptance:
     decisions: tuple[CandidateDecision, ...]
     provider_failures: tuple[ProviderFailure, ...]
     grounding: object
+    observed_pages: tuple[ExtractedWebPage, ...] = ()
 
 
 def _fact(page, fact, evidence):
@@ -276,7 +277,7 @@ def accept_web_evidence(query, *, requirements, provider_builder,
         "READY" if readable else grounding.status, retrieval,
         "EVIDENCE_INSUFFICIENT" if missing else "EVIDENCE_SUFFICIENT",
         covered, missing, tuple(sources), tuple(e for s in sources for e in s.evidence),
-        tuple(decisions), tuple(failures), grounding,
+        tuple(decisions), tuple(failures), grounding, tuple(extracted),
     )
 
 

@@ -115,3 +115,9 @@ WEB_PROVIDER = _choice_env(
         "SEARXNG",
     },
 )
+
+
+# Opt-in only: existing deployments retain the legacy Web path.
+WEB_MVP_ENABLED = _choice_env(
+    "CORVUS_WEB_MVP_ENABLED", "FALSE", {"TRUE", "FALSE"},
+) == "TRUE"
