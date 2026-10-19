@@ -119,6 +119,7 @@ def prepare_web_grounding(
     select_used_web_evidence_fn=(
         select_used_web_evidence
     ),
+    candidate_acceptor=None,
 ):
     """
     Prepare current-turn Web grounding without
@@ -287,6 +288,17 @@ def prepare_web_grounding(
                 )
             )
             continue
+
+        # Opt-in prototype seam. Default callers keep first-page behavior.
+        # A collector can retain exact evidence and request another candidate.
+        if candidate_acceptor is not None:
+            accepted = candidate_acceptor(page, ranked, tuple(used_evidence))
+            if accepted is None:
+                outcomes.append(WebCandidateOutcome(
+                    result_id=result.result_id, status="REQUIREMENTS_PENDING"
+                ))
+                continue
+            used_evidence = accepted
 
         outcomes.append(
             WebCandidateOutcome(
