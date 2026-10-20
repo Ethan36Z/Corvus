@@ -381,3 +381,12 @@ def current_image(user_id, chat_id, assistant_id, content, arena):
             raise ValueError("Invalid current image turn")
         image = dict(images[0])
     return claim(user_id, chat_id, assistant_id, image)
+
+
+def mutation_actor(chat, user, payload):
+    """Retain native admin text operations, but never grant an image-owner bypass."""
+    reject_bytes(payload)
+    pending = any(message.get("corvus_image_pending") for message in
+                  (chat.chat or {}).get("history", {}).get("messages", {}).values())
+    if chat.user_id != user.id and (pending or references(chat.chat) or references(payload)):
+        raise HTTPException(404, "Image binding is unavailable")

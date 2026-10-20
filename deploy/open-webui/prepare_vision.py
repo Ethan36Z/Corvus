@@ -13,6 +13,7 @@ PINS = {
     'src/lib/components/chat/MessageInput.svelte': '09cf2906f768a8d3a343b26a7adc235f7769814c7765cde117ab7abf6f1d88d0',
     'backend/open_webui/models/files.py': '0dc93c0ea941289afd161938778cafdcbe3c160e907ebc513a1d73f4f286fdec',
     'backend/open_webui/models/chats.py': '67d94bd7732af53c431f82da34d83d6c11a7d99e6cff2513075476830f5860fd',
+    'backend/open_webui/routers/chats.py': '82d079a8cf3f1ad8bcaab57fe809e9a44753edecf0517f44ee5b3a359122ba15',
     'backend/open_webui/routers/files.py': 'f2cb5ef17326d68140cb5f138abf0b4d18adbeb4f80f9ed9699cfa937f3c9ffd',
 }
 
@@ -62,6 +63,16 @@ def patch_file_model(source):
                 raise ValueError("Reserved image provider")
             file = FileModel(''')
     return source
+
+
+def patch_chat_router(source):
+    before = '    if chat.user_id != user.id and user.role != "admin":'
+    if source.count(before) != 2:
+        raise ValueError('Pinned chat message mutation routes mismatch')
+    return source.replace(before, """    from open_webui.routers.corvus_vision import mutation_actor
+    mutation_actor(chat, user, form_data.model_dump())
+
+""" + before)
 
 
 def patch_file_router(source):
@@ -241,7 +252,7 @@ def prepare(frontend, backend, target):
         if hashlib.sha256(data).hexdigest() != digest:
             raise ValueError('Source pin mismatch: ' + relative)
         sources[relative] = data.decode()
-    patches = [patch_chat, patch_composer, patch_file_model, patch_chats, patch_file_router]
+    patches = [patch_chat, patch_composer, patch_file_model, patch_chats, patch_chat_router, patch_file_router]
     output = {path: patch(data) for (path, data), patch in zip(sources.items(), patches)}
     pipe = (Path(__file__).parent / 'corvus_pipe.py').read_bytes()
     if hashlib.sha256(pipe).hexdigest() != '68967bd0ed499aaf2ecce38bc6afc80c3fc3cdeb805aab6a57182a2e907af861':

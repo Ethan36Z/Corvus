@@ -256,6 +256,20 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.calls,[])
         with get_db() as db:self.assertEqual(db.query(files.File).count(),0)
 
+    async def test_native_admin_message_mutations_do_not_bypass_image_owner(self):
+        admin=types.SimpleNamespace(id='bob',role='admin')
+        with self.assertRaises(HTTPException):v.mutation_actor(self.chat,admin,{'content':'change'})
+        await self.ready()
+        with self.assertRaises(HTTPException):v.mutation_actor(self.chat,admin,{'type':'chat:message','data':{}})
+        v.mutation_actor(self.chat,types.SimpleNamespace(id='alice',role='user'),{'content':'owned'})
+        text=types.SimpleNamespace(user_id='alice',chat={'history':{'messages':{}}})
+        v.mutation_actor(text,admin,{'content':'Existing admin text behavior'})
+        with self.assertRaises(ValueError):v.mutation_actor(text,admin,{'content':'data:image/png;base64,AAAA'})
+        import ast
+        source=(PATCHED/'routers/chats.py').read_text()
+        self.assertEqual(source.count('mutation_actor(chat, user, form_data.model_dump())'),2)
+        ast.parse(source)
+
     async def test_generic_multipart_blocked_before_parser_or_storage(self):
         import ast
         from fastapi import APIRouter, UploadFile, File as FormFile
