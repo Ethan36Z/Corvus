@@ -455,3 +455,59 @@ Contract checked against the pinned upstream sources:
 [chat payloads](https://github.com/open-webui/open-webui/blob/v0.6.5/src/lib/components/chat/Chat.svelte),
 [settings](https://github.com/open-webui/open-webui/blob/v0.6.5/backend/open_webui/config.py),
 and [container entrypoint](https://github.com/open-webui/open-webui/blob/v0.6.5/backend/start.sh).
+
+## Offline single-store Vision candidate (not activated)
+
+`prepare_vision.py FRONTEND_SOURCE BACKEND_SOURCE NEW_TARGET` verifies the current
+STT-enabled native frontend, pinned 0.6.5 file/chat modules and actual Lab Pipe.
+It emits **only into a new isolated directory**, including the generated Pipe;
+it does not build images, change the installed Pipe, configure permissions or
+activate services. Existing branding, Arena and STT normalizer are inherited.
+The generated backend module belongs at `open_webui/routers/corvus_vision.py`.
+The native files router includes its authenticated subroutes; no main-router
+replacement, new service or direct attachment-store mount is needed.
+
+The candidate is disabled without `CORVUS_SINGLE_STORE_VISION=offline-reviewed-v1`
+in the future Lab WebUI and Lab API processes. Do not set this on a live service
+as part of offline preparation. A later approved packaging/activation must install
+all generated files together, the generated Pipe, and the two A3 source changes,
+then narrowly enable the existing Corvus model's native image permissions.
+Targets remain literal Lab loopback port 18096, with no request URL or fallback.
+
+One PNG/JPEG up to 6 MiB plus nonempty accompanying text is supported. Native
+selection, preview, removal and rendering are reused. Draft image bytes are
+memory-only; native chat/draft serialization saves references or text. Generic
+file uploads are rejected **before multipart parsing** in this prepared Lab
+candidate, preventing a WebUI spooled-file copy. Generic document/RAG capabilities
+remain closed. Imports, clones and shares containing image references fail
+closed; image-only turns, tools and temporary-chat image turns are unsupported.
+
+Upload uses native bearer authentication. File rows contain immutable instance,
+user, chat, user-message and operation metadata, with no path, bytes or thumbnail.
+Content uses the native verified-user dependency (including its same-origin cookie
+support), exact owned-message membership, fixed Corvus reads and `private,
+no-store`. Deletion revokes access; it does not delete raw blobs. Existing chat or
+message deletion also revokes by invalidating live membership. Already delivered
+browser bytes or in-flight canonical work cannot be recalled.
+
+Pending upload reconciliation restores references on reload for review only; it
+never dispatches inference. A durable SQLite claim admits one image dispatch.
+Lost/cancelled canonical results are held UNCERTAIN; a process death can leave a
+CLAIMED hold. There is no automatic retry, reset, regeneration or destructive
+cleanup of these holds. Existing A3 provenance and image-turn Hindsight exclusion
+remain authoritative. Historical images are display-only.
+
+Corvus remains the only active persistent image-byte store. Safe physical orphan
+cleanup and raw retention require an explicit operator policy before activation;
+this candidate conservatively retains uncertain/shared/referenced blobs. Back up
+Corvus metadata/blobs and WebUI binding metadata together; preserve the installation
+identity on recovery. Missing or mismatched ownership fails closed. Existing raw
+copies are not migrated or purged by this candidate. Gateway request buffering,
+browser/device acceptance and the current runtime's memory/dump risks still need
+separate activation review; no live single-store guarantee is claimed here.
+
+Focused offline tests: `tests/test_attachment_operation.py` (temporary SQLite),
+`tests/test_webui_vision_single_store.py` (retained WebUI runtime, temporary SQLite,
+mocked native users and A3 HTTP), and `tests/test_webui_vision_frontend.mjs`
+(existing Vite/Svelte dependencies; `VISION_PATCHED` and `VISION_NODE_MODULES`).
+No new packages, inference, real image, service data or replacement image required.

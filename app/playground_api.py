@@ -33,6 +33,8 @@ from app.tts import TTSError, synthesize_speech
 from memory.store import connect
 from memory.attachments import (
     get_attachment,
+    get_attachment_operation,
+    store_attachment_bytes,
     get_latest_attachment_artifact,
     read_attachment_bytes,
 )
@@ -374,6 +376,36 @@ async def post_attachment(
                 status_code=400,
                 detail="attachment must not be empty",
             )
+
+    operation_key = request.headers.get("x-corvus-image-operation")
+    if operation_key is not None:
+        # Lab-only reuse; no enablement in Production/Demo defaults.
+        import os
+        if os.getenv("CORVUS_SINGLE_STORE_VISION", "") != "offline-reviewed-v1":
+            raise HTTPException(404, "Not found")
+        from app.vision_input import _detect_image_media_type
+        import asyncio
+        data = bytearray()
+        async def consume_image():
+            async for chunk in request.stream():
+                if len(data) + len(chunk) > 6 * 1024 * 1024:
+                    raise HTTPException(413, "Image is too large")
+                data.extend(chunk)
+        try:
+            await asyncio.wait_for(consume_image(), 10)
+        except asyncio.TimeoutError:
+            raise HTTPException(408, "Image upload timed out") from None
+        mime = request.headers.get("content-type", "").split(";", 1)[0]
+        if mime not in {"image/png", "image/jpeg"} or _detect_image_media_type(data) != mime:
+            raise HTTPException(400, "Invalid image")
+        try:
+            attachment = store_attachment_bytes(bytes(data), original_filename=filename,
+                media_type=mime, retention_class=ATTACHMENT_DEFAULT_RETENTION,
+                max_bytes=6 * 1024 * 1024, operation_key=operation_key)
+        except ValueError:
+            raise HTTPException(409, "Image operation conflict") from None
+        return {"attachment_id": attachment["id"], "media_type": attachment["media_type"],
+                "size_bytes": attachment["size_bytes"], "blob_status": attachment["blob_status"], "sha256": attachment["sha256"]}
 
     media_type = (
         request.headers.get(
@@ -1195,3 +1227,18 @@ def get_assertions():
         }
         for row in rows
     ]
+
+
+@app.get("/api/attachments/operations/{operation_key}")
+def attachment_operation_status(operation_key: str):
+    import os
+    if os.getenv("CORVUS_SINGLE_STORE_VISION", "") != "offline-reviewed-v1":
+        raise HTTPException(404, "Not found")
+    try:
+        item = get_attachment_operation(operation_key)
+    except ValueError:
+        raise HTTPException(400, "Invalid image operation") from None
+    if item is None:
+        raise HTTPException(404, "Not found")
+    return {"attachment_id": item["id"], "media_type": item["media_type"],
+            "size_bytes": item["size_bytes"], "blob_status": item["blob_status"], "sha256": item["sha256"]}

@@ -145,7 +145,13 @@ def store_attachment_stream(
     retention_class="STANDARD",
     max_bytes=None,
     chunk_size=DEFAULT_CHUNK_SIZE,
+    operation_key=None,
 ):
+    if operation_key is not None:
+        operation_key = str(operation_key)
+        if len(operation_key) != 64 or any(c not in "0123456789abcdef" for c in operation_key):
+            raise ValueError("invalid attachment operation key")
+
     if not hasattr(stream, "read"):
         raise TypeError(
             "stream must provide read()"
@@ -276,25 +282,30 @@ def store_attachment_stream(
             relative_path
         )
 
-        try:
-            os.link(
-                temp_path,
-                destination,
-            )
-        except FileExistsError:
-            _verify_blob_file(
-                destination,
-                expected_sha256=sha256,
-                expected_size=size_bytes,
-            )
-
-        temp_path.unlink(
-            missing_ok=True
-        )
-
-        attachment_id = uuid.uuid4().hex
-
+        attachment_id = (uuid.uuid5(uuid.NAMESPACE_URL, "corvus-image-v1:" + operation_key).hex
+                         if operation_key is not None else uuid.uuid4().hex)
         with connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            prior = conn.execute("SELECT blob_sha256, media_type, retention_class FROM attachments WHERE id = ?",
+                                 (attachment_id,)).fetchone()
+            if prior is not None and prior != (sha256, media_type, retention_class):
+                raise ValueError("attachment operation conflict")
+            try:
+                os.link(
+                    temp_path,
+                    destination,
+                )
+            except FileExistsError:
+                _verify_blob_file(
+                    destination,
+                    expected_sha256=sha256,
+                    expected_size=size_bytes,
+                )
+
+            temp_path.unlink(
+                missing_ok=True
+            )
+
             conn.execute(
                 """
                 INSERT OR IGNORE INTO attachment_blobs (
@@ -356,7 +367,7 @@ def store_attachment_stream(
 
             conn.execute(
                 """
-                INSERT INTO attachments (
+                INSERT OR IGNORE INTO attachments (
                     id,
                     blob_sha256,
                     original_filename,
@@ -374,6 +385,12 @@ def store_attachment_stream(
                 ),
             )
 
+            existing = conn.execute(
+                "SELECT blob_sha256, media_type, retention_class FROM attachments WHERE id = ?",
+                (attachment_id,),
+            ).fetchone()
+            if existing != (sha256, media_type, retention_class):
+                raise ValueError("attachment operation conflict")
             conn.commit()
 
         return get_attachment(
@@ -393,6 +410,7 @@ def store_attachment_bytes(
     media_type,
     retention_class="STANDARD",
     max_bytes=None,
+    operation_key=None,
 ):
     if not isinstance(
         data,
@@ -414,6 +432,7 @@ def store_attachment_bytes(
         media_type=media_type,
         retention_class=retention_class,
         max_bytes=max_bytes,
+        operation_key=operation_key,
     )
 
 
@@ -626,3 +645,10 @@ def get_latest_attachment_artifact(
         "producer_version": row[5],
         "created_at": row[6],
     }
+
+
+def get_attachment_operation(operation_key):
+    if (not isinstance(operation_key, str) or len(operation_key) != 64
+            or any(c not in "0123456789abcdef" for c in operation_key)):
+        raise ValueError("invalid attachment operation key")
+    return get_attachment(uuid.uuid5(uuid.NAMESPACE_URL, "corvus-image-v1:" + operation_key).hex)
