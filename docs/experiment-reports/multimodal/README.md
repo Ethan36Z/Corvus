@@ -41,6 +41,8 @@ it does not imply deployment, new test execution or browser acceptance.
 | STT reboot persistence restored | 2026-10-20 | Complete original-credential persistent mounts and existing Docker boot recovery | `STT_REBOOT_REPAIR_RESTORED` | [Restoration and focused acceptance](2026-10-20-stt-reboot-persistence-restored.md) | Local page/health 200; one authenticated synthetic STT 200 in 5.123 s; all three unless-stopped; Whisper process/data preserved; no actual reboot | `75e3cf9b2042891709fdc1fde18a1158a0767d67` |
 | Vision single-store Lab activation | 2026-10-20 | Activate retained image/Pipe on recovered persistent STT baseline | `VISION_LAB_READY_FOR_MAC_ACCEPTANCE` | [Activation and one-image acceptance](2026-10-20-vision-single-store-lab-activation.md) | One PNG upload/one A3-Qwen dispatch 200 in 2.721 s; reference-only save, authenticated content/reload and ownership checks pass; only WebUI recreated; Mac pending | `da3d9c38f36be4921843f217d0b8cdbe520a4039` |
 
+| Vision 20 MiB original images | 2026-10-20 | Coordinate native/adapter/A3 caps while preserving single-store original bytes | `VISION_LAB_READY_FOR_MAC_ACCEPTANCE` | [Capacity update and focused deployment](2026-10-20-vision-image20-lab-deployment.md) | One exact 20 MiB PNG upload/inference/reload passed in 3.750 s; +1 rejected; only Lab API restarted and WebUI recreated; real Mac photo pending | `4f138cf28916b4d1a82f6abcefe84838d888a265` |
+
 ## Future entries
 
 Follow the [archive conventions](../README.md). Use
