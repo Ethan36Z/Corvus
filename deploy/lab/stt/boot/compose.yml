@@ -1,0 +1,36 @@
+# Append to the reviewed active configuration, never older package image defaults.
+# Docker remains the only container boot manager. No new systemd service.
+services:
+  open-webui:
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /etc/corvus-lab/stt/webui/credential
+        target: /run/secrets/corvus_stt_bridge
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /etc/corvus-lab/stt/webui-protocol.py
+        target: /app/backend/open_webui/routers/corvus_stt_protocol.py
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /etc/corvus-lab/stt/stt-admissions
+        target: /run/secrets/corvus_stt_admissions
+        read_only: true
+        bind: {create_host_path: false}
+  corvus-stt-bridge:
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /etc/corvus-lab/stt/bridge/credential
+        target: /run/secrets/corvus_stt_bridge
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /etc/corvus-lab/stt/stt-admissions
+        target: /run/secrets/corvus_stt_admissions
+        read_only: true
+        bind: {create_host_path: false}
+  corvus-whisper-dictation:
+    restart: unless-stopped
