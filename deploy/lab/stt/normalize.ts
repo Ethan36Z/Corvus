@@ -45,6 +45,10 @@ function checkContainer(buffer: ArrayBuffer, mime: string) {
  } else if (mime === 'audio/webm') {
   if (length < 16 || tag(0) !== '\x1a\x45\xdf\xa3') throw invalid();
   const masters = new Set([0x1a45dfa3, 0x18538067, 0x1549a966, 0x1654ae6b, 0xae, 0xe1, 0x1f43b675, 0xa0]);
+  // A streaming Cluster ends at the next Segment-level element (or parent end),
+  // not at EOF unconditionally: later Clusters must remain siblings.
+  const segmentChildren = new Set([0x114d9b74, 0x1549a966, 0x1654ae6b, 0x1f43b675,
+   0x1c53bb6b, 0x1941a469, 0x1043a770, 0x1254c367]);
   let elements = 0, blocks = 0;
   const vint = (at: number, id: boolean) => {
    if (at >= length || !bytes[at]) throw invalid();
@@ -56,20 +60,27 @@ function checkContainer(buffer: ArrayBuffer, mime: string) {
    for (let i = 1; i < n; i++) { value = value * 256 + bytes[at + i]; unknown = unknown && bytes[at + i] === 255; }
    return { n, value, unknown };
   };
-  const scan = (start: number, end: number, depth: number) => {
+  const scan = (start: number, end: number, depth: number, parent = 0, streamingCluster = false): number => {
    if (depth > 8) throw invalid();
    let at = start;
    while (at < end) {
+    const id = vint(at, true);
+    if (at + id.n > end) throw invalid();
+    if (streamingCluster && segmentChildren.has(id.value)) return at;
     if (++elements > 100000) throw invalid();
-    const id = vint(at, true), size = vint(at + id.n, false), begin = at + id.n + size.n;
-    // Recorder WebM uses an unknown-length Segment. Other unknown sizes fail closed.
-    if (size.unknown && id.value !== 0x18538067) throw invalid();
+    const size = vint(at + id.n, false), begin = at + id.n + size.n;
+    if (begin > end) throw invalid();
+    // Only root Segment and its direct Cluster children may have unknown size.
+    if (size.unknown && !((id.value === 0x18538067 && parent === 0)
+      || (id.value === 0x1f43b675 && parent === 0x18538067))) throw invalid();
     const stop = size.unknown ? end : begin + size.value;
     if (!Number.isSafeInteger(stop) || stop > end || begin > stop) throw invalid();
-    if (masters.has(id.value)) scan(begin, stop, depth + 1);
+    const next = masters.has(id.value)
+     ? scan(begin, stop, depth + 1, id.value, size.unknown && id.value === 0x1f43b675) : stop;
     if (id.value === 0xa3 || id.value === 0xa1) { if (stop - begin < 4) throw invalid(); blocks++; }
-    at = stop;
+    at = next;
    }
+   return at;
   };
   scan(0, length, 0); if (!blocks) throw invalid();
  } else throw invalid();

@@ -76,3 +76,46 @@ test('cancel during chunked PCM encoding drops output',async()=>{
  const controller=new AbortController(),e=env();const pending=e.encodePcmWav(audio([new Array(100000).fill(.2)]),controller.signal);
  controller.abort();await assert.rejects(()=>pending,{name:'AbortError'});
 });
+
+// Structural cases use the existing mocked decoder, not codec-acceptance claims.
+const ebml = (...parts) => Uint8Array.from(parts.flatMap(part => Array.from(part)));
+const ebmlHeader = [0x1a,0x45,0xdf,0xa3,0x80];
+const segment = [0x18,0x53,0x80,0x67,0xff];
+const cluster = [0x1f,0x43,0xb6,0x75,0xff];
+const block = [0xa3,0x84,0x81,0,0,0];
+const webm = (...parts) => new Blob([ebml(ebmlHeader,...parts)],{type:'audio/webm'});
+
+test('unknown-sized Cluster fixture reaches existing decoder; finite fixture stays accepted',async()=>{
+ const e=env();
+ for(const key of ['webmOpus','unknownClusterWebmOpus']) {
+  const wav=await e.normalizeRecording(blob(key));assert.equal(wav.type,'audio/wav');
+ }
+ assert.equal(e.calls.length,2);
+});
+test('streaming Clusters terminate at siblings and finite parent end without growing nesting',async()=>{
+ const e=env();
+ // More than eight siblings must not be interpreted as recursive Clusters.
+ await e.normalizeRecording(webm(segment,...Array.from({length:20},()=>ebml(cluster,block)),[0x1c,0x53,0xbb,0x6b,0x80]));
+ const payload=ebml(cluster,block);
+ await e.normalizeRecording(webm([0x18,0x53,0x80,0x67,0x80+payload.length],payload));
+ assert.equal(e.calls.length,2);
+});
+test('unknown sizes outside Segment/its Cluster, truncated payloads and parent escapes reject',async()=>{
+ const e=env();
+ for(const input of [webm(segment,cluster,[0xa3,0xff]),
+   webm(segment,[0x15,0x49,0xa9,0x66,0xff],block),
+   webm(cluster,block),webm(segment,[0xae,0x80+cluster.length+block.length],cluster,block),
+   webm(segment,cluster,[0xa3,0x85,0x81,0,0,0]),
+   webm([0x18,0x53,0x80,0x67,0x80+cluster.length+block.length-1],cluster,block),
+   blob('unknownClusterWebmOpus').slice(0,-1,'audio/webm')]) {
+  await assert.rejects(()=>e.normalizeRecording(input));
+ }
+ assert.equal(e.calls.length,0);
+});
+test('streaming Cluster keeps depth and element-count limits',async()=>{
+ const e=env();let nested=ebml(block);
+ for(let i=0;i<10;i++)nested=ebml([0xae,0x80+nested.length],nested);
+ await assert.rejects(()=>e.normalizeRecording(webm(segment,cluster,nested)));
+ await assert.rejects(()=>e.normalizeRecording(webm(segment,cluster,block,new Uint8Array(200002).map((_,i)=>i%2 ? 0x80 : 0xec))));
+ assert.equal(e.calls.length,0);
+});

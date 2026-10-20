@@ -27,6 +27,12 @@ try {
  const rejected=async(fn)=>{try{await fn();return false;}catch{return true;}};
  const inspect=async(blob)=>{check(await validateDictationWav(blob));const v=new DataView(await blob.arrayBuffer());check(v.getUint16(22,true)===1);canonicalWavs.push(btoa(String.fromCharCode(...new Uint8Array(await blob.arrayBuffer()))));return {bytes:blob.size,frames:v.getUint32(40,true)/2,rate:v.getUint32(24,true)};};
  await run('WebM/Opus complete synthetic fixture',async()=>inspect(await normalizeRecording(fixture('webmOpus','audio/webm;codecs=opus'))));
+ await run('unknown-sized WebM Cluster preserves decoded PCM through existing converter',async()=>{
+  const streaming=await normalizeRecording(fixture('unknownClusterWebmOpus','audio/webm;codecs=opus'));
+  const finite=await normalizeRecording(fixture('webmOpus','audio/webm;codecs=opus'));
+  const a=new Uint8Array(await streaming.arrayBuffer()),b=new Uint8Array(await finite.arrayBuffer());
+  check(a.length===b.length&&a.every((value,index)=>value===b[index]));return inspect(streaming);
+ });
  await run('MP4/AAC trailing-moov complete synthetic fixture',async()=>{
   const input=fixture('trailingMoov','audio/mp4;codecs=mp4a.40.2'),bytes=new Uint8Array(await input.arrayBuffer());
   const text=String.fromCharCode(...bytes);check(text.indexOf('moov')>text.indexOf('mdat'));

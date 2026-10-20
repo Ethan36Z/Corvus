@@ -206,7 +206,7 @@ test('stale cancelled recorder callbacks cannot release a subsequent recording',
 
 test('supported encoded container reaches same composer contract after mocked normalization',async()=>{
  const fixtures=JSON.parse(await readFile(new URL('fixtures/stt-r4-synthetic.json',import.meta.url),'utf8'));
- for(const [key,mime] of [['webmOpus','audio/webm;codecs=opus'],['trailingMoov','audio/mp4;codecs=mp4a.40.2']]){
+ for(const [key,mime] of [['webmOpus','audio/webm;codecs=opus'],['unknownClusterWebmOpus','audio/webm;codecs=opus'],['trailingMoov','audio/mp4;codecs=mp4a.40.2']]){
   const e=environment({mime,chunk:new Blob([Buffer.from(fixtures[key],'base64')],{type:mime}),decoder:async()=>({sampleRate:16000,length:160,numberOfChannels:1,getChannelData:()=>new Float32Array(160)})});
   await e.start();await e.component.confirmRecording();await e.finish();assert.equal(e.calls.length,1);
   assert.equal(e.calls[0][1].type,'audio/wav');assert.equal(await e.component.validateDictationWav(e.calls[0][1]),true);
