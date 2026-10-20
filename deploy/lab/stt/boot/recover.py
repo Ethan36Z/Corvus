@@ -3,7 +3,8 @@
 Private runtime snapshots/configuration live outside Git. prepare is read-only
 with respect to runtime. material provisioning is a separate local sudo step.
 """
-import copy, hashlib, http.client, importlib.util, io, json, os
+import copy, hashlib, importlib.util, io, json, os
+from http.client import HTTPConnection
 from pathlib import Path
 import subprocess, sys, time, uuid, wave
 os.umask(0o077)
@@ -138,7 +139,7 @@ def restore():
  unchanged_others(old);write('restored.json',{'restored':True,'whisper_not_restarted':True});print('WEBUI_BRIDGE_RESTORED: persistent binds and Docker unless-stopped; Whisper process unchanged')
 
 def http(path,body=None,headers=None):
- c=http.client.HTTPConnection('127.0.0.1',3003,timeout=45)
+ c=HTTPConnection('127.0.0.1',3003,timeout=45)
  try:
   c.request('POST' if body is not None else 'GET',path,body,headers or {});r=c.getresponse();data=r.read(65537);assert len(data)<=65536 or path=='/health';return r.status,dict(r.getheaders()),data
  finally:c.close()
