@@ -109,6 +109,10 @@ def validate_chat(db, user_id, chat_id, value, *, transfer=False):
     messages = body.get("history", {}).get("messages", {})
     for message in messages.values():
         if message.get("corvus_image_pending") or references(message):
+            if (message.get("models") != ["corvus_pipe"]
+                    or any(messages.get(child, {}).get("model") != "corvus_pipe"
+                           for child in message.get("childrenIds", []))):
+                raise ValueError("Image turns require the Corvus Pipe")
             if any(messages.get(child, {}).get("corvus_arena_requested") for child in message.get("childrenIds", [])):
                 raise ValueError("Images cannot be combined with Arena")
     found = references(value)
@@ -290,7 +294,8 @@ def claim(user_id, chat_id, assistant_id, image_ref):
             raise ValueError("Invalid image turn")
         file = db.get(File, image_ref.get("corvus_ref"))
         _, message = authority(db, file, user_id)
-        if (file.meta["chat_id"] != chat_id or assistant.get("parentId") != message["id"]
+        if (assistant.get("model") != "corvus_pipe" or file.meta["chat_id"] != chat_id
+                or assistant.get("parentId") != message["id"]
                 or image_ref != ref(file) or file.meta["state"] != "READY"):
             raise ValueError("Image turn cannot be dispatched again; reconcile its status")
         file.meta = {**file.meta, "state": "CLAIMED"}

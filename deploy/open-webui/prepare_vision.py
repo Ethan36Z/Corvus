@@ -138,7 +138,7 @@ def patch_chat(source):
     source = once(source, '\t\tprompt = \'\';\n\n\t\t// Reset chat input textarea', '''        let visionDraft: Blob | null = null;
         try { visionDraft = imageDraft(files, arenaForTurn); }
         catch { toast.error($i18n.t('Use one PNG/JPEG image without Arena.')); return; }
-        if (visionDraft && (!userPrompt.trim() || $temporaryChatEnabled || selectedModels.length !== 1 || selectedModels[0] !== 'corvus_pipe' || selectedToolIds.length || webSearchEnabled || imageGenerationEnabled || codeInterpreterEnabled)) {
+        if (visionDraft && (!userPrompt.trim() || $temporaryChatEnabled || selectedModels.length !== 1 || selectedModels[0] !== 'corvus_pipe' || (atSelectedModel && atSelectedModel.id !== 'corvus_pipe') || selectedToolIds.length || webSearchEnabled || imageGenerationEnabled || codeInterpreterEnabled)) {
             toast.error($i18n.t('Select Corvus for image input.')); return;
         }
         prompt = '';

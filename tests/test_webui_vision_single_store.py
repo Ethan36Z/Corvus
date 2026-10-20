@@ -74,8 +74,8 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
         self.mid, self.aid = str(uuid4()), str(uuid4())
-        self.message = {'id': self.mid, 'role': 'user', 'content': 'Describe synthetic image', 'files': [], 'corvus_image_pending': True, 'childrenIds': [self.aid]}
-        self.assistant = {'id': self.aid, 'role': 'assistant', 'content': '', 'parentId': self.mid, 'childrenIds': []}
+        self.message = {'id': self.mid, 'role': 'user', 'content': 'Describe synthetic image', 'models': ['corvus_pipe'], 'files': [], 'corvus_image_pending': True, 'childrenIds': [self.aid]}
+        self.assistant = {'id': self.aid, 'role': 'assistant', 'content': '', 'model': 'corvus_pipe', 'parentId': self.mid, 'childrenIds': []}
         self.chat = chats.Chats.insert_new_chat('alice', chats.ChatForm(chat={'history': {'messages': {self.mid:self.message,self.aid:self.assistant},'currentId': self.aid}, 'messages': [self.message,self.assistant]}))
         self.cid = self.chat.id
         self.calls = []
@@ -244,6 +244,17 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
                 __user__={'id':'alice'},__chat_id__=self.cid,__metadata__={'message_id':self.aid,'corvus_arena':True})
         self.assertEqual(reply,'Text Arena reply');self.assertEqual(calls[0][0],'http://127.0.0.1:18096/api/arena/chat')
         self.assertNotIn('attachment_id',calls[0][1])
+
+    async def test_wrong_model_pending_image_rejected_before_write(self):
+        for field in ('models','child_model'):
+            state=json.loads(json.dumps(self.chat.chat))
+            if field=='models':state['history']['messages'][self.mid]['models']=['another-model']
+            else:state['history']['messages'][self.aid]['model']='another-model'
+            state['messages']=list(state['history']['messages'].values())
+            self.assertIsNone(chats.Chats.update_chat_by_id(self.cid,state))
+            with self.assertRaises(ValueError):chats.Chats.insert_new_chat('alice',chats.ChatForm(chat=state))
+        self.assertEqual(self.calls,[])
+        with get_db() as db:self.assertEqual(db.query(files.File).count(),0)
 
     async def test_generic_multipart_blocked_before_parser_or_storage(self):
         import ast

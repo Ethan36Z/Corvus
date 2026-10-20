@@ -58,7 +58,7 @@ for(const statement of tree.statements){
 assert.equal(declarations.length,2);
 const executable=ts.transpileModule(declarations.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 let sequence=0;
-async function turn({arena=false,fail=false,cancel=false}={}){
+async function turn({arena=false,fail=false,cancel=false,otherModel=false}={}){
  const events=[],errors=[];
  const sandbox={ imageDraft,persistentDraft,Blob,AbortController,setTimeout,clearTimeout,clearInterval,
   imageController:null,files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
@@ -66,7 +66,7 @@ async function turn({arena=false,fail=false,cancel=false}={}){
   webSearchEnabled:false,imageGenerationEnabled:false,codeInterpreterEnabled:false,
   $temporaryChatEnabled:false,$models:[{id:'corvus_pipe',info:{meta:{capabilities:{vision:true}}}}],
   $settings:{richTextInput:true,memory:false},$config:{},$chatId:'',$currentChatPage:1,
-  atSelectedModel:undefined,autoScroll:false,localStorage:{token:'synthetic'},
+  atSelectedModel:otherModel?{id:'another-model'}:undefined,autoScroll:false,localStorage:{token:'synthetic'},
   document:{getElementById:()=>null},console:{log:()=>{}},toast:{error:(text)=>errors.push(text)},$i18n:{t:(text)=>text},
   uuidv4:()=>`00000000-0000-0000-0000-${String(++sequence).padStart(12,'0')}`,
   tick:async()=>{},saveSessionSelectedModels:()=>{},scrollToBottom:()=>{},getChatEventEmitter:async()=>null,
@@ -99,3 +99,6 @@ console.log('Actual native submit/send: reference-only initial/save queues, uplo
 
 const cancelled=await turn({cancel:true});assert.deepEqual(cancelled.events,['create','save','upload']);assert.ok(Object.values(cancelled.history.messages).filter(m=>m.role==='assistant').every(m=>m.done));
 console.log('Native upload cancellation releases composer and never dispatches a late result.');
+
+assert.deepEqual((await turn({otherModel:true})).events,[]);
+console.log('Native @model override rejects image turn before any save/upload.');
