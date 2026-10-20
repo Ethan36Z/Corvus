@@ -21,7 +21,7 @@ from open_webui.models.functions import Functions
 from open_webui.utils.auth import get_verified_user
 
 PROVIDER = "corvus-vision-v1"
-LIMIT = 6 * 1024 * 1024
+LIMIT = 20 * 1024 * 1024
 BASE = "http://127.0.0.1:18096"
 router = APIRouter()
 

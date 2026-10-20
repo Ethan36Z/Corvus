@@ -388,7 +388,7 @@ async def post_attachment(
         data = bytearray()
         async def consume_image():
             async for chunk in request.stream():
-                if len(data) + len(chunk) > 6 * 1024 * 1024:
+                if len(data) + len(chunk) > 20 * 1024 * 1024:
                     raise HTTPException(413, "Image is too large")
                 data.extend(chunk)
         try:
@@ -401,7 +401,7 @@ async def post_attachment(
         try:
             attachment = store_attachment_bytes(bytes(data), original_filename=filename,
                 media_type=mime, retention_class=ATTACHMENT_DEFAULT_RETENTION,
-                max_bytes=6 * 1024 * 1024, operation_key=operation_key)
+                max_bytes=20 * 1024 * 1024, operation_key=operation_key)
         except ValueError:
             raise HTTPException(409, "Image operation conflict") from None
         return {"attachment_id": attachment["id"], "media_type": attachment["media_type"],

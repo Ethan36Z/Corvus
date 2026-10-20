@@ -123,8 +123,8 @@ def patch_composer(source):
     source = once(source, "['image/gif', 'image/webp', 'image/jpeg', 'image/png', 'image/avif']", "['image/jpeg', 'image/png']")
     source = once(source, '\t\t\t\tuploadFileHandler(file);', '''                toast.error($i18n.t('Use one PNG/JPEG image.'));''')
     source = once(source, "\t\tinputFiles.forEach((file) => {", """        inputFiles.forEach((file) => {
-            if (file.size > 6 * 1024 * 1024 || inputFiles.length !== 1 || files.some((item) => item.type === 'image')) {
-                toast.error($i18n.t('Use one PNG/JPEG image up to 6 MiB.')); return;
+            if (file.size > 20 * 1024 * 1024 || inputFiles.length !== 1 || files.some((item) => item.type === 'image')) {
+                toast.error($i18n.t('Use one PNG/JPEG image up to 20 MiB.')); return;
             }""")
     # Paste uses the SAME native selection handler and bounds, not another uploader.
     import re
@@ -133,11 +133,19 @@ def patch_composer(source):
     if count != 2:
         raise ValueError('Pinned native paste paths mismatch')
     # Enforce after async FileReader as well as at selection (racing selections).
-    source = once(source, '\t\t\t\t\tlet imageUrl = event.target.result;', '''                    if (files.some((item) => item.type === 'image') || file.size > 6 * 1024 * 1024) {
-                        toast.error($i18n.t('Use one PNG/JPEG image up to 6 MiB.'));
+    source = once(source, '\t\t\t\t\tlet imageUrl = event.target.result;', '''                    if (files.some((item) => item.type === 'image') || file.size > 20 * 1024 * 1024) {
+                        toast.error($i18n.t('Use one PNG/JPEG image up to 20 MiB.'));
                         return;
                     }
                     let imageUrl = event.target.result;''')
+    # Single-store Vision preserves the original selected bytes regardless of
+    # the native optional compression preference.
+    import re
+    source, count = re.subn(
+        r"\n\t{5}if \(\$settings\?\.imageCompression \?\? false\) \{.*?\n\t{5}\}",
+        "", source, flags=re.S)
+    if count != 1:
+        raise ValueError('Pinned native compression anchor mismatch')
     return source
 
 

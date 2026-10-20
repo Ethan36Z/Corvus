@@ -1,5 +1,5 @@
 /** Native composer helpers: bytes stay transient; saved state contains references only. */
-export const IMAGE_LIMIT = 6 * 1024 * 1024;
+export const IMAGE_LIMIT = 20 * 1024 * 1024;
 export function persistentDraft(input: any) {
 	return { ...input, files: (input.files ?? []).filter((file: any) => file.type !== 'image') };
 }

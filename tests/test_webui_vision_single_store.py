@@ -134,6 +134,21 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError): chats.Chats.insert_new_chat('bob',chats.ChatForm(chat=self.chat.chat))
         with self.assertRaises(ValueError): chats.Chats.import_chat('alice',chats.ChatImportForm(chat=self.chat.chat))
         with self.assertRaises(ValueError): chats.Chats.insert_shared_chat_by_chat_id(self.cid)
+    async def test_twenty_mib_upload_and_display_preserves_bytes(self):
+        import hashlib
+        self.assertEqual(v.LIMIT, 20*1024*1024)
+        raw=PNG+b'x'*(v.LIMIT-len(PNG))
+        async def upstream(method,path,*,body=None,headers=None,limit=v.LIMIT):
+            if path.endswith('/content'): return raw, 'image/png'
+            self.assertEqual(body,raw)
+            return json.dumps({'attachment_id':'a'*32,'media_type':'image/png','size_bytes':len(raw),'blob_status':'PRESENT','sha256':hashlib.sha256(raw).hexdigest()}).encode(),'application/json'
+        v.upstream=upstream
+        response=await self.upload(content=raw)
+        self.assertEqual(response.status_code,200)
+        self.save_ref(response.json())
+        displayed=await v.content(response.json()['corvus_ref'],types.SimpleNamespace(id='alice'))
+        self.assertEqual(displayed.body,raw)
+
     async def test_limits_format_arena_before_writes(self):
         for kwargs,code in [({'arena':'true'},400),({'content':b'bad'},400),({'content':b''},400),({'mime':'image/gif'},400),({'content':PNG+b'x'*v.LIMIT},413)]:
             self.assertEqual((await self.upload(**kwargs)).status_code,code)

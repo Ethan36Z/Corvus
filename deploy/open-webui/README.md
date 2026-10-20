@@ -474,7 +474,7 @@ all generated files together, the generated Pipe, and the two A3 source changes,
 then narrowly enable the existing Corvus model's native image permissions.
 Targets remain literal Lab loopback port 18096, with no request URL or fallback.
 
-One PNG/JPEG up to 6 MiB plus nonempty accompanying text is supported. Native
+One PNG/JPEG up to 20 MiB plus nonempty accompanying text is supported. Native
 selection, preview, removal and rendering are reused. Draft image bytes are
 memory-only; native chat/draft serialization saves references or text. Generic
 file uploads are rejected **before multipart parsing** in this prepared Lab
@@ -511,3 +511,21 @@ Focused offline tests: `tests/test_attachment_operation.py` (temporary SQLite),
 mocked native users and A3 HTTP), and `tests/test_webui_vision_frontend.mjs`
 (existing Vite/Svelte dependencies; `VISION_PATCHED` and `VISION_NODE_MODULES`).
 No new packages, inference, real image, service data or replacement image required.
+
+
+### Lab 20 MiB capacity update
+
+The Lab single-store PNG/JPEG raw-byte boundary is 20 MiB at selection,
+WebUI adapter, A3 operation upload and A3 Vision loading. The native optional
+image-resize preference is bypassed on this image path to retain original bytes.
+No gateway, STT, TTS, Pipe or Arena change is required.
+
+`package_vision20.py SOURCE_BUILD NEW_OUTPUT` can incrementally package the
+exact retained Vision frontend (asset SHA checked). It updates only the three
+compiled size constants and optional image-resize branch, plus source contents
+and import URLs. Affected assets and their import parents get fresh `-vision20`
+URLs and the frontend version changes; unchanged feature bundles remain byte
+identical. Edited source-map mappings are omitted rather than advertised as
+accurate generated columns. Use only atop the retained Vision image, alongside
+`vision.py`; do not apply to another source/image version. This avoids dependency
+downloads after volatile build directories were lost on reboot.
