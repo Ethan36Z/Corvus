@@ -1,0 +1,42 @@
+[Unit]
+Description=Corvus Lab API (OW2e-A)
+After=network-online.target docker.service
+Wants=network-online.target
+Conflicts=corvus-ow2a-acceptance.service
+
+[Service]
+Type=simple
+User=ethan
+Group=ethan
+WorkingDirectory=/home/ethan/srv/apps/corvus-lab
+Environment=HOME=/home/ethan
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=CORVUS_DATA_DIR=/home/ethan/srv/data/corvus/lab
+Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
+Environment=CORVUS_HINDSIGHT_ASYNC_RETAIN_ENABLED=true
+Environment=CORVUS_FOREGROUND_REGISTRY_DIR=/run/corvus-foreground
+Environment=CORVUS_FOREGROUND_REGISTRY_PUBLISHER=lab
+Environment=CORVUS_FOREGROUND_REGISTRY_EXPECTED_PUBLISHERS=lab
+Environment=HF_HOME=/home/ethan/srv/data/corvus/lab/hf-cache
+Environment=HF_MODULES_CACHE=/home/ethan/srv/data/corvus/lab/hf-cache/modules
+Environment=XDG_CACHE_HOME=/home/ethan/srv/data/corvus/lab/cache
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+Environment=OMP_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+ExecStartPre=/home/ethan/srv/apps/corvus-lab/.venv/bin/python -B -c "import os,sys; from pathlib import Path; assert Path.cwd() == Path('/home/ethan/srv/apps/corvus-lab'); assert sys.prefix == '/home/ethan/srv/apps/corvus-lab/.venv'; assert os.environ['CORVUS_DATA_DIR'] == '/home/ethan/srv/data/corvus/lab'; assert Path(os.environ['CORVUS_DATA_DIR']).resolve() == Path('/home/ethan/srv/data/corvus/lab')"
+ExecStart=/home/ethan/srv/apps/corvus-lab/.venv/bin/python -B -m uvicorn app.playground_api:app --host 127.0.0.1 --port 18096 --workers 1
+Restart=no
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadOnlyPaths=/home/ethan/srv/apps/corvus-lab /home/ethan/srv/data/corvus/lab/hf-cache /home/ethan/srv/data/corvus/lab/cache
+ReadWritePaths=/home/ethan/srv/data/corvus/lab
+ReadWritePaths=/run/corvus-foreground
+InaccessiblePaths=/home/ethan/srv/apps/small-vram-companion /home/ethan/srv/data/corvus/private /home/ethan/srv/data/corvus/demo /home/ethan/srv/data/corvus/ow2a-acceptance
+
+[Install]
+WantedBy=multi-user.target

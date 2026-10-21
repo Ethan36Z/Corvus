@@ -1,0 +1,2 @@
+# Existing Lab dependency used by commit 98ae271; captured, not installed by closure.
+Pillow==12.3.0
