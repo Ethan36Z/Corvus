@@ -110,6 +110,19 @@ class Contracts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code,200,response.text)
         reference=response.json();self.save_ref(reference)
         return reference
+    async def test_image_get_requires_saved_reference_before_first_render(self):
+        response=await self.upload()
+        self.assertEqual(response.status_code,200)
+        reference=response.json()
+        with self.assertRaises(HTTPException) as caught:
+            await v.content(reference['corvus_ref'],types.SimpleNamespace(id='alice'))
+        self.assertEqual(caught.exception.status_code,404)
+        self.save_ref(reference)
+        displayed=await v.content(reference['corvus_ref'],types.SimpleNamespace(id='alice'))
+        self.assertEqual(displayed.body,PNG)
+        reloaded=chats.Chats.get_chat_by_id(self.cid)
+        self.assertEqual(reloaded.chat['history']['messages'][self.mid]['files'],[reference])
+
     async def test_reference_only_upload_display_reload_and_claim(self):
         r = await self.ready()
         result = await v.content(r['corvus_ref'],types.SimpleNamespace(id='alice'))

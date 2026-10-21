@@ -224,8 +224,44 @@ def patch_chat(source):
     source = once(source, "\t$: if (chatIdProp) {", "\t$: if (chatIdProp) {\n        cancelImageUploadForChat(chatIdProp);")
     # Discard legacy raw drafts on restoration, without writing or migrating them.
     source = source.replace('files = input.files;', "files = (input.files ?? []).filter((file) => file.type !== 'image');")
-    return source
+    return patch_image_reference_order(source)
 
+
+
+
+def patch_image_reference_order(source):
+    # Default calls keep Arena's capture-of-current-history semantics. Only the
+    # upload's reference commit passes a staged snapshot, before it is rendered.
+    source = once(source, 'const persistChatHistory = (token, id, body) => {',
+        'const persistChatHistory = (token, id, body, snapshotHistory = history) => {')
+    source = once(source, '...body, history,\n\t\t\tmessages: createMessagesList(history, history.currentId)',
+        '...body, history: snapshotHistory,\n\t\t\tmessages: createMessagesList(snapshotHistory, snapshotHistory.currentId)')
+    source = once(source, 'const saveChatHandler = async (_chatId, history) => {',
+        'const saveChatHandler = async (_chatId, history, snapshotHistory = undefined) => {')
+    start = source.index('const saveChatHandler = async ')
+    source = source[:start] + once(source[start:], 'files: chatFiles\n\t\t\t\t});',
+        'files: chatFiles\n\t\t\t\t}, snapshotHistory);')
+    source = once(source, """                history.messages[parentId].files = [reference];
+                delete history.messages[parentId].corvus_image_pending;
+                _history = JSON.parse(JSON.stringify(history));
+                await saveChatHandler(_chatId, _history);""", """                // Commit the authorized reference before the native Image mounts.
+                _history = JSON.parse(JSON.stringify(history));
+                _history.messages[parentId].files = [reference];
+                delete _history.messages[parentId].corvus_image_pending;
+                await saveChatHandler(_chatId, _history, _history);""")
+    source = once(source, """                    history = history;
+                    return;
+                }
+            } catch {""", """                    history = history;
+                    return;
+                }
+                // Preserve concurrent live messages; publish only this user turn.
+                history.messages[parentId] = { ...history.messages[parentId], files: [reference] };
+                delete history.messages[parentId].corvus_image_pending;
+                history = history;
+                _history = JSON.parse(JSON.stringify(history));
+            } catch {""")
+    return source
 
 
 def patch_pipe(source):

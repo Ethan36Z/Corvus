@@ -63,8 +63,8 @@ for(const statement of tree.statements){
 assert.equal(declarations.length,3);
 const executable=ts.transpileModule(declarations.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 let sequence=0;
-async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false}={}){
- const events=[],errors=[];
+async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false,stateSync=false,nativeOverride=null,referenceSaveFail=false}={}){
+ const events=[],errors=[];let stored=null;const display=[];let displayedUrl=null;
  const sandbox={ imageDraft,persistentDraft,Blob,AbortController,setTimeout,clearTimeout,clearInterval,
   imageController:null,imageUploadChatId:'',files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
   arenaEnabled:arena,arenaAvailable:true,selectedModels:['corvus_pipe'],selectedToolIds:[],
@@ -79,8 +79,17 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
   createMessagesList:(h,id)=>{const out=[];while(id){const m=h.messages[id];if(!m)break;out.unshift(m);id=m.parentId;}return out;},
  };
  if(timeout)sandbox.setTimeout=(callback,ms)=>{assert.equal(ms,30000);queueMicrotask(callback);return 0;};
+ const flushNativeImage=()=>{
+  const user=Object.values(sandbox.history.messages).find(m=>m.role==='user');
+  const ref=user?.files?.[0];
+  if(ref && ref.url!==displayedUrl){
+   displayedUrl=ref.url;
+   // Same membership gate as the existing authenticated content endpoint.
+   display.push(stored?.messages?.[user.id]?.files?.[0]?.corvus_ref===ref.corvus_ref?200:404);
+  }
+ };
  const save=(kind,h)=>{assert.ok(!JSON.stringify(h).includes('data:image'));events.push(kind);};
- sandbox.initChatHandler=async(h)=>{save('create',h);sandbox.$chatId='00000000-0000-0000-0000-000000000099';return sandbox.$chatId;};
+ sandbox.initChatHandler=async(h)=>{save('create',h);stored=JSON.parse(JSON.stringify(h));sandbox.$chatId='00000000-0000-0000-0000-000000000099';return sandbox.$chatId;};
  sandbox.saveChatHandler=async(id,h)=>save('save',h);
  sandbox.uploadImage=async(token,chat,message,b,signal)=>{
   events.push('upload');assert.equal(b.type,'image/png');assert.deepEqual(new Uint8Array(await b.arrayBuffer()),png);
@@ -93,12 +102,31 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
   return {type:'image',corvus_ref:'00000000-0000-0000-0000-000000000001',url:'/api/v1/files/00000000-0000-0000-0000-000000000001/content'};
  };
  sandbox.sendPromptSocket=async(h,model,assistant)=>{
+  if(stateSync)flushNativeImage();
   const parent=h.messages[h.messages[assistant].parentId];
   assert.equal(parent.files[0].type,'image');assert.ok(parent.files[0].corvus_ref);
   assert.equal(parent.content,'Describe image');events.push('dispatch');
  };
- vm.runInNewContext(executable+'\nglobalThis.submitNative = submitPrompt;globalThis.chatChanged = cancelImageUploadForChat;',sandbox);
- await sandbox.submitNative('Describe image');return {events,errors,history:sandbox.history};
+ let runCode=executable;
+ if(stateSync){
+  const source=nativeOverride??native,tree=ts.createSourceFile('State.ts',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS),nodes=[];
+  for(const statement of tree.statements)if(ts.isVariableStatement(statement))for(const d of statement.declarationList.declarations){
+   if(['submitPrompt','sendPrompt','cancelImageUploadForChat','persistChatHistory','saveChatHandler'].includes(d.name.getText(tree)))nodes.push('const '+d.getText(tree)+';');
+  }
+  assert.equal(nodes.length,5);
+  runCode=ts.transpileModule(nodes.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
+  Object.assign(sandbox,{params:{},chat:null,persistedArenaTrialIds:new Set(),arenaTrialIdsFromSavedHistory:()=>new Set(),arenaSaves:{save:async(id,callback)=>callback()}});
+  sandbox.updateChatById=async(token,id,body)=>{
+   events.push('save');flushNativeImage();await Promise.resolve();flushNativeImage();
+   assert.ok(!JSON.stringify(body).includes('data:image'));
+   if(referenceSaveFail && Object.values(body.history.messages).some(m=>m.files?.length))throw Error('Synthetic reference commit failed');
+   stored=JSON.parse(JSON.stringify(body.history));return {id,chat:{history:stored}};
+  };
+ }
+ vm.runInNewContext(runCode+'\nglobalThis.submitNative = submitPrompt;globalThis.chatChanged = cancelImageUploadForChat;'+(stateSync?'globalThis.persistForTest=persistChatHistory;':''),sandbox);
+ await sandbox.submitNative('Describe image');
+ if(stateSync)flushNativeImage();
+ return {events,errors,history:sandbox.history,stored,display,sandbox,getStored:()=>stored};
 }
 const success=await turn();assert.deepEqual(success.events,['create','save','upload','save','dispatch']);assert.deepEqual(success.errors,[]);
 assert.deepEqual((await turn({arena:true})).events,[]);
@@ -144,3 +172,28 @@ for (const settings of [{navigate:true},{timeout:true}]) {
  assert.ok(Object.values(result.history.messages).filter(m=>m.role==='assistant').every(m=>m.done));
 }
 console.log('Native functions: same-chat upload completes; navigation/cancellation/timeout signal prevents late save/dispatch, without retries.');
+
+if(process.env.VISION_STATE_BEFORE){
+ const before=readFileSync(process.env.VISION_STATE_BEFORE,'utf8').match(/<script lang="ts">([\s\S]*?)<\/script>/)[1];
+ const raced=await turn({stateSync:true,nativeOverride:before});
+ assert.deepEqual(raced.display,[404],'Original native order must reproduce image GET before saved membership');
+ const fixed=await turn({stateSync:true});
+ assert.deepEqual(fixed.events,['create','save','upload','save','dispatch']);
+ assert.deepEqual(fixed.display,[200],'First native image mount must see committed reference');
+ const user=Object.values(fixed.history.messages).find(m=>m.role==='user');
+ assert.equal(JSON.stringify(fixed.stored.messages[user.id].files),JSON.stringify(user.files));
+ assert.ok(!fixed.stored.messages[user.id].corvus_image_pending);
+ // Reopening the same saved history must resolve exactly the displayed URL.
+ assert.equal(fixed.stored.messages[user.id].files[0].url,user.files[0].url);
+ const failed=await turn({stateSync:true,referenceSaveFail:true});
+ assert.deepEqual(failed.events,['create','save','upload','save']);assert.deepEqual(failed.display,[]);
+ assert.ok(Object.values(failed.history.messages).filter(m=>m.role==='user').every(m=>!m.files?.length));
+ const cancelled=await turn({stateSync:true,navigate:true});assert.deepEqual(cancelled.display,[]);assert.ok(!cancelled.events.includes('dispatch'));
+ // Preserve the existing Arena/default save behavior: newest live state wins
+ // over an older body snapshot unless this reference commit explicitly opts in.
+ const stale=JSON.parse(JSON.stringify(fixed.history));
+ fixed.history.messages[fixed.history.currentId].content='latest synthetic event';
+ await fixed.sandbox.persistForTest('synthetic',fixed.sandbox.$chatId,{history:stale});
+ assert.equal(fixed.getStored().messages[fixed.history.currentId].content,'latest synthetic event');
+ console.log('Actual native save functions reproduce pre-commit 404; fixed initial display/reload references agree; save failure/navigation never render or dispatch; default current-history capture preserved.');
+}

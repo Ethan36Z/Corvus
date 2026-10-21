@@ -34,6 +34,22 @@ def package(source, output):
     for before, after in replacements:
         assert js.count(before) == 1, 'Pinned controller lifecycle anchor mismatch'
         js = js.replace(before, after, 1)
+    # Native Image may GET as soon as files changes; membership must be durable
+    # first. Keep the default capture-current-history semantics for other calls.
+    replacements = [
+        ('G=(V,le,de)=>{', 'G=(V,le,de,snapshotHistory=J)=>{'),
+        ('history:J,messages:Zn(J,J.currentId)', 'history:snapshotHistory,messages:Zn(snapshotHistory,snapshotHistory.currentId)'),
+        ('Rt=async(V,le)=>{', 'Rt=async(V,le,snapshotHistory=void 0)=>{'),
+        ('await G(localStorage.token,V,{models:Y,history:le,messages:Zn(le,le.currentId),params:ut,files:wt})',
+         'await G(localStorage.token,V,{models:Y,history:le,messages:Zn(le,le.currentId),params:ut,files:wt},snapshotHistory)'),
+        ('if(t(22,J.messages[de].files=[vt],J),delete J.messages[de].corvus_image_pending,V=JSON.parse(JSON.stringify(J)),await Rt(st,V),Lt.signal.aborted||s!==st)',
+         'V=JSON.parse(JSON.stringify(J)),V.messages[de].files=[vt],delete V.messages[de].corvus_image_pending;if(await Rt(st,V,V),Lt.signal.aborted||s!==st)'),
+        ('t(22,J);return}}catch{rt.error(l.t("Image upload not confirmed.',
+         't(22,J);return}t(22,J.messages[de]={...J.messages[de],files:[vt]},J);delete J.messages[de].corvus_image_pending;t(22,J);V=JSON.parse(JSON.stringify(J))}catch{rt.error(l.t("Image upload not confirmed.'),
+    ]
+    for before, after in replacements:
+        assert js.count(before) == 1, 'Pinned image reference commit anchor mismatch'
+        js = js.replace(before, after, 1)
     # Find all import parents before renaming; no stale immutable URL may point
     # at changed code. Names are versioned rather than claiming Vite hashes.
     scripts = {str(p.relative_to(source)):p.read_text() for p in source.rglob('*.js')}
@@ -43,7 +59,7 @@ def package(source, output):
         new = {p for p, text in scripts.items() if any(n in text for n in names)}
         if new <= affected: break
         affected |= new
-    names = {pathlib.Path(p).name:pathlib.Path(p).stem+'-vision20-abort.js' for p in affected}
+    names = {pathlib.Path(p).name:pathlib.Path(p).stem+'-vision20-state.js' for p in affected}
     assert len(names) == len(affected)
     shutil.copytree(source, output)
     changed = []
@@ -66,7 +82,8 @@ def package(source, output):
                     imageUploadChatId = '';
                 }""", 1)
                     content = content.replace('$: if (chatIdProp) {\n        imageController?.abort();', '$: if (chatIdProp) {\n        cancelImageUploadForChat(chatIdProp);', 1)
-                    d['sourcesContent'][i] = content
+                    from prepare_vision import patch_image_reference_order
+                    d['sourcesContent'][i] = patch_image_reference_order(content)
                 elif name.endswith('/corvus-vision.ts'):
                     assert content.count('6 * 1024 * 1024') == 1
                     d['sourcesContent'][i] = content.replace('6 * 1024 * 1024','20 * 1024 * 1024')
@@ -81,7 +98,7 @@ def package(source, output):
             d['mappings'] = ''; text = json.dumps(d, separators=(',',':'))
         for old,new in names.items(): text = text.replace(old,new)
         if rel == '_app/version.json':
-            v = json.loads(text);v['version'] += '-vision20-abort';text = json.dumps(v)
+            v = json.loads(text);v['version'] += '-vision20-state';text = json.dumps(v)
         if text != p.read_text(): p.write_text(text);changed.append(rel)
     for rel in affected:
         p = output/rel;new = p.with_name(names[p.name]);p.rename(new)

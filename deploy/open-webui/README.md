@@ -547,3 +547,22 @@ and generated source contents to execute the real submit/send functions without
 requiring another Svelte build. `VISION_COMPILED_BEFORE`/`VISION_COMPILED_AFTER`
 add an actual dirty-mask self-abort reproduction and correction check. This is
 mocked offline evidence, not real-browser or deployed-fix acceptance.
+
+
+### Offline reference display ordering repair
+
+Commit an image reference through the existing save queue before publishing it to
+native `history.messages`/Image. The authenticated content endpoint deliberately
+returns 404 until saved message membership contains that reference. Rendering
+before that commit can leave the first image GET failed until a reload.
+
+Only this reference save supplies a staged snapshot to the existing persistence
+helper; default calls still capture the newest current history (including Arena
+safeguards). Failed/cancelled saves never render or dispatch; there is no upload
+or inference retry and no change to permissions, storage or reply confirmation.
+The updated incremental packager emits fresh `-vision20-state` assets. The
+existing frontend test accepts `VISION_STATE_BEFORE` to compare the old live/save
+order to the staged-reference order using mocked native saves. Actual browser
+thumbnail acceptance remains pending deployment and user verification. The
+reported transient unconfirmed reply lacks retained status/error evidence and
+is not attributed to this thumbnail race or hidden by this fix.
