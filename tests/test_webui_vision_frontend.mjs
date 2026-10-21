@@ -14,7 +14,10 @@ const helper = readFileSync(root + '/src/lib/utils/corvus-vision.ts', 'utf8');
 const js = ts.transpileModule(helper,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
 const context = { exports:{}, Uint8Array, Blob, atob, AbortController, fetch:undefined };
 vm.runInNewContext(js,context);
-const { imageDraft,persistentDraft,uploadImage } = context.exports;
+const { imageDraft,persistentDraft,uploadImage,createImagePreviews } = context.exports;
+function memoryWritable(value){
+ const listeners=new Set();return {set(next){value=next;for(const run of listeners)run(value);},subscribe(run){listeners.add(run);run(value);return ()=>listeners.delete(run);}};
+}
 const png = Uint8Array.from([137,80,78,71,13,10,26,10,1,2,3]);
 const draft = { type:'image',url:'data:image/png;base64,'+Buffer.from(png).toString('base64') };
 const large = Buffer.alloc(20*1024*1024); Buffer.from(png).copy(large);
@@ -35,11 +38,11 @@ context.fetch=async(url,options)=>{
  return {ok:true,json:async()=>({type:'image',corvus_ref:'00000000-0000-0000-0000-000000000001',url:'/api/v1/files/00000000-0000-0000-0000-000000000001/content'})};
 };
 await uploadImage('synthetic','chat','message',blob,new AbortController().signal);assert.equal(calls,1);
-if (!lifecycleOnly) for(const name of ['Chat.svelte','MessageInput.svelte']){
- const source=readFileSync(root+'/src/lib/components/chat/'+name,'utf8');
+if (!lifecycleOnly) for(const name of ['chat/Chat.svelte','chat/MessageInput.svelte','chat/Messages/UserMessage.svelte','common/Image.svelte']){
+ const source=readFileSync(root+'/src/lib/components/'+name,'utf8');
  const processed=await svelte.preprocess(source,vitePreprocess(),{filename:name});
  svelte.compile(processed.code,{filename:name,generate:'dom'});
- if(name==='Chat.svelte'){
+ if(name==='chat/Chat.svelte'){
   assert.ok(source.includes('JSON.stringify(persistentDraft(input))'));
   assert.ok(!source.includes("type: 'image_url'"));
   assert.ok(source.includes('const _files = visionDraft ? []'));
@@ -63,10 +66,10 @@ for(const statement of tree.statements){
 assert.equal(declarations.length,3);
 const executable=ts.transpileModule(declarations.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 let sequence=0;
-async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false,stateSync=false,nativeOverride=null,referenceSaveFail=false}={}){
- const events=[],errors=[];let stored=null;const display=[];let displayedUrl=null;
+async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false,stateSync=false,nativeOverride=null,referenceSaveFail=false,initialSaveFail=false,createFail=false}={}){
+ const events=[],errors=[];let previewState={};const imagePreviews=createImagePreviews(memoryWritable);imagePreviews.subscribe(v=>{previewState=v;});let stored=null;const display=[];let displayedUrl=null;
  const sandbox={ imageDraft,persistentDraft,Blob,AbortController,setTimeout,clearTimeout,clearInterval,
-  imageController:null,imageUploadChatId:'',files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
+  imagePreviews,imagePreviewChatId:'',imageController:null,imageUploadChatId:'',files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
   arenaEnabled:arena,arenaAvailable:true,selectedModels:['corvus_pipe'],selectedToolIds:[],
   webSearchEnabled:false,imageGenerationEnabled:false,codeInterpreterEnabled:false,
   $temporaryChatEnabled:false,$models:[{id:'corvus_pipe',info:{meta:{capabilities:{vision:true}}}}],
@@ -89,7 +92,7 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
   }
  };
  const save=(kind,h)=>{assert.ok(!JSON.stringify(h).includes('data:image'));events.push(kind);};
- sandbox.initChatHandler=async(h)=>{save('create',h);stored=JSON.parse(JSON.stringify(h));sandbox.$chatId='00000000-0000-0000-0000-000000000099';return sandbox.$chatId;};
+ sandbox.initChatHandler=async(h)=>{const user=Object.values(h.messages).find(m=>m.role==='user');if(!nativeOverride)assert.equal(previewState[user.id].url,draft.url,'Local preview must exist before initial chat save/network');assert.ok(!user.files?.length);save('create',h);if(createFail)throw Error('Synthetic chat creation failed');stored=JSON.parse(JSON.stringify(h));sandbox.$chatId='00000000-0000-0000-0000-000000000099';return sandbox.$chatId;};
  sandbox.saveChatHandler=async(id,h)=>save('save',h);
  sandbox.uploadImage=async(token,chat,message,b,signal)=>{
   events.push('upload');assert.equal(b.type,'image/png');assert.deepEqual(new Uint8Array(await b.arrayBuffer()),png);
@@ -119,6 +122,7 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
   sandbox.updateChatById=async(token,id,body)=>{
    events.push('save');flushNativeImage();await Promise.resolve();flushNativeImage();
    assert.ok(!JSON.stringify(body).includes('data:image'));
+   if(initialSaveFail)throw Error('Synthetic initial chat save failed');
    if(referenceSaveFail && Object.values(body.history.messages).some(m=>m.files?.length))throw Error('Synthetic reference commit failed');
    stored=JSON.parse(JSON.stringify(body.history));return {id,chat:{history:stored}};
   };
@@ -126,7 +130,7 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
  vm.runInNewContext(runCode+'\nglobalThis.submitNative = submitPrompt;globalThis.chatChanged = cancelImageUploadForChat;'+(stateSync?'globalThis.persistForTest=persistChatHistory;':''),sandbox);
  await sandbox.submitNative('Describe image');
  if(stateSync)flushNativeImage();
- return {events,errors,history:sandbox.history,stored,display,sandbox,getStored:()=>stored};
+ return {events,errors,history:sandbox.history,stored,display,sandbox,getStored:()=>stored,getPreviews:()=>previewState};
 }
 const success=await turn();assert.deepEqual(success.events,['create','save','upload','save','dispatch']);assert.deepEqual(success.errors,[]);
 assert.deepEqual((await turn({arena:true})).events,[]);
@@ -197,3 +201,51 @@ if(process.env.VISION_STATE_BEFORE){
  assert.equal(fixed.getStored().messages[fixed.history.currentId].content,'latest synthetic event');
  console.log('Actual native save functions reproduce pre-commit 404; fixed initial display/reload references agree; save failure/navigation never render or dispatch; default current-history capture preserved.');
 }
+
+// The new preview state stays outside every canonical history and draft save.
+const instant=await turn({stateSync:true});
+const user=Object.values(instant.history.messages).find(m=>m.role==='user');
+assert.equal(instant.getPreviews()[user.id].status,'saved');
+assert.equal(instant.getPreviews()[user.id].url,draft.url);
+assert.ok(!JSON.stringify(instant.stored).includes(draft.url));
+assert.ok(!JSON.stringify(persistentDraft({files:[draft],prompt:'text'})).includes(draft.url));
+assert.equal(instant.sandbox.imagePreviews.restore(user.id),false,'Saved/uploading is not a failed draft');
+instant.sandbox.imagePreviews.ready(user.id);assert.equal(instant.getPreviews()[user.id],undefined);
+for(const settings of [{createFail:true},{fail:true},{cancel:true},{stateSync:true,referenceSaveFail:true},{stateSync:true,initialSaveFail:true}]){
+ const failed=await turn(settings);const message=Object.values(failed.history.messages).find(m=>m.role==='user');
+ assert.equal(failed.getPreviews()[message.id].status,'failed');
+ assert.ok(!failed.events.includes('dispatch'));const before=[...failed.events];
+ failed.sandbox.prompt='Existing unsent text';assert.equal(failed.sandbox.imagePreviews.restore(message.id),false);
+ assert.equal(failed.sandbox.prompt,'Existing unsent text');failed.sandbox.prompt='';
+ assert.equal(failed.sandbox.imagePreviews.restore(message.id),true);
+ assert.equal(failed.sandbox.files[0].url,draft.url);assert.equal(failed.sandbox.prompt,'Describe image');
+ assert.deepEqual(failed.events,before,'Restore must not upload, save, send or infer');
+ failed.sandbox.imagePreviews.clear();assert.deepEqual(Object.keys(failed.getPreviews()),[]);
+}
+// Execute the actual native Image callback/derived state. No network or DOM
+// painting is claimed; the native template retains the loaded target node.
+const imageSource=readFileSync(root+'/src/lib/components/common/Image.svelte','utf8');
+const imageScript=imageSource.match(/<script lang="ts">([\s\S]*?)<\/script>/)[1];
+const imageTree=ts.createSourceFile('Image.ts',imageScript,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);
+let callback='',reactive=[];
+for(const statement of imageTree.statements){
+ if(ts.isVariableStatement(statement))for(const declaration of statement.declarationList.declarations)if(declaration.name.getText(imageTree)==='imageLoaded')callback='const '+declaration.getText(imageTree)+';';
+ if(ts.isLabeledStatement(statement))reactive.push(statement.statement.getText(imageTree));
+}
+assert.ok(callback);const events=[];
+const state={src:draft.url,previewSrc:draft.url,loadedSrc:'',_src:'',previewMode:false,showFallback:false,WEBUI_BASE_URL:'',URL,document:{baseURI:'https://lab-corvus.foxluma.com/'},dispatch:(...args)=>events.push(args)};
+vm.runInNewContext(ts.transpileModule(callback,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText+';globalThis.loaded=imageLoaded;',state);
+const flush=()=>{
+ for(const needle of ['_src =','if (previewSrc)','showFallback ='])vm.runInNewContext(reactive.find(x=>x.startsWith(needle)),state);
+};
+flush();assert.equal(state.previewMode,true);
+state.src='/api/v1/files/synthetic/content';flush();assert.equal(state.showFallback,true);
+state.loaded({currentTarget:{complete:true,naturalWidth:10,currentSrc:draft.url}});flush();assert.equal(state.showFallback,true,'Stale local load must not hide fallback');
+const target=state._src;
+state.loaded({currentTarget:{complete:true,naturalWidth:10,currentSrc:new URL(target,state.document.baseURI).href}});flush();assert.equal(state.showFallback,false);
+state.previewSrc='';flush();assert.equal(state.previewMode,true,'Clearing transient state must keep the loaded target template mounted');assert.equal(state._src,target);
+assert.ok(imageSource.includes('{#if previewMode}') && imageSource.includes("on:error={() => dispatch('displayError')}"));
+const userSource=readFileSync(root+'/src/lib/components/chat/Messages/UserMessage.svelte','utf8');
+assert.ok(userSource.includes("getContext('corvus-image-previews')"));assert.ok(userSource.includes('Restore to composer (does not send)'));
+assert.ok(userSource.includes('message.files?.some((file) => file.url === event.detail.src)'));
+console.log('Immediate memory preview exists before first save/network; no raw preview persistence; saved-reference sequence intact; explicit failure/manual restore makes zero calls; loaded-image handoff/stale-load protection verified (no browser paint/Svelte build claim).');

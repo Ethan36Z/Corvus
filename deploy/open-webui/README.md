@@ -583,3 +583,38 @@ Retained exact rollback image:
 `sha256:d0080a3e2577f2801d41cb6ab5399168a68896ea0e2e468477f7a34bcf8bcd91`;
 protected current configuration/recovery checkpoints and earlier backups remain
 available. Rollback preserves current data and never restores an old database.
+
+
+### Offline immediate memory preview candidate
+
+The existing composer data URL is retained only in a per-Chat component context.
+It is registered before the first save/network call and displayed by the native
+UserMessage/Image components without being assigned to history, saved files or
+localStorage. Upload, ownership binding and staged reference persistence retain
+their existing order. Only the committed reference is published to live history.
+
+The native Image keeps a local fallback overlay until the actual official-image
+node has loaded. A sticky preview mode prevents remounting that loaded node when
+the local state is released. A stale image-load event cannot release the fallback.
+A display fetch error retains the local view and reports a display problem,
+without retrying. This is a UI handoff, not an inference or upload optimization.
+
+Initial-save/upload/reference-save failures and cancellation mark the transient
+preview failed. A clearly labelled manual action restores the original image
+and text to the existing composer, only if it is empty; it never overwrites
+another draft, sends, fetches or infers. The user must check the original turn
+before manually sending again. Failure previews live only in this component;
+restoration is unavailable after reload/navigation/closure. Successful previews
+are released after official-image load; navigation/component cleanup clears the
+context. Host/browser memory erasure is not claimed.
+
+Only frontend helper, pinned Chat/UserMessage/Image source patches and existing
+frontend tests changed. No changes to API, storage, authorization, Pipe, model,
+STT/TTS, Arena or unconfirmed-reply handling. The installed TypeScript/native
+function and image-handoff state tests use synthetic images/mocked saves and do
+not prove browser paint behavior. The local Svelte compiler/build dependencies
+are not retained; no Svelte compile, image build or deployment was performed.
+The old literal-only packaging path is deliberately disabled on this candidate
+because it cannot compile the new native markup. A proper native component build
+and browser acceptance are required before a later deployment; do not ship an
+old bundle while claiming this preview exists.

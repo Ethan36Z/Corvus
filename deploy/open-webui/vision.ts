@@ -39,3 +39,34 @@ export async function reconcileImage(token: string, chat: string, message: strin
             || reference.url !== `/api/v1/files/${reference.corvus_ref}/content`) return null;
     return reference;
 }
+
+
+/** Per-Chat component state. Never merged into history, files, or drafts. */
+export function createImagePreviews(writable: any) {
+    let entries: Record<string, any> = {};
+    const state = writable(entries);
+    const publish = () => state.set(entries);
+    return {
+        subscribe: state.subscribe,
+        begin(id: string, url: string, restore: () => boolean) {
+            entries = { ...entries, [id]: { url, restore, status: 'uploading' } }; publish();
+        },
+        saved(id: string) {
+            if (entries[id]) { entries = { ...entries, [id]: { ...entries[id], status: 'saved' } }; publish(); }
+        },
+        failed(id: string) {
+            if (entries[id]) { entries = { ...entries, [id]: { ...entries[id], status: 'failed' } }; publish(); }
+        },
+        ready(id: string) {
+            if (entries[id]?.status === 'saved') { entries = { ...entries }; delete entries[id]; publish(); }
+        },
+        displayFailed(id: string) {
+            if (entries[id]?.status === 'saved') { entries = { ...entries, [id]: { ...entries[id], displayError: true } }; publish(); }
+        },
+        restore(id: string) {
+            // Restore only to the native composer. Never send, fetch or retry.
+            return entries[id]?.status === 'failed' ? entries[id].restore() : false;
+        },
+        clear() { entries = {}; publish(); }
+    };
+}

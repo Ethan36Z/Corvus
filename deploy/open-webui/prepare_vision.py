@@ -15,6 +15,8 @@ PINS = {
     'backend/open_webui/models/chats.py': '67d94bd7732af53c431f82da34d83d6c11a7d99e6cff2513075476830f5860fd',
     'backend/open_webui/routers/chats.py': '82d079a8cf3f1ad8bcaab57fe809e9a44753edecf0517f44ee5b3a359122ba15',
     'backend/open_webui/routers/files.py': 'f2cb5ef17326d68140cb5f138abf0b4d18adbeb4f80f9ed9699cfa937f3c9ffd',
+    'src/lib/components/chat/Messages/UserMessage.svelte': '75d3cf89442c8d89922be6a5b1e565b6a2f05c32f1793162300c168d505a001a',
+    'src/lib/components/common/Image.svelte': '4cddef5cd6a0c5754e9c99d515155854e00bf12cc03897fb5674420cbc7ddfa0',
 }
 
 
@@ -224,9 +226,138 @@ def patch_chat(source):
     source = once(source, "\t$: if (chatIdProp) {", "\t$: if (chatIdProp) {\n        cancelImageUploadForChat(chatIdProp);")
     # Discard legacy raw drafts on restoration, without writing or migrating them.
     source = source.replace('files = input.files;', "files = (input.files ?? []).filter((file) => file.type !== 'image');")
-    return patch_image_reference_order(source)
+    return patch_instant_preview(patch_image_reference_order(source))
 
 
+
+
+
+def patch_instant_preview(source):
+    source = once(source, 'persistentDraft, uploadImage, reconcileImage }',
+        'persistentDraft, uploadImage, reconcileImage, createImagePreviews }')
+    source = once(source, 'getContext, onDestroy, onMount, tick }',
+        'getContext, setContext, onDestroy, onMount, tick }')
+    source = once(source, 'get, type Unsubscriber, type Writable }',
+        'get, writable, type Unsubscriber, type Writable }')
+    source = once(source, "    let imageController: AbortController | null = null;", """    const imagePreviews = createImagePreviews(writable);
+    setContext('corvus-image-previews', imagePreviews);
+    let imagePreviewChatId = '';
+    let imageController: AbortController | null = null;""")
+    source = once(source, "        if (nextChatId !== imageUploadChatId) imageController?.abort();", """        if (nextChatId !== imageUploadChatId) imageController?.abort();
+        if (imagePreviewChatId && nextChatId !== imagePreviewChatId) imagePreviews.clear();
+        imagePreviewChatId = nextChatId;""")
+    source = once(source, "        prompt = '';\n\n        // Reset chat input textarea", """        const visionPreview = visionDraft ? files.find((file) => file.type === 'image').url : '';
+        prompt = '';
+
+        // Reset chat input textarea""")
+    source = once(source, '\t\tlet userMessageId = uuidv4();\n\t\tlet userMessage = {', """        let userMessageId = uuidv4();
+        if (visionDraft) {
+            imagePreviewChatId = $chatId;
+            imagePreviews.begin(userMessageId, visionPreview, () => {
+                if (!history.messages[userMessageId] || files.length || prompt.trim()) {
+                    toast.error($i18n.t('Clear the current composer before restoring this draft.'));
+                    return false;
+                }
+                files = [{ type: 'image', url: visionPreview }];
+                prompt = userPrompt;
+                return true;
+            });
+        }
+        let userMessage = {""")
+    source = once(source, '        await saveChatHandler(_chatId, _history);\n        if (visionDraft) {', """        try {
+            await saveChatHandler(_chatId, _history);
+        } catch (error) {
+            if (!visionDraft) throw error;
+            imagePreviews.failed(parentId);
+            toast.error($i18n.t('Image save not confirmed. Check this turn before sending again; you can restore its draft.'));
+            Object.values(responseMessageIds).forEach((id) => { if (history.messages[id]) history.messages[id].done = true; });
+            history = history;
+            return;
+        }
+        if (visionDraft) {""")
+    # New-chat creation can fail before the first ordinary save. Keep it in the
+    # same pre-upload failure boundary; non-image errors still propagate.
+    source = once(source, '\t\t// Create new chat if newChat is true and first user message',
+        '        try {\n\t\t// Create new chat if newChat is true and first user message')
+    source = once(source, '        try {\n            await saveChatHandler(_chatId, _history);',
+        '            await saveChatHandler(_chatId, _history);')
+    source = once(source, '            imageUploadChatId = _chatId;',
+        '            imageUploadChatId = _chatId;\n            imagePreviewChatId = _chatId;')
+    source = once(source, '                // Preserve concurrent live messages; publish only this user turn.',
+        '                imagePreviews.saved(parentId);\n                // Preserve concurrent live messages; publish only this user turn.')
+    before = '                if (controller.signal.aborted || $chatId !== _chatId) {'
+    if source.count(before) != 2:
+        raise ValueError('Pinned image cancellation guards mismatch')
+    source = source.replace(before, before + '\n                    imagePreviews.failed(parentId);')
+    source = once(source, '                // Keep the saved pending turn; status reconciliation is manual,',
+        '                imagePreviews.failed(parentId);\n                // Keep the saved pending turn; status reconciliation is manual,')
+    source = once(source, '\tconst initNewChat = async () => {',
+        "\tconst initNewChat = async () => {\n        imagePreviews.clear();\n        imagePreviewChatId = '';")
+    source = once(source, '\tonDestroy(() => {\n        imageController?.abort();',
+        '\tonDestroy(() => {\n        imageController?.abort();\n        imagePreviews.clear();')
+    return source
+
+
+def patch_user_preview(source):
+    source = once(source, "\tconst i18n = getContext('i18n');", """    const imagePreviews: any = getContext('corvus-image-previews') ?? {
+        subscribe: (run) => { run({}); return () => {}; },
+        ready: () => {}, restore: () => false, displayFailed: () => {}
+    };
+    let preview;
+    let displayFiles;
+    $: preview = $imagePreviews[messageId];
+    $: displayFiles = message.files?.length ? message.files : (preview ? [{ type: 'image', url: preview.url }] : undefined);
+    const i18n = getContext('i18n');""")
+    source = once(source, '{#if message.files}', '{#if displayFiles}')
+    source = once(source, '{#each message.files as file}', '{#each displayFiles as file}')
+    source = once(source, '<Image src={file.url} imageClassName=" max-h-96 rounded-lg" />', """<Image src={file.url} previewSrc={preview?.url ?? ''} imageClassName=" max-h-96 rounded-lg"
+                                    on:loaded={(event) => {
+                                        if (message.files?.some((file) => file.url === event.detail.src)) imagePreviews.ready(messageId);
+                                    }}
+                                    on:displayError={() => imagePreviews.displayFailed(messageId)} />""")
+    source = once(source, "\t\t\t{#if message.content !== ''}", """            {#if preview?.status === 'failed'}
+                <div role="status" aria-live="polite">
+                    {$i18n.t('Image save not confirmed. Check this turn before sending again.')}
+                    <button type="button" on:click={() => imagePreviews.restore(messageId)}>{$i18n.t('Restore to composer (does not send)')}</button>
+                </div>
+            {:else if preview?.displayError}
+                <div role="status">{$i18n.t('Image saved; showing the local preview while its display is unavailable.')}</div>
+            {/if}
+            {#if message.content !== ''}""")
+    return source
+
+
+def patch_image_preview(source):
+    source = once(source, "\timport { WEBUI_BASE_URL }", "    import { createEventDispatcher } from 'svelte';\n\timport { WEBUI_BASE_URL }")
+    source = once(source, "\texport let src = '';", """    export let src = '';
+    export let previewSrc = '';
+    const dispatch = createEventDispatcher();
+    let previewMode = false;
+    let loadedSrc = '';
+    let showFallback = false;
+    $: if (previewSrc) previewMode = true;
+    $: showFallback = !!previewSrc && loadedSrc !== _src;
+    const imageLoaded = (event) => {
+        const image = event.currentTarget;
+        if (!image.complete || !image.naturalWidth || image.currentSrc !== new URL(_src, document.baseURI).href) return;
+        loadedSrc = _src;
+        dispatch('loaded', { src });
+    };""")
+    source = once(source, '<img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image" />', """{#if previewMode}
+        <span style="display: grid">
+            {#if showFallback}
+                <img src={previewSrc} {alt} class={imageClassName} draggable="false" aria-hidden="true" style="grid-area: 1 / 1" />
+            {/if}
+            <img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image"
+                style="grid-area: 1 / 1" style:visibility={showFallback ? 'hidden' : 'visible'}
+                on:load={imageLoaded} on:error={() => dispatch('displayError')} />
+        </span>
+    {:else}
+        <img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image" on:load={imageLoaded} />
+    {/if}""")
+    source = once(source, '<ImagePreview bind:show={showImagePreview} src={_src} {alt} />',
+        '<ImagePreview bind:show={showImagePreview} src={showFallback ? previewSrc : _src} {alt} />')
+    return source
 
 
 def patch_image_reference_order(source):
@@ -305,7 +436,7 @@ def prepare(frontend, backend, target):
         if hashlib.sha256(data).hexdigest() != digest:
             raise ValueError('Source pin mismatch: ' + relative)
         sources[relative] = data.decode()
-    patches = [patch_chat, patch_composer, patch_file_model, patch_chats, patch_chat_router, patch_file_router]
+    patches = [patch_chat, patch_composer, patch_file_model, patch_chats, patch_chat_router, patch_file_router, patch_user_preview, patch_image_preview]
     output = {path: patch(data) for (path, data), patch in zip(sources.items(), patches)}
     pipe = (Path(__file__).parent / 'corvus_pipe.py').read_bytes()
     if hashlib.sha256(pipe).hexdigest() != '68967bd0ed499aaf2ecce38bc6afc80c3fc3cdeb805aab6a57182a2e907af861':

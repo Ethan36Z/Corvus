@@ -10,6 +10,7 @@ PIN = 'e2b30c49e2fa5b901f69cf73e27df4a245b8f48e1178c5f25046d25528db0686'
 CHUNK = 'CD_kXMG7.js'
 
 def package(source, output):
+    raise ValueError('Instant-preview candidate requires native Svelte compilation; the old literal-only packager is disabled for this branch.')
     source, output = pathlib.Path(source), pathlib.Path(output)
     assert not output.exists(), 'Output must be new'
     original = source / '_app/immutable/chunks' / CHUNK
