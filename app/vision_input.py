@@ -1,4 +1,8 @@
 import base64
+import io
+import warnings
+
+from PIL import Image, ImageOps
 
 from memory.attachments import (
     get_attachment,
@@ -14,6 +18,7 @@ SUPPORTED_VISION_MEDIA_TYPES = {
 DEFAULT_MAX_VISION_BYTES = (
     20 * 1024 * 1024
 )
+INFERENCE_IMAGE_MAX_SIZE = (1024, 1024)
 
 
 class VisionInputError(ValueError):
@@ -161,6 +166,25 @@ def load_vision_attachment(
     }
 
 
+def _inference_image_bytes(data, media_type):
+    """Keep attachment evidence unchanged; resize only the in-memory model input."""
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            image_format = {"image/png": "PNG", "image/jpeg": "JPEG"}[media_type]
+            with io.BytesIO(data) as source, Image.open(source, formats=[image_format]) as image:
+                if image.width <= 1024 and image.height <= 1024:
+                    return data
+                ImageOps.exif_transpose(image, in_place=True)
+                image.thumbnail(INFERENCE_IMAGE_MAX_SIZE, Image.Resampling.LANCZOS)
+                with io.BytesIO() as output:
+                    image.save(output, format=image_format)
+                    return output.getvalue()
+    except Exception:
+        # No source bytes, filenames or decoder details enter the API error.
+        raise VisionInputError("Vision inference image processing failed.") from None
+
+
 def build_vision_messages(
     messages,
     attachment_id,
@@ -200,7 +224,7 @@ def build_vision_messages(
     )
 
     encoded = base64.b64encode(
-        loaded["data"]
+        _inference_image_bytes(loaded["data"], loaded["media_type"])
     ).decode("ascii")
 
     data_url = (
