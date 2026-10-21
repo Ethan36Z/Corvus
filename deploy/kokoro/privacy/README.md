@@ -67,3 +67,20 @@ Future code/dependency/logging changes require renewed review. Request validatio
 and API error response bodies are unchanged; clients must not log private error
 bodies. Existing explicitly requested download-link files are unchanged; the
 private TTS-1 client disables download links and receives transient audio only.
+
+
+## Retained TTS runtime configuration — local closure
+
+`compose.runtime.yml` saves the already deployed TTS-2.2 Compose packet as
+non-sensitive configuration. It uses only the existing external network and
+read-only local community voice mount, CPU mode, loopback 8105, af_mica/z defaults
+and Docker `unless-stopped`. No voice/model bytes or user text/audio are included.
+It is not applied during closure.
+
+Observed image: `sha256:94d19bad32ccb34df77cccc2f5c9bc4ebd1a225878be2522d27b16edc5ae3c44`.
+The installed guard, launcher, verifier and source lock match this branch's
+existing `7c0b5d0` files exactly. The image/model cache stays outside Git.
+Before any future separately authorized reuse, verify that the retained tag
+resolves to that image or rebuild using the existing pinned privacy Dockerfile;
+never silently pull a mutable replacement. The Compose file creates no new
+storage or model and must not be applied as a project-wide up/down operation.
