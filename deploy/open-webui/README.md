@@ -618,3 +618,30 @@ The old literal-only packaging path is deliberately disabled on this candidate
 because it cannot compile the new native markup. A proper native component build
 and browser acceptance are required before a later deployment; do not ship an
 old bundle while claiming this preview exists.
+
+
+### Lab immediate-preview deployment — 2026-10-20
+
+Source `e5afa6837299b96f30b0457b64f745a7c3cadf99` is now deployed as
+`sha256:bee59f7e2f3a65b14a29369efee050bc07226fbb5863817b4551c7b10ba4e500`.
+The earlier offline build limitation above was resolved using the original
+pinned Open WebUI v0.6.5 source, unchanged lockfile and existing Node 22 image.
+Source, dependencies, complete static build and verification logs are retained
+at `/home/ethan/srv/build/corvus-webui-v065`. Existing native frontend checks,
+Svelte compilation and the full Vite build passed before this resumed deployment;
+none were repeated during the deployment resume. The replacement image reused
+the current working Lab image and copied only the existing compiled frontend.
+
+Only Lab WebUI was recreated. HTTP health, delivered HTML entry points, build
+version and all three changed frontend asset hashes passed verification.
+Persistent STT mounts, data volume, runtime/security/restart settings and existing
+Pipe/model configuration were preserved. Other container identities/start times
+and Lab API process identity were unchanged. No image upload or inference was
+performed. The separate unconfirmed-reply behavior was not modified.
+
+Exact rollback image remains available:
+`sha256:50e5699421902c24647c252cf87d74a23d041a6295013097080ba15843549cfe`.
+Protected rollback configuration and retained backups are preserved under the
+existing recovery procedure; no database snapshot was restored. Mac acceptance
+of immediate local preview, official-image handoff and manual failure recovery
+remains pending. Deployment health does not establish browser paint behavior.
