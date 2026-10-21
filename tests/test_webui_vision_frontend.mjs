@@ -66,7 +66,7 @@ for(const statement of tree.statements){
 assert.equal(declarations.length,3);
 const executable=ts.transpileModule(declarations.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 let sequence=0;
-async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false,stateSync=false,nativeOverride=null,referenceSaveFail=false,initialSaveFail=false,createFail=false}={}){
+async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false,stateSync=false,nativeOverride=null,referenceSaveFail=false,initialSaveFail=false,createFail=false,previousDone=null}={}){
  const events=[],errors=[];let previewState={};const imagePreviews=createImagePreviews(memoryWritable);imagePreviews.subscribe(v=>{previewState=v;});let stored=null;const display=[];let displayedUrl=null;
  const sandbox={ imageDraft,persistentDraft,Blob,AbortController,setTimeout,clearTimeout,clearInterval,
   imagePreviews,imagePreviewChatId:'',imageController:null,imageUploadChatId:'',files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
@@ -81,6 +81,13 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
   getChatList:async()=>[],currentChatPage:{set:()=>{}},chats:{set:()=>{}},
   createMessagesList:(h,id)=>{const out=[];while(id){const m=h.messages[id];if(!m)break;out.unshift(m);id=m.parentId;}return out;},
  };
+ if(previousDone!==null){
+  sandbox.$chatId='existing-synthetic-chat';
+  sandbox.history={currentId:'previous-error',messages:{'previous-error':{
+   id:'previous-error',parentId:null,childrenIds:[],role:'assistant',done:previousDone,
+   content:'',error:{content:'Synthetic unconfirmed reply'}
+  }}};
+ }
  if(timeout)sandbox.setTimeout=(callback,ms)=>{assert.equal(ms,30000);queueMicrotask(callback);return 0;};
  const flushNativeImage=()=>{
   const user=Object.values(sandbox.history.messages).find(m=>m.role==='user');
@@ -133,6 +140,26 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameCh
  return {events,errors,history:sandbox.history,stored,display,sandbox,getStored:()=>stored,getPreviews:()=>previewState};
 }
 const success=await turn();assert.deepEqual(success.events,['create','save','upload','save','dispatch']);assert.deepEqual(success.errors,[]);
+// Run the actual submit/send functions on the same failed chat, without reload.
+if(process.env.VISION_ERROR_BEFORE){
+ const before=readFileSync(process.env.VISION_ERROR_BEFORE,'utf8').match(/<script lang="ts">([\s\S]*?)<\/script>/)[1];
+ const blocked=await turn({previousDone:true,stateSync:true,nativeOverride:before});
+ assert.deepEqual(blocked.events,[],'Old completed-error guard blocks the independent turn');
+ assert.equal(blocked.sandbox.prompt,'Describe image');assert.equal(blocked.sandbox.files[0].url,draft.url);
+}
+const afterError=await turn({previousDone:true,stateSync:true});
+assert.deepEqual(afterError.events,['save','upload','save','dispatch']);
+assert.deepEqual(afterError.errors,[]);
+const previous=afterError.history.messages['previous-error'];
+assert.equal(previous.error.content,'Synthetic unconfirmed reply');assert.equal(previous.content,'');assert.equal(previous.done,true);
+const next=Object.values(afterError.history.messages).find(m=>m.role==='user');
+assert.equal(next.parentId,'previous-error');assert.equal(next.content,'Describe image');
+assert.equal(previous.childrenIds.length,1,'One new turn, no old dispatch/regeneration');
+const stillRunning=await turn({previousDone:false});
+assert.deepEqual(stillRunning.events,[],'Unfinished response still blocks all writes/upload/dispatch');
+assert.equal(stillRunning.sandbox.prompt,'Describe image');assert.equal(stillRunning.sandbox.files[0].url,draft.url);
+assert.equal(Object.keys(stillRunning.history.messages).length,1);
+console.log('Completed empty-error turn permits one new native turn without reload; prior error preserved; unfinished turn preserves composer and makes zero calls.');
 assert.deepEqual((await turn({arena:true})).events,[]);
 assert.deepEqual((await turn({fail:true})).events,['create','save','upload']);
 console.log('Actual native submit/send: reference-only initial/save queues, upload-before-dispatch, preserved text, Arena zero writes, lost upload no dispatch passed (mocked APIs).');

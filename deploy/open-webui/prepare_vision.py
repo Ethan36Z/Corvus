@@ -151,7 +151,14 @@ def patch_composer(source):
     return source
 
 
+def patch_completed_error_guard(source):
+    # The preceding done guard still blocks an unfinished response. A completed
+    # error remains in history, but must not prohibit a new independent turn.
+    return once(source, "\t\tif (messages.length != 0 && messages.at(-1).error && !messages.at(-1).content) {\n\t\t\t// Error in response\n\t\t\ttoast.error($i18n.t(`Oops! There was an error in the previous response.`));\n\t\t\treturn;\n\t\t}\n", '')
+
+
 def patch_chat(source):
+    source = patch_completed_error_guard(source)
     source = once(source, "<script lang=\"ts\">", '''<script lang="ts">
     import { imageDraft, persistentDraft, uploadImage, reconcileImage } from '$lib/utils/corvus-vision';
     let imageController: AbortController | null = null;
