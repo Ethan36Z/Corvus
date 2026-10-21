@@ -153,6 +153,11 @@ def patch_chat(source):
     source = once(source, "<script lang=\"ts\">", '''<script lang="ts">
     import { imageDraft, persistentDraft, uploadImage, reconcileImage } from '$lib/utils/corvus-vision';
     let imageController: AbortController | null = null;
+    let imageUploadChatId = '';
+    // Keep controller state out of the chatIdProp reactive dependency set.
+    const cancelImageUploadForChat = (nextChatId: string) => {
+        if (nextChatId !== imageUploadChatId) imageController?.abort();
+    };
 ''')
     source = once(source, '\t\tprompt = \'\';\n\n\t\t// Reset chat input textarea', '''        let visionDraft: Blob | null = null;
         try { visionDraft = imageDraft(files, arenaForTurn); }
@@ -173,6 +178,7 @@ def patch_chat(source):
         if (visionDraft) {
             const controller = new AbortController();
             imageController?.abort(); imageController = controller;
+            imageUploadChatId = _chatId;
             const timer = setTimeout(() => controller.abort(), 30000);
             try {
                 const reference = await uploadImage(localStorage.token, _chatId, parentId, visionDraft, controller.signal);
@@ -199,7 +205,10 @@ def patch_chat(source):
                 return;
             } finally {
                 clearTimeout(timer);
-                if (imageController === controller) imageController = null;
+                if (imageController === controller) {
+                    imageController = null;
+                    imageUploadChatId = '';
+                }
             }
         }
 
@@ -212,7 +221,7 @@ def patch_chat(source):
     source = once(source, 'JSON.stringify(input));', 'JSON.stringify(persistentDraft(input)));')
     source = once(source, '\tonDestroy(() => {', '\tonDestroy(() => {\n        imageController?.abort();')
     source = once(source, '\tconst stopResponse = async () => {', '\tconst stopResponse = async () => {\n        imageController?.abort();')
-    source = once(source, "\t$: if (chatIdProp) {", "\t$: if (chatIdProp) {\n        imageController?.abort();")
+    source = once(source, "\t$: if (chatIdProp) {", "\t$: if (chatIdProp) {\n        cancelImageUploadForChat(chatIdProp);")
     # Discard legacy raw drafts on restoration, without writing or migrating them.
     source = source.replace('files = input.files;', "files = (input.files ?? []).filter((file) => file.type !== 'image');")
     return source

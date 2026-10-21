@@ -6,8 +6,9 @@ import vm from 'node:vm';
 const require = createRequire(import.meta.url);
 const deps = process.env.VISION_NODE_MODULES;
 const ts = require(deps + '/typescript/lib/typescript.js');
-const svelte = require(deps + '/svelte/compiler.cjs');
-const { vitePreprocess } = await import(deps + '/@sveltejs/vite-plugin-svelte/src/index.js');
+const lifecycleOnly = process.env.VISION_LIFECYCLE_ONLY === '1';
+const svelte = lifecycleOnly ? null : require(deps + '/svelte/compiler.cjs');
+const vitePreprocess = lifecycleOnly ? null : (await import(deps + '/@sveltejs/vite-plugin-svelte/src/index.js')).vitePreprocess;
 const root = process.env.VISION_PATCHED;
 const helper = readFileSync(root + '/src/lib/utils/corvus-vision.ts', 'utf8');
 const js = ts.transpileModule(helper,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
@@ -34,7 +35,7 @@ context.fetch=async(url,options)=>{
  return {ok:true,json:async()=>({type:'image',corvus_ref:'00000000-0000-0000-0000-000000000001',url:'/api/v1/files/00000000-0000-0000-0000-000000000001/content'})};
 };
 await uploadImage('synthetic','chat','message',blob,new AbortController().signal);assert.equal(calls,1);
-for(const name of ['Chat.svelte','MessageInput.svelte']){
+if (!lifecycleOnly) for(const name of ['Chat.svelte','MessageInput.svelte']){
  const source=readFileSync(root+'/src/lib/components/chat/'+name,'utf8');
  const processed=await svelte.preprocess(source,vitePreprocess(),{filename:name});
  svelte.compile(processed.code,{filename:name,generate:'dom'});
@@ -47,7 +48,7 @@ for(const name of ['Chat.svelte','MessageInput.svelte']){
   assert.ok(source.includes('imageController?.abort()'));
  }
 }
-console.log('Native Svelte compilation; transient draft, final upload bytes, reference shape, count/type/Arena rejection and save-before-dispatch checks passed. No image build or inference.');
+console.log(lifecycleOnly ? 'Installed TypeScript/native function contracts; Svelte compilation not rerun.' : 'Native Svelte compilation and transient/reference contracts passed.');
 
 // Execute the actual native submit/send functions with mocked existing APIs.
 // This catches images entering the first-chat/save queues before the upload.
@@ -56,16 +57,16 @@ const tree=ts.createSourceFile('Chat.ts',native,ts.ScriptTarget.Latest,true,ts.S
 const declarations=[];
 for(const statement of tree.statements){
  if(ts.isVariableStatement(statement))for(const declaration of statement.declarationList.declarations){
-  if(['submitPrompt','sendPrompt'].includes(declaration.name.getText(tree)))declarations.push('const '+declaration.getText(tree)+';');
+  if(['submitPrompt','sendPrompt','cancelImageUploadForChat'].includes(declaration.name.getText(tree)))declarations.push('const '+declaration.getText(tree)+';');
  }
 }
-assert.equal(declarations.length,2);
+assert.equal(declarations.length,3);
 const executable=ts.transpileModule(declarations.join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 let sequence=0;
-async function turn({arena=false,fail=false,cancel=false,otherModel=false}={}){
+async function turn({arena=false,fail=false,cancel=false,otherModel=false,sameChat=false,navigate=false,timeout=false}={}){
  const events=[],errors=[];
  const sandbox={ imageDraft,persistentDraft,Blob,AbortController,setTimeout,clearTimeout,clearInterval,
-  imageController:null,files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
+  imageController:null,imageUploadChatId:'',files:[draft],chatFiles:[],prompt:'Describe image',history:{messages:{},currentId:null},
   arenaEnabled:arena,arenaAvailable:true,selectedModels:['corvus_pipe'],selectedToolIds:[],
   webSearchEnabled:false,imageGenerationEnabled:false,codeInterpreterEnabled:false,
   $temporaryChatEnabled:false,$models:[{id:'corvus_pipe',info:{meta:{capabilities:{vision:true}}}}],
@@ -77,6 +78,7 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false}={}){
   getChatList:async()=>[],currentChatPage:{set:()=>{}},chats:{set:()=>{}},
   createMessagesList:(h,id)=>{const out=[];while(id){const m=h.messages[id];if(!m)break;out.unshift(m);id=m.parentId;}return out;},
  };
+ if(timeout)sandbox.setTimeout=(callback,ms)=>{assert.equal(ms,30000);queueMicrotask(callback);return 0;};
  const save=(kind,h)=>{assert.ok(!JSON.stringify(h).includes('data:image'));events.push(kind);};
  sandbox.initChatHandler=async(h)=>{save('create',h);sandbox.$chatId='00000000-0000-0000-0000-000000000099';return sandbox.$chatId;};
  sandbox.saveChatHandler=async(id,h)=>save('save',h);
@@ -85,6 +87,8 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false}={}){
   assert.ok(sandbox.history.messages[message].corvus_image_pending);
   assert.equal(sandbox.history.messages[message].files,undefined);
   if(fail)throw Error('Synthetic lost response');
+  if(sameChat)sandbox.chatChanged(chat);
+  if(navigate)sandbox.chatChanged('another-chat');
   if(cancel)sandbox.imageController.abort();
   return {type:'image',corvus_ref:'00000000-0000-0000-0000-000000000001',url:'/api/v1/files/00000000-0000-0000-0000-000000000001/content'};
  };
@@ -93,7 +97,7 @@ async function turn({arena=false,fail=false,cancel=false,otherModel=false}={}){
   assert.equal(parent.files[0].type,'image');assert.ok(parent.files[0].corvus_ref);
   assert.equal(parent.content,'Describe image');events.push('dispatch');
  };
- vm.runInNewContext(executable+'\nglobalThis.submitNative = submitPrompt;',sandbox);
+ vm.runInNewContext(executable+'\nglobalThis.submitNative = submitPrompt;globalThis.chatChanged = cancelImageUploadForChat;',sandbox);
  await sandbox.submitNative('Describe image');return {events,errors,history:sandbox.history};
 }
 const success=await turn();assert.deepEqual(success.events,['create','save','upload','save','dispatch']);assert.deepEqual(success.errors,[]);
@@ -106,3 +110,37 @@ console.log('Native upload cancellation releases composer and never dispatches a
 
 assert.deepEqual((await turn({otherModel:true})).events,[]);
 console.log('Native @model override rejects image turn before any save/upload.');
+
+// Exercise the actual generated lifecycle dependency gate; unlike extracting only
+// submit/send, this reproduces the Svelte dirty-controller flush that caused the
+// real upload cancellation. All fetch/provider calls remain mocked.
+if (process.env.VISION_COMPILED_BEFORE && process.env.VISION_COMPILED_AFTER) {
+ function lifecycle(path) {
+  const source=readFileSync(path,'utf8');
+  const match=source.match(/o\.\$\$\.dirty\[1\]&([0-9]+)&&C&&\(([^,]+),\(async/);
+  assert.ok(match,'Actual chat reactive gate not found');
+  const ctx={O:new AbortController(),C:'owned-chat',visionUploadChatId:'owned-chat',o:{$$:{dirty:[0,1<<24]}}};
+  const helper=source.match(/const cancelImageUploadForChat=next=>\{[^}]+\};/);
+  if(helper)vm.runInNewContext(helper[0],ctx);
+  const flush=()=>vm.runInNewContext(`if(o.$$.dirty[1]&${match[1]} && C) {${match[2]};}`,ctx);
+  flush();return {ctx,flush,mask:Number(match[1])};
+ }
+ const original=lifecycle(process.env.VISION_COMPILED_BEFORE);
+ assert.equal(original.ctx.O.signal.aborted,true,'Original deployed controller flush must reproduce abort');
+ const before=readFileSync(process.env.VISION_COMPILED_BEFORE,'utf8');
+ const after=readFileSync(process.env.VISION_COMPILED_AFTER,'utf8');
+ for(const anchor of ['ur(()=>{O==null||O.abort(),j==null||j()', 'Qt=async()=>{if(O==null||O.abort(),xe)', 'setTimeout(()=>Lt.abort(),3e4)']) {
+  assert.ok(before.includes(anchor) && after.includes(anchor),'Existing cleanup/stop/timeout must remain');
+ }
+ const fixed=lifecycle(process.env.VISION_COMPILED_AFTER);
+ assert.equal(fixed.mask,1<<23);assert.equal(fixed.ctx.O.signal.aborted,false);
+ fixed.ctx.o.$$.dirty[1]=1<<23;fixed.flush();assert.equal(fixed.ctx.O.signal.aborted,false,'Same owned chat must not cancel');
+ fixed.ctx.C='another-chat';fixed.flush();assert.equal(fixed.ctx.O.signal.aborted,true,'Real chat navigation must cancel');
+ console.log('Actual deployed reactive self-abort reproduced; corrected controller flush/same-chat/navigation verified offline.');
+}
+assert.deepEqual((await turn({sameChat:true})).events,['create','save','upload','save','dispatch']);
+for (const settings of [{navigate:true},{timeout:true}]) {
+ const result=await turn(settings);assert.deepEqual(result.events,['create','save','upload']);
+ assert.ok(Object.values(result.history.messages).filter(m=>m.role==='assistant').every(m=>m.done));
+}
+console.log('Native functions: same-chat upload completes; navigation/cancellation/timeout signal prevents late save/dispatch, without retries.');

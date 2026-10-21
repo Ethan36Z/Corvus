@@ -1,7 +1,8 @@
 """Incremental packaging of the pinned, already built Lab Vision frontend.
 
 No dependency installation or application recompile. Change only three compiled
-size constants and the existing optional resize branch. Move affected JS/import
+size constants, the existing optional resize branch and the proven reactive
+upload self-abort. Move affected JS/import
 parents to fresh URLs; preserve all other STT/TTS/Arena/branding asset bytes.
 """
 import argparse, hashlib, json, pathlib, re, shutil
@@ -19,6 +20,20 @@ def package(source, output):
     resize = r'if\(\(r==null\?void 0:r\.imageCompression\)\?\?!1\)\{.*?\(ao\|\|\$\)\&\&\(Ht=await Mm\(Ht,ao,\$\)\)\}'
     js, n = re.subn(resize, '', js)
     assert n == 1, 'Pinned optional image compression branch mismatch'
+    # The deployed Svelte block incorrectly depended on controller slot 55 as
+    # well as chatIdProp slot 54. Preserve actual chat-change cancellation but
+    # never trigger it from controller assignment/cleanup. All anchors are pinned.
+    replacements = [
+        ('let O=null;const B=tn("i18n");',
+         'let O=null,visionUploadChatId="";const cancelImageUploadForChat=next=>{if(next!==visionUploadChatId)O==null||O.abort()};const B=tn("i18n");'),
+        ('t(55,O=Lt);const gn=', 't(55,O=Lt);visionUploadChatId=st;const gn='),
+        ('O===Lt&&t(55,O=null)', 'O===Lt&&(t(55,O=null),visionUploadChatId="")'),
+        ('o.$$.dirty[1]&25165824&&C&&(O==null||O.abort(),',
+         'o.$$.dirty[1]&8388608&&C&&(cancelImageUploadForChat(C),'),
+    ]
+    for before, after in replacements:
+        assert js.count(before) == 1, 'Pinned controller lifecycle anchor mismatch'
+        js = js.replace(before, after, 1)
     # Find all import parents before renaming; no stale immutable URL may point
     # at changed code. Names are versioned rather than claiming Vite hashes.
     scripts = {str(p.relative_to(source)):p.read_text() for p in source.rglob('*.js')}
@@ -28,7 +43,7 @@ def package(source, output):
         new = {p for p, text in scripts.items() if any(n in text for n in names)}
         if new <= affected: break
         affected |= new
-    names = {pathlib.Path(p).name:pathlib.Path(p).stem+'-vision20.js' for p in affected}
+    names = {pathlib.Path(p).name:pathlib.Path(p).stem+'-vision20-abort.js' for p in affected}
     assert len(names) == len(affected)
     shutil.copytree(source, output)
     changed = []
@@ -38,7 +53,21 @@ def package(source, output):
         if rel == str(original.relative_to(source))+'.map':
             d = json.loads(text)
             for i, (name, content) in enumerate(zip(d['sources'], d['sourcesContent'])):
-                if name.endswith('/corvus-vision.ts'):
+                if name.endswith('/Chat.svelte'):
+                    content = content.replace('    let imageController: AbortController | null = null;', """    let imageController: AbortController | null = null;
+    let imageUploadChatId = '';
+    // Keep controller state out of the chatIdProp reactive dependency set.
+    const cancelImageUploadForChat = (nextChatId: string) => {
+        if (nextChatId !== imageUploadChatId) imageController?.abort();
+    };""", 1)
+                    content = content.replace('imageController?.abort(); imageController = controller;', 'imageController?.abort(); imageController = controller;\n            imageUploadChatId = _chatId;', 1)
+                    content = content.replace('if (imageController === controller) imageController = null;', """if (imageController === controller) {
+                    imageController = null;
+                    imageUploadChatId = '';
+                }""", 1)
+                    content = content.replace('$: if (chatIdProp) {\n        imageController?.abort();', '$: if (chatIdProp) {\n        cancelImageUploadForChat(chatIdProp);', 1)
+                    d['sourcesContent'][i] = content
+                elif name.endswith('/corvus-vision.ts'):
                     assert content.count('6 * 1024 * 1024') == 1
                     d['sourcesContent'][i] = content.replace('6 * 1024 * 1024','20 * 1024 * 1024')
                 elif name.endswith('/MessageInput.svelte'):
@@ -52,7 +81,7 @@ def package(source, output):
             d['mappings'] = ''; text = json.dumps(d, separators=(',',':'))
         for old,new in names.items(): text = text.replace(old,new)
         if rel == '_app/version.json':
-            v = json.loads(text);v['version'] += '-vision20';text = json.dumps(v)
+            v = json.loads(text);v['version'] += '-vision20-abort';text = json.dumps(v)
         if text != p.read_text(): p.write_text(text);changed.append(rel)
     for rel in affected:
         p = output/rel;new = p.with_name(names[p.name]);p.rename(new)

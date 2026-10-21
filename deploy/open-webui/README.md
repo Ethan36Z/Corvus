@@ -529,3 +529,21 @@ identical. Edited source-map mappings are omitted rather than advertised as
 accurate generated columns. Use only atop the retained Vision image, alongside
 `vision.py`; do not apply to another source/image version. This avoids dependency
 downloads after volatile build directories were lost on reboot.
+
+
+### Offline upload-controller repair
+
+The chat-change reactive block must not directly read `imageController`: Svelte
+otherwise schedules it when upload assigns or clears that controller. A stable
+`cancelImageUploadForChat(chatIdProp)` helper isolates this dependency and cancels
+only when the destination differs from the upload's saved chat. Existing stop,
+destroy, supersession and 30-second timeout cancellation are preserved, as are
+late-result checks and no automatic retry/dispatch.
+
+The existing pinned incremental packager also applies this exact compiled
+reactive-gate correction and emits fresh `-vision20-abort` URLs. The native
+frontend test's `VISION_LIFECYCLE_ONLY=1` mode uses already installed TypeScript
+and generated source contents to execute the real submit/send functions without
+requiring another Svelte build. `VISION_COMPILED_BEFORE`/`VISION_COMPILED_AFTER`
+add an actual dirty-mask self-abort reproduction and correction check. This is
+mocked offline evidence, not real-browser or deployed-fix acceptance.
