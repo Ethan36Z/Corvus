@@ -1,0 +1,917 @@
+diff --git a/src/lib/apis/audio/index.ts b/src/lib/apis/audio/index.ts
+--- a/src/lib/apis/audio/index.ts
++++ b/src/lib/apis/audio/index.ts
+@@ -64,34 +64,22 @@
+ 	return res;
+ };
+ 
+-export const transcribeAudio = async (token: string, file: File) => {
++export const transcribeAudio = async (token: string, file: File, signal?: AbortSignal) => {
+ 	const data = new FormData();
+ 	data.append('file', file);
+-
+-	let error = null;
+-	const res = await fetch(`${AUDIO_API_BASE_URL}/transcriptions`, {
+-		method: 'POST',
+-		headers: {
+-			Accept: 'application/json',
+-			authorization: `Bearer ${token}`
+-		},
+-		body: data
+-	})
+-		.then(async (res) => {
+-			if (!res.ok) throw await res.json();
+-			return res.json();
+-		})
+-		.catch((err) => {
+-			error = err.detail;
+-			console.log(err);
+-			return null;
++	let response;
++	try {
++		response = await fetch(`${AUDIO_API_BASE_URL}/transcriptions`, {
++			method: 'POST',
++			headers: { Accept: 'application/json', authorization: `Bearer ${token}` },
++			body: data, signal, redirect: 'error', cache: 'no-store'
+ 		});
+-
+-	if (error) {
+-		throw error;
++		if (!response.ok) throw new Error('Dictation is unavailable.');
++		return await response.json();
++	} catch (error) {
++		if (signal?.aborted) throw error;
++		throw new Error('Dictation is unavailable.');
+ 	}
+-
+-	return res;
+ };
+ 
+ export const synthesizeOpenAISpeech = async (
+diff --git a/src/lib/components/chat/Chat.svelte b/src/lib/components/chat/Chat.svelte
+--- a/src/lib/components/chat/Chat.svelte
++++ b/src/lib/components/chat/Chat.svelte
+@@ -1,4 +1,17 @@
+ <script lang="ts">
++    import { imageDraft, persistentDraft, uploadImage, reconcileImage, createImagePreviews } from '$lib/utils/corvus-vision';
++    const imagePreviews = createImagePreviews(writable);
++    setContext('corvus-image-previews', imagePreviews);
++    let imagePreviewChatId = '';
++    let imageController: AbortController | null = null;
++    let imageUploadChatId = '';
++    // Keep controller state out of the chatIdProp reactive dependency set.
++    const cancelImageUploadForChat = (nextChatId: string) => {
++        if (nextChatId !== imageUploadChatId) imageController?.abort();
++        if (imagePreviewChatId && nextChatId !== imagePreviewChatId) imagePreviews.clear();
++        imagePreviewChatId = nextChatId;
++    };
++
+ 	import { corvusLabel } from '$lib/corvus-branding';
+ 	import { arenaMetadata, acceptArenaEvent, preserveArena, createArenaSaveQueue, arenaTrialIdsFromSavedHistory } from '$lib/corvus-arena';
+ 	import { v4 as uuidv4 } from 'uuid';
+@@ -6,13 +19,13 @@
+ 	import mermaid from 'mermaid';
+ 	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
+ 
+-	import { getContext, onDestroy, onMount, tick } from 'svelte';
++	import { getContext, setContext, onDestroy, onMount, tick } from 'svelte';
+ 	const i18n: Writable<i18nType> = getContext('i18n');
+ 
+ 	import { goto } from '$app/navigation';
+ 	import { page } from '$app/stores';
+ 
+-	import { get, type Unsubscriber, type Writable } from 'svelte/store';
++	import { get, writable, type Unsubscriber, type Writable } from 'svelte/store';
+ 	import type { i18n as i18nType } from 'i18next';
+ 	import { WEBUI_BASE_URL } from '$lib/constants';
+ 
+@@ -99,11 +112,11 @@
+ 	const arenaSaves = createArenaSaveQueue();
+ 	let persistedArenaTrialIds = new Set<string>();
+ 
+-	const persistChatHistory = (token, id, body) => {
++	const persistChatHistory = (token, id, body, snapshotHistory = history) => {
+ 		// Capture this chat's newest state now. Queued callbacks never read another chat.
+ 		if ($chatId !== id) return Promise.resolve(null);
+-		const snapshot = JSON.parse(JSON.stringify({ ...body, history,
+-			messages: createMessagesList(history, history.currentId) }));
++		const snapshot = JSON.parse(JSON.stringify({ ...body, history: snapshotHistory,
++			messages: createMessagesList(snapshotHistory, snapshotHistory.currentId) }));
+ 		return arenaSaves.save(id, async () => {
+ 			const saved = await updateChatById(token, id, snapshot);
+ 			if ($chatId === id) {
+@@ -161,6 +174,7 @@
+ 	let params = {};
+ 
+ 	$: if (chatIdProp) {
++        cancelImageUploadForChat(chatIdProp);
+ 		(async () => {
+ 			loading = true;
+ 			console.log(chatIdProp);
+@@ -180,7 +194,7 @@
+ 						const input = JSON.parse(localStorage.getItem(`chat-input-${chatIdProp}`));
+ 
+ 						prompt = input.prompt;
+-						files = input.files;
++						files = (input.files ?? []).filter((file) => file.type !== 'image');
+ 						selectedToolIds = input.selectedToolIds;
+ 						webSearchEnabled = input.webSearchEnabled;
+ 						imageGenerationEnabled = input.imageGenerationEnabled;
+@@ -452,7 +466,7 @@
+ 			try {
+ 				const input = JSON.parse(localStorage.getItem(`chat-input-${chatIdProp}`));
+ 				prompt = input.prompt;
+-				files = input.files;
++				files = (input.files ?? []).filter((file) => file.type !== 'image');
+ 				selectedToolIds = input.selectedToolIds;
+ 				webSearchEnabled = input.webSearchEnabled;
+ 				imageGenerationEnabled = input.imageGenerationEnabled;
+@@ -492,6 +506,8 @@
+ 	});
+ 
+ 	onDestroy(() => {
++        imageController?.abort();
++        imagePreviews.clear();
+ 		chatIdUnsubscriber?.();
+ 		window.removeEventListener('message', onMessageHandler);
+ 		$socket?.off('chat-events', chatEventHandler);
+@@ -684,6 +700,8 @@
+ 	//////////////////////////
+ 
+ 	const initNewChat = async () => {
++        imagePreviews.clear();
++        imagePreviewChatId = '';
+ 		if ($page.url.searchParams.get('models')) {
+ 			selectedModels = $page.url.searchParams.get('models')?.split(',');
+ 		} else if ($page.url.searchParams.get('model')) {
+@@ -1310,11 +1328,6 @@
+ 			// Response not done
+ 			return;
+ 		}
+-		if (messages.length != 0 && messages.at(-1).error && !messages.at(-1).content) {
+-			// Error in response
+-			toast.error($i18n.t(`Oops! There was an error in the previous response.`));
+-			return;
+-		}
+ 		if (
+ 			files.length > 0 &&
+ 			files.filter((file) => file.type !== 'image' && file.status === 'uploading').length > 0
+@@ -1336,9 +1349,16 @@
+ 			return;
+ 		}
+ 
+-		prompt = '';
+-
+-		// Reset chat input textarea
++        let visionDraft: Blob | null = null;
++        try { visionDraft = imageDraft(files, arenaForTurn); }
++        catch { toast.error($i18n.t('Use one PNG/JPEG image without Arena.')); return; }
++        if (visionDraft && (!userPrompt.trim() || $temporaryChatEnabled || selectedModels.length !== 1 || selectedModels[0] !== 'corvus_pipe' || (atSelectedModel && atSelectedModel.id !== 'corvus_pipe') || selectedToolIds.length || webSearchEnabled || imageGenerationEnabled || codeInterpreterEnabled)) {
++            toast.error($i18n.t('Select Corvus for image input.')); return;
++        }
++        const visionPreview = visionDraft ? files.find((file) => file.type === 'image').url : '';
++        prompt = '';
++
++        // Reset chat input textarea
+ 		if (!($settings?.richTextInput ?? true)) {
+ 			const chatInputElement = document.getElementById('chat-input');
+ 
+@@ -1348,7 +1368,7 @@
+ 			}
+ 		}
+ 
+-		const _files = JSON.parse(JSON.stringify(files));
++        const _files = visionDraft ? [] : JSON.parse(JSON.stringify(files));
+ 		chatFiles.push(..._files.filter((item) => ['doc', 'file', 'collection'].includes(item.type)));
+ 		chatFiles = chatFiles.filter(
+ 			// Remove duplicates
+@@ -1360,14 +1380,27 @@
+ 		prompt = '';
+ 
+ 		// Create user message
+-		let userMessageId = uuidv4();
+-		let userMessage = {
++        let userMessageId = uuidv4();
++        if (visionDraft) {
++            imagePreviewChatId = $chatId;
++            imagePreviews.begin(userMessageId, visionPreview, () => {
++                if (!history.messages[userMessageId] || files.length || prompt.trim()) {
++                    toast.error($i18n.t('Clear the current composer before restoring this draft.'));
++                    return false;
++                }
++                files = [{ type: 'image', url: visionPreview }];
++                prompt = userPrompt;
++                return true;
++            });
++        }
++        let userMessage = {
+ 			id: userMessageId,
+ 			parentId: messages.length !== 0 ? messages.at(-1).id : null,
+ 			childrenIds: [],
+ 			role: 'user',
+ 			content: userPrompt,
+-			files: _files.length > 0 ? _files : undefined,
++            files: _files.length > 0 ? _files : undefined,
++            ...(visionDraft ? { corvus_image_pending: true } : {}),
+ 			timestamp: Math.floor(Date.now() / 1000), // Unix epoch
+ 			models: selectedModels
+ 		};
+@@ -1387,14 +1420,14 @@
+ 
+ 		saveSessionSelectedModels();
+ 
+-		await sendPrompt(history, userPrompt, userMessageId, { newChat: true, corvusArena: arenaForTurn });
++		await sendPrompt(history, userPrompt, userMessageId, { newChat: true, corvusArena: arenaForTurn, visionDraft });
+ 	};
+ 
+ 	const sendPrompt = async (
+ 		_history,
+ 		prompt: string,
+ 		parentId: string,
+-		{ modelId = null, modelIdx = null, newChat = false, corvusArena = false } = {}
++		{ modelId = null, modelIdx = null, newChat = false, corvusArena = false, visionDraft = null as Blob | null } = {}
+ 	) => {
+ 		if (autoScroll) {
+ 			scrollToBottom();
+@@ -1449,6 +1482,7 @@
+ 		}
+ 		history = history;
+ 
++        try {
+ 		// Create new chat if newChat is true and first user message
+ 		if (newChat && _history.messages[_history.currentId].parentId === null) {
+ 			_chatId = await initChatHandler(_history);
+@@ -1458,9 +1492,64 @@
+ 
+ 		_history = JSON.parse(JSON.stringify(history));
+ 		// Save chat after all messages have been created
+-		await saveChatHandler(_chatId, _history);
+-
+-		await Promise.all(
++            await saveChatHandler(_chatId, _history);
++        } catch (error) {
++            if (!visionDraft) throw error;
++            imagePreviews.failed(parentId);
++            toast.error($i18n.t('Image save not confirmed. Check this turn before sending again; you can restore its draft.'));
++            Object.values(responseMessageIds).forEach((id) => { if (history.messages[id]) history.messages[id].done = true; });
++            history = history;
++            return;
++        }
++        if (visionDraft) {
++            const controller = new AbortController();
++            imageController?.abort(); imageController = controller;
++            imageUploadChatId = _chatId;
++            imagePreviewChatId = _chatId;
++            const timer = setTimeout(() => controller.abort(), 30000);
++            try {
++                const reference = await uploadImage(localStorage.token, _chatId, parentId, visionDraft, controller.signal);
++                if (controller.signal.aborted || $chatId !== _chatId) {
++                    imagePreviews.failed(parentId);
++                    Object.values(responseMessageIds).forEach((id) => { if (history.messages[id]) history.messages[id].done = true; });
++                    history = history;
++                    return;
++                }
++                // Commit the authorized reference before the native Image mounts.
++                _history = JSON.parse(JSON.stringify(history));
++                _history.messages[parentId].files = [reference];
++                delete _history.messages[parentId].corvus_image_pending;
++                await saveChatHandler(_chatId, _history, _history);
++                if (controller.signal.aborted || $chatId !== _chatId) {
++                    imagePreviews.failed(parentId);
++                    Object.values(responseMessageIds).forEach((id) => { if (history.messages[id]) history.messages[id].done = true; });
++                    history = history;
++                    return;
++                }
++                imagePreviews.saved(parentId);
++                // Preserve concurrent live messages; publish only this user turn.
++                history.messages[parentId] = { ...history.messages[parentId], files: [reference] };
++                delete history.messages[parentId].corvus_image_pending;
++                history = history;
++                _history = JSON.parse(JSON.stringify(history));
++            } catch {
++                imagePreviews.failed(parentId);
++                // Keep the saved pending turn; status reconciliation is manual,
++                // never a second canonical dispatch or automatic upload retry.
++                toast.error($i18n.t('Image upload not confirmed. This turn was not sent.'));
++                Object.values(responseMessageIds).forEach((id) => { if (history.messages[id]) history.messages[id].done = true; });
++                history = history;
++                return;
++            } finally {
++                clearTimeout(timer);
++                if (imageController === controller) {
++                    imageController = null;
++                    imageUploadChatId = '';
++                }
++            }
++        }
++
++        await Promise.all(
+ 			selectedModelIds.map(async (modelId, _modelIdx) => {
+ 				console.log('modelId', modelId);
+ 				const model = $models.filter((m) => m.id === modelId).at(0);
+@@ -1586,27 +1675,7 @@
+ 		messages = messages
+ 			.map((message, idx, arr) => ({
+ 				role: message.role,
+-				...((message.files?.filter((file) => file.type === 'image').length > 0 ?? false) &&
+-				message.role === 'user'
+-					? {
+-							content: [
+-								{
+-									type: 'text',
+-									text: message?.merged?.content ?? message.content
+-								},
+-								...message.files
+-									.filter((file) => file.type === 'image')
+-									.map((file) => ({
+-										type: 'image_url',
+-										image_url: {
+-											url: file.url
+-										}
+-									}))
+-							]
+-						}
+-					: {
+-							content: message?.merged?.content ?? message.content
+-						})
++				content: message?.merged?.content ?? message.content
+ 			}))
+ 			.filter((message) => message?.role === 'user' || message?.content?.trim());
+ 
+@@ -1764,6 +1833,7 @@
+ 	};
+ 
+ 	const stopResponse = async () => {
++        imageController?.abort();
+ 		if (taskIds) {
+ 			for (const taskId of taskIds) {
+ 				const res = await stopTask(localStorage.token, taskId).catch((error) => {
+@@ -1944,7 +2014,7 @@
+ 		return _chatId;
+ 	};
+ 
+-	const saveChatHandler = async (_chatId, history) => {
++	const saveChatHandler = async (_chatId, history, snapshotHistory = undefined) => {
+ 		if ($chatId == _chatId) {
+ 			if (!$temporaryChatEnabled) {
+ 				await persistChatHistory(localStorage.token, _chatId, {
+@@ -1953,7 +2023,7 @@
+ 					messages: createMessagesList(history, history.currentId),
+ 					params: params,
+ 					files: chatFiles
+-				});
++				}, snapshotHistory);
+ 				currentChatPage.set(1);
+ 				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+ 			}
+@@ -2088,7 +2158,7 @@
+ 								{createMessagePair}
+ 								onChange={(input) => {
+ 									if (input.prompt) {
+-										localStorage.setItem(`chat-input-${$chatId}`, JSON.stringify(input));
++										localStorage.setItem(`chat-input-${$chatId}`, JSON.stringify(persistentDraft(input)));
+ 									} else {
+ 										localStorage.removeItem(`chat-input-${$chatId}`);
+ 									}
+diff --git a/src/lib/components/chat/MessageInput.svelte b/src/lib/components/chat/MessageInput.svelte
+--- a/src/lib/components/chat/MessageInput.svelte
++++ b/src/lib/components/chat/MessageInput.svelte
+@@ -226,7 +226,10 @@
+ 
+ 	const inputFilesHandler = async (inputFiles) => {
+ 		console.log('Input files handler called with:', inputFiles);
+-		inputFiles.forEach((file) => {
++        inputFiles.forEach((file) => {
++            if (file.size > 20 * 1024 * 1024 || inputFiles.length !== 1 || files.some((item) => item.type === 'image')) {
++                toast.error($i18n.t('Use one PNG/JPEG image up to 20 MiB.')); return;
++            }
+ 			console.log('Processing file:', {
+ 				name: file.name,
+ 				type: file.type,
+@@ -251,7 +254,7 @@
+ 			}
+ 
+ 			if (
+-				['image/gif', 'image/webp', 'image/jpeg', 'image/png', 'image/avif'].includes(file['type'])
++				['image/jpeg', 'image/png'].includes(file['type'])
+ 			) {
+ 				if (visionCapableModels.length === 0) {
+ 					toast.error($i18n.t('Selected model(s) do not support image inputs'));
+@@ -259,16 +262,12 @@
+ 				}
+ 				let reader = new FileReader();
+ 				reader.onload = async (event) => {
+-					let imageUrl = event.target.result;
+-
+-					if ($settings?.imageCompression ?? false) {
+-						const width = $settings?.imageCompressionSize?.width ?? null;
+-						const height = $settings?.imageCompressionSize?.height ?? null;
+-
+-						if (width || height) {
+-							imageUrl = await compressImage(imageUrl, width, height);
+-						}
+-					}
++                    if (files.some((item) => item.type === 'image') || file.size > 20 * 1024 * 1024) {
++                        toast.error($i18n.t('Use one PNG/JPEG image up to 20 MiB.'));
++                        return;
++                    }
++                    let imageUrl = event.target.result;
++
+ 
+ 					files = [
+ 						...files,
+@@ -280,7 +279,7 @@
+ 				};
+ 				reader.readAsDataURL(file);
+ 			} else {
+-				uploadFileHandler(file);
++                toast.error($i18n.t('Use one PNG/JPEG image.'));
+ 			}
+ 		});
+ 	};
+@@ -498,9 +497,7 @@
+ 								await tick();
+ 								document.getElementById('chat-input')?.focus();
+ 
+-								if ($settings?.speechAutoSend ?? false) {
+-									dispatch('submit', prompt);
+-								}
++								// Dictation stays editable; retain speechAutoSend for future voice modes.
+ 							}}
+ 						/>
+ 					{:else}
+@@ -787,20 +784,7 @@
+ 													if (clipboardData && clipboardData.items) {
+ 														for (const item of clipboardData.items) {
+ 															if (item.type.indexOf('image') !== -1) {
+-																const blob = item.getAsFile();
+-																const reader = new FileReader();
+-
+-																reader.onload = function (e) {
+-																	files = [
+-																		...files,
+-																		{
+-																			type: 'image',
+-																			url: `${e.target.result}`
+-																		}
+-																	];
+-																};
+-
+-																reader.readAsDataURL(blob);
++																const blob = item.getAsFile(); if (blob) inputFilesHandler([blob]);
+ 															} else if (item.type === 'text/plain') {
+ 																if ($settings?.largeTextAsFile ?? false) {
+ 																	const text = clipboardData.getData('text/plain');
+@@ -1000,20 +984,7 @@
+ 												if (clipboardData && clipboardData.items) {
+ 													for (const item of clipboardData.items) {
+ 														if (item.type.indexOf('image') !== -1) {
+-															const blob = item.getAsFile();
+-															const reader = new FileReader();
+-
+-															reader.onload = function (e) {
+-																files = [
+-																	...files,
+-																	{
+-																		type: 'image',
+-																		url: `${e.target.result}`
+-																	}
+-																];
+-															};
+-
+-															reader.readAsDataURL(blob);
++															const blob = item.getAsFile(); if (blob) inputFilesHandler([blob]);
+ 														} else if (item.type === 'text/plain') {
+ 															if ($settings?.largeTextAsFile ?? false) {
+ 																const text = clipboardData.getData('text/plain');
+diff --git a/src/lib/components/chat/MessageInput/VoiceRecording.svelte b/src/lib/components/chat/MessageInput/VoiceRecording.svelte
+--- a/src/lib/components/chat/MessageInput/VoiceRecording.svelte
++++ b/src/lib/components/chat/MessageInput/VoiceRecording.svelte
+@@ -5,6 +5,8 @@
+ 	import { blobToFile, calculateSHA256, extractCurlyBraceWords } from '$lib/utils';
+ 
+ 	import { transcribeAudio } from '$lib/apis/audio';
++	import { recordingBlob, validateDictationWav } from '$lib/utils/corvus-dictation';
++	import { normalizeRecording } from '$lib/utils/corvus-normalize';
+ 
+ 	const i18n = getContext('i18n');
+ 
+@@ -24,6 +26,7 @@
+ 	const startDurationCounter = () => {
+ 		durationCounter = setInterval(() => {
+ 			durationSeconds++;
++			if (durationSeconds >= 120) { void stopRecording(); toast.error($i18n.t('Recording limit reached.')); dispatch('cancel'); }
+ 		}, 1000);
+ 	};
+ 
+@@ -76,7 +79,7 @@
+ 	};
+ 
+ 	const analyseAudio = (stream) => {
+-		const audioContext = new AudioContext();
++		audioContext = new AudioContext();
+ 		const audioStreamSource = audioContext.createMediaStreamSource(stream);
+ 
+ 		const analyser = audioContext.createAnalyser();
+@@ -130,166 +133,138 @@
+ 		detectSound();
+ 	};
+ 
+-	const transcribeHandler = async (audioBlob) => {
+-		// Create a blob from the audio chunks
+-
+-		await tick();
+-		const file = blobToFile(audioBlob, 'recording.wav');
+-
+-		const res = await transcribeAudio(localStorage.token, file).catch((error) => {
+-			toast.error(`${error}`);
+-			return null;
+-		});
+-
+-		if (res) {
+-			console.log(res);
+-			dispatch('confirm', res);
++	let cancelled = false;
++	let generation = 0;
++	let transcriptionController;
++	let audioContext;
++	let encodedBytes = 0;
++
++	const releaseMedia = () => {
++		stopDurationCounter();
++		stream?.getTracks().forEach((track) => track.stop());
++		stream = null;
++		if (audioContext) {
++			const context = audioContext;
++			audioContext = null;
++			void context.close().catch(() => {});
+ 		}
+ 	};
+ 
+-	const saveRecording = (blob) => {
+-		const url = URL.createObjectURL(blob);
+-		const a = document.createElement('a');
+-		document.body.appendChild(a);
+-		a.style = 'display: none';
+-		a.href = url;
+-		a.download = 'recording.wav';
+-		a.click();
+-		window.URL.revokeObjectURL(url);
++	const transcribeHandler = async ({ blob }) => {
++		const take = generation;
++		if (cancelled) return;
++		const controller = new AbortController();
++		transcriptionController = controller;
++		try {
++			const wav = await normalizeRecording(blob, controller.signal);
++			if (cancelled || take !== generation || controller.signal.aborted) return;
++			if (!(await validateDictationWav(wav))) throw new Error('Invalid normalized audio.');
++			if (cancelled || take !== generation || controller.signal.aborted) return;
++			const file = blobToFile(wav, 'recording.wav');
++			const res = await transcribeAudio(localStorage.token, file, controller.signal);
++			if (!cancelled && take === generation && !controller.signal.aborted
++				&& typeof res?.text === 'string' && res.text.trim()) {
++				dispatch('confirm', { text: res.text });
++			}
++		} catch {
++			if (!cancelled && take === generation && !controller.signal.aborted) {
++				toast.error($i18n.t('Dictation is unavailable for this recording.'));
++			}
++		} finally {
++			if (transcriptionController === controller) transcriptionController = null;
++		}
+ 	};
+ 
+ 	const startRecording = async () => {
+ 		loading = true;
+-
+-		stream = await navigator.mediaDevices.getUserMedia({
+-			audio: {
+-				echoCancellation: true,
+-				noiseSuppression: true,
+-				autoGainControl: true
++		cancelled = false;
++		confirmed = false;
++		const take = ++generation;
++		// Private dictation must not switch to a browser/vendor speech engine.
++		if ($config.audio.stt.engine === 'web' || ($settings?.audio?.stt?.engine ?? '') === 'web') {
++			toast.error($i18n.t('Browser speech recognition is unavailable for private dictation.'));
++			loading = false;
++			recording = false;
++			dispatch('cancel');
++			return;
++		}
++		try {
++			const acquired = await navigator.mediaDevices.getUserMedia({
++				audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
++			});
++			if (cancelled || take !== generation || !recording) {
++				acquired.getTracks().forEach((track) => track.stop());
++				return;
+ 			}
+-		});
+-		mediaRecorder = new MediaRecorder(stream);
+-		mediaRecorder.onstart = () => {
+-			console.log('Recording started');
+-			loading = false;
+-			startDurationCounter();
+-
+-			audioChunks = [];
+-			analyseAudio(stream);
+-		};
+-		mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+-		mediaRecorder.onstop = async () => {
+-			console.log('Recording stopped');
+-			if ($config.audio.stt.engine === 'web' || ($settings?.audio?.stt?.engine ?? '') === 'web') {
++			stream = acquired;
++			mediaRecorder = new MediaRecorder(stream);
++			mediaRecorder.onstart = () => {
++				if (cancelled || take !== generation) return;
++				loading = false;
+ 				audioChunks = [];
+-			} else {
+-				if (confirmed) {
+-					const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+-
+-					await transcribeHandler(audioBlob);
+-
+-					confirmed = false;
+-					loading = false;
++				encodedBytes = 0;
++				startDurationCounter();
++				analyseAudio(stream);
++			};
++			mediaRecorder.ondataavailable = (event) => {
++				if (!cancelled && take === generation && event.data.size) {
++					encodedBytes += event.data.size;
++					if (encodedBytes > 8 * 1024 * 1024) {
++						void stopRecording();
++						toast.error($i18n.t('Recording limit reached.'));
++						dispatch('cancel');
++					} else audioChunks.push(event.data);
+ 				}
++			};
++			mediaRecorder.onstop = async () => {
++				if (take !== generation) return;
++				const chunks = audioChunks;
+ 				audioChunks = [];
++				const accept = confirmed && !cancelled && take === generation;
++				confirmed = false;
++				releaseMedia();
++				try {
++					if (accept) await transcribeHandler(recordingBlob(chunks, mediaRecorder.mimeType));
++				} catch {
++					if (!cancelled && take === generation) {
++						toast.error($i18n.t('This recording format is not supported for private dictation.'));
++						dispatch('cancel');
++					}
++				} finally {
++					if (take === generation) { loading = false; recording = false; }
++				}
++			};
++			mediaRecorder.start(1000);
++		} catch {
++			if (take === generation) {
++				releaseMedia();
++				loading = false;
+ 				recording = false;
+-			}
+-		};
+-		mediaRecorder.start();
+-		if ($config.audio.stt.engine === 'web' || ($settings?.audio?.stt?.engine ?? '') === 'web') {
+-			if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+-				// Create a SpeechRecognition object
+-				speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+-
+-				// Set continuous to true for continuous recognition
+-				speechRecognition.continuous = true;
+-
+-				// Set the timeout for turning off the recognition after inactivity (in milliseconds)
+-				const inactivityTimeout = 2000; // 3 seconds
+-
+-				let timeoutId;
+-				// Start recognition
+-				speechRecognition.start();
+-
+-				// Event triggered when speech is recognized
+-				speechRecognition.onresult = async (event) => {
+-					// Clear the inactivity timeout
+-					clearTimeout(timeoutId);
+-
+-					// Handle recognized speech
+-					console.log(event);
+-					const transcript = event.results[Object.keys(event.results).length - 1][0].transcript;
+-
+-					transcription = `${transcription}${transcript}`;
+-
+-					await tick();
+-					document.getElementById('chat-input')?.focus();
+-
+-					// Restart the inactivity timeout
+-					timeoutId = setTimeout(() => {
+-						console.log('Speech recognition turned off due to inactivity.');
+-						speechRecognition.stop();
+-					}, inactivityTimeout);
+-				};
+-
+-				// Event triggered when recognition is ended
+-				speechRecognition.onend = function () {
+-					// Restart recognition after it ends
+-					console.log('recognition ended');
+-
+-					confirmRecording();
+-					dispatch('confirm', { text: transcription });
+-					confirmed = false;
+-					loading = false;
+-				};
+-
+-				// Event triggered when an error occurs
+-				speechRecognition.onerror = function (event) {
+-					console.log(event);
+-					toast.error($i18n.t(`Speech recognition error: {{error}}`, { error: event.error }));
+-					dispatch('cancel');
+-
+-					stopRecording();
+-				};
++				toast.error($i18n.t('Microphone is unavailable.'));
++				dispatch('cancel');
+ 			}
+ 		}
+ 	};
+ 
+ 	const stopRecording = async () => {
+-		if (recording && mediaRecorder) {
+-			await mediaRecorder.stop();
+-		}
+-
+-		if (speechRecognition) {
+-			speechRecognition.stop();
+-		}
+-
+-		stopDurationCounter();
++		cancelled = true;
++		confirmed = false;
++		generation++;
++		transcriptionController?.abort();
++		transcriptionController = null;
++		if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+ 		audioChunks = [];
+-
+-		if (stream) {
+-			const tracks = stream.getTracks();
+-			tracks.forEach((track) => track.stop());
+-		}
+-
+-		stream = null;
++		releaseMedia();
++		recording = false;
++		loading = false;
+ 	};
+ 
+ 	const confirmRecording = async () => {
++		if (cancelled || !recording || !mediaRecorder || mediaRecorder.state === 'inactive') return;
+ 		loading = true;
+ 		confirmed = true;
+-
+-		if (recording && mediaRecorder) {
+-			await mediaRecorder.stop();
+-		}
+-		clearInterval(durationCounter);
+-
+-		if (stream) {
+-			const tracks = stream.getTracks();
+-			tracks.forEach((track) => track.stop());
+-		}
+-
+-		stream = null;
++		mediaRecorder.stop();
++		releaseMedia();
+ 	};
+ 
+ 	let resizeObserver;
+@@ -316,7 +291,8 @@
+ 
+ 	onDestroy(() => {
+ 		// remove resize observer
+-		resizeObserver.disconnect();
++		stopRecording();
++		resizeObserver?.disconnect();
+ 	});
+ </script>
+ 
+diff --git a/src/lib/components/chat/Messages/ResponseMessage.svelte b/src/lib/components/chat/Messages/ResponseMessage.svelte
+--- a/src/lib/components/chat/Messages/ResponseMessage.svelte
++++ b/src/lib/components/chat/Messages/ResponseMessage.svelte
+@@ -265,7 +265,6 @@
+ 				return;
+ 			}
+ 
+-			console.debug('Prepared message content for TTS', messageContentParts);
+ 
+ 			audioParts = messageContentParts.reduce(
+ 				(acc, _sentence, idx) => {
+diff --git a/src/lib/components/chat/Messages/UserMessage.svelte b/src/lib/components/chat/Messages/UserMessage.svelte
+--- a/src/lib/components/chat/Messages/UserMessage.svelte
++++ b/src/lib/components/chat/Messages/UserMessage.svelte
+@@ -17,7 +17,15 @@
+ 
+ 	import localizedFormat from 'dayjs/plugin/localizedFormat';
+ 
+-	const i18n = getContext('i18n');
++    const imagePreviews: any = getContext('corvus-image-previews') ?? {
++        subscribe: (run) => { run({}); return () => {}; },
++        ready: () => {}, restore: () => false, displayFailed: () => {}
++    };
++    let preview;
++    let displayFiles;
++    $: preview = $imagePreviews[messageId];
++    $: displayFiles = message.files?.length ? message.files : (preview ? [{ type: 'image', url: preview.url }] : undefined);
++    const i18n = getContext('i18n');
+ 	dayjs.extend(localizedFormat);
+ 
+ 	export let user;
+@@ -139,12 +147,16 @@
+ 		{/if}
+ 
+ 		<div class="chat-{message.role} w-full min-w-full markdown-prose">
+-			{#if message.files}
++			{#if displayFiles}
+ 				<div class="mt-2.5 mb-1 w-full flex flex-col justify-end overflow-x-auto gap-1 flex-wrap">
+-					{#each message.files as file}
++					{#each displayFiles as file}
+ 						<div class={($settings?.chatBubble ?? true) ? 'self-end' : ''}>
+ 							{#if file.type === 'image'}
+-								<Image src={file.url} imageClassName=" max-h-96 rounded-lg" />
++								<Image src={file.url} previewSrc={preview?.url ?? ''} imageClassName=" max-h-96 rounded-lg"
++                                    on:loaded={(event) => {
++                                        if (message.files?.some((file) => file.url === event.detail.src)) imagePreviews.ready(messageId);
++                                    }}
++                                    on:displayError={() => imagePreviews.displayFailed(messageId)} />
+ 							{:else}
+ 								<FileItem
+ 									item={file}
+@@ -160,7 +172,15 @@
+ 				</div>
+ 			{/if}
+ 
+-			{#if message.content !== ''}
++            {#if preview?.status === 'failed'}
++                <div role="status" aria-live="polite">
++                    {$i18n.t('Image save not confirmed. Check this turn before sending again.')}
++                    <button type="button" on:click={() => imagePreviews.restore(messageId)}>{$i18n.t('Restore to composer (does not send)')}</button>
++                </div>
++            {:else if preview?.displayError}
++                <div role="status">{$i18n.t('Image saved; showing the local preview while its display is unavailable.')}</div>
++            {/if}
++            {#if message.content !== ''}
+ 				{#if edit === true}
+ 					<div class=" w-full bg-gray-50 dark:bg-gray-800 rounded-3xl px-5 py-3 mb-2">
+ 						<div class="max-h-96 overflow-auto">
+diff --git a/src/lib/components/common/Image.svelte b/src/lib/components/common/Image.svelte
+--- a/src/lib/components/common/Image.svelte
++++ b/src/lib/components/common/Image.svelte
+@@ -1,8 +1,22 @@
+ <script lang="ts">
++    import { createEventDispatcher } from 'svelte';
+ 	import { WEBUI_BASE_URL } from '$lib/constants';
+ 	import ImagePreview from './ImagePreview.svelte';
+ 
+-	export let src = '';
++    export let src = '';
++    export let previewSrc = '';
++    const dispatch = createEventDispatcher();
++    let previewMode = false;
++    let loadedSrc = '';
++    let showFallback = false;
++    $: if (previewSrc) previewMode = true;
++    $: showFallback = !!previewSrc && loadedSrc !== _src;
++    const imageLoaded = (event) => {
++        const image = event.currentTarget;
++        if (!image.complete || !image.naturalWidth || image.currentSrc !== new URL(_src, document.baseURI).href) return;
++        loadedSrc = _src;
++        dispatch('loaded', { src });
++    };
+ 	export let alt = '';
+ 
+ 	export let className = ' w-full outline-hidden focus:outline-hidden';
+@@ -21,7 +35,18 @@
+ 	}}
+ 	type="button"
+ >
+-	<img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image" />
++	{#if previewMode}
++        <span style="display: grid">
++            {#if showFallback}
++                <img src={previewSrc} {alt} class={imageClassName} draggable="false" aria-hidden="true" style="grid-area: 1 / 1" />
++            {/if}
++            <img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image"
++                style="grid-area: 1 / 1" style:visibility={showFallback ? 'hidden' : 'visible'}
++                on:load={imageLoaded} on:error={() => dispatch('displayError')} />
++        </span>
++    {:else}
++        <img src={_src} {alt} class={imageClassName} draggable="false" data-cy="image" on:load={imageLoaded} />
++    {/if}
+ </button>
+ 
+-<ImagePreview bind:show={showImagePreview} src={_src} {alt} />
++<ImagePreview bind:show={showImagePreview} src={showFallback ? previewSrc : _src} {alt} />

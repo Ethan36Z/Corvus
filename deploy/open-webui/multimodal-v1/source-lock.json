@@ -1,0 +1,60 @@
+{
+  "upstream_commit": "07d8460126a686de9a99e2662d06106e22c3f6b6",
+  "upstream_archive_sha256": "e15a53351b91fdc0d8e4499d03f210b684fa198cd58d6557cc5aabffaae5f836",
+  "package_lock_sha256": "d140bb9648ff22a039826c710fc5bfa4e5e36b8660ea6e97c9253025cbb1ead9",
+  "node_image": "sha256:35d1e2d251585b806c41f71d0933d7ba3afb6374ee3745523c2ae406480f6bc7",
+  "frontend_source_commit": "a7558fdc39acbe29ca5813182b155b0b65766798",
+  "runtime_webui_image": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
+  "patch_sha256": "4e656f917cc246a8669551297a1d9bf757fe8dc7eaf026aa83764c5677e11ee4",
+  "files": {
+    "src/lib/apis/audio/index.ts": {
+      "before": "47f9b585a019c13d98f1559c674d81e1b14c943a217f072bb0695b7407e379e1",
+      "after": "9c6ec8c1d15b1fd78b89f06996279ec891cd2caf7df3ec9557d04a013ce1c895"
+    },
+    "src/lib/components/chat/Chat.svelte": {
+      "before": "8d1cac9a7cf676e7275747df6d55d31d55bc45660819c48b1770b2ff2c4eadcd",
+      "after": "67379cd1caf31359bd21b8c2b68618f7d8281b2a8db1940ee210277cf912069b"
+    },
+    "src/lib/components/chat/MessageInput.svelte": {
+      "before": "554564dee985a2f4db96be7cd2c2da3e8d499d3ae07e491e6b8499b8287a5451",
+      "after": "16985bb74b2d30623a600386e49cb2b2dc10a33b19e09450d78bd711c0cec00c"
+    },
+    "src/lib/components/chat/MessageInput/VoiceRecording.svelte": {
+      "before": "91713f5f7ec32cb1382cd735362f4f3da7389e6c85e1b38f28a2cbb62cd275d6",
+      "after": "557fd96cc2fa0ec3f7556897d81a4180446dd95339f0b00aad6044d883e1338c"
+    },
+    "src/lib/components/chat/Messages/ResponseMessage.svelte": {
+      "before": "48cfca12c0e8fc857a3078a5c0f7e7abda6616f82ac704c1ee037c184cac409b",
+      "after": "667f397f709f79832dbbc56be9f95156b2205f6eb2fa10292a0dd3a141801b8f"
+    },
+    "src/lib/components/chat/Messages/UserMessage.svelte": {
+      "before": "75d3cf89442c8d89922be6a5b1e565b6a2f05c32f1793162300c168d505a001a",
+      "after": "b77c54441974d1f2c4304abfca57bbf733a7240f2abfc8a1997eaea07c8409f6"
+    },
+    "src/lib/components/common/Image.svelte": {
+      "before": "4cddef5cd6a0c5754e9c99d515155854e00bf12cc03897fb5674420cbc7ddfa0",
+      "after": "fea753e5ab83bdb263420e4248cc616a3e3eb751241ef486986d531699f48482"
+    },
+    "src/lib/utils/corvus-dictation.ts": {
+      "before": null,
+      "after": "22072214fdce84a44906aa323092d1bf7cb0d60730ed3d64ed68ffa75a8cbf49"
+    },
+    "src/lib/utils/corvus-normalize.ts": {
+      "before": null,
+      "after": "7fd22d68fade094aed17c8fa811303b7feffdda48033cd86ca3e641d608d8766"
+    },
+    "src/lib/utils/corvus-vision.ts": {
+      "before": null,
+      "after": "541e4b09b097f8d04d93c3d28721ba7fa4f86a29a310929dd44cb63ffb59f170"
+    }
+  },
+  "copy_existing_helpers": {
+    "src/lib/utils/corvus-dictation.ts": "deploy/lab/stt/dictation.ts",
+    "src/lib/utils/corvus-normalize.ts": "deploy/lab/stt/normalize.ts",
+    "src/lib/utils/corvus-vision.ts": "deploy/open-webui/vision.ts"
+  },
+  "base_source_verification": {
+    "patched_files": 117,
+    "application_branding_findings": 0
+  }
+}
