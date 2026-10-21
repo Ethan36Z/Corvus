@@ -566,3 +566,20 @@ order to the staged-reference order using mocked native saves. Actual browser
 thumbnail acceptance remains pending deployment and user verification. The
 reported transient unconfirmed reply lacks retained status/error evidence and
 is not attributed to this thumbnail race or hidden by this fix.
+
+
+### Lab thumbnail-order deployment — 2026-10-20
+
+Deployed source `4d5b5847cb35db03e63af305d473c4f69aea188c` as frontend-only image
+`sha256:50e5699421902c24647c252cf87d74a23d041a6295013097080ba15843549cfe`.
+Only Lab WebUI was recreated. Health and delivered `-vision20-state` HTML/JS
+hashes and commit-before-render order were verified. Persistent STT mounts,
+volume, environment/security settings, Pipe/model configuration and all other
+service process identities/start times were unchanged. No image upload,
+retry or inference was performed during deployment. Unconfirmed-reply logic
+was not changed. Mac first-display/reload acceptance remains pending.
+
+Retained exact rollback image:
+`sha256:d0080a3e2577f2801d41cb6ab5399168a68896ea0e2e468477f7a34bcf8bcd91`;
+protected current configuration/recovery checkpoints and earlier backups remain
+available. Rollback preserves current data and never restores an old database.
