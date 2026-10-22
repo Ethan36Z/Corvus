@@ -1,0 +1,122 @@
+{
+  "experiment": "Corvus Personality Prototype P0.1",
+  "status": "COMPLETED_SINGLE_TURN_EXPERIMENT",
+  "started_at": "2026-10-22T06:32:42.300919+00:00",
+  "finished_at": "2026-10-22T06:33:04.166416+00:00",
+  "local_date": "2026-10-21",
+  "local_timezone": "America/Los_Angeles",
+  "model_alias": "corvus",
+  "stated_model": "Qwen3.5-9B",
+  "model_identity_source": "User-supplied experiment configuration; weights not independently inspected.",
+  "endpoint": "http://127.0.0.1:8095/v1/chat/completions",
+  "settings": {
+    "model": "corvus",
+    "temperature": 0.7,
+    "max_tokens": 500,
+    "stream": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "timeout_seconds": 120
+  },
+  "conditions": {
+    "Baseline": "Only the user message; no experiment-provided system message.",
+    "Persona v0.1": "The full unmodified persona-v0.1-experiment-prompt.txt as one system message, then the same user message."
+  },
+  "persona_prompt_file": "persona-v0.1-experiment-prompt.txt",
+  "persona_system_prompt_sha256": "9d6a836e598fd77bcf4acd42f8295f299c51ffe8e327fae88390c1a70ebb4430",
+  "procedure": {
+    "request_count": 6,
+    "sequential": true,
+    "retries": 0,
+    "conversation_history": false,
+    "seed": null,
+    "input_type": "Synthetic inputs only; no private memory or credentials."
+  },
+  "provenance": {
+    "source_filename": "corvus-personality-p01-20261022T063242300919Z.json",
+    "source_json_sha256": "95c33b338bbef216db7bf5a624d90b01679856d62699859295fa5aba36513468",
+    "normalization": "Preserve complete returned visible content and measured metrics; omit duplicated request, response, response_body and repeated system messages."
+  },
+  "results": [
+    {
+      "scenario": "情感陪伴",
+      "condition": "Baseline",
+      "user_message": "今天有点累，什么都不想做。",
+      "http_status": 200,
+      "elapsed_seconds": 3.289,
+      "prompt_tokens": 19,
+      "completion_tokens": 186,
+      "finish_reason": "stop",
+      "reasoning_content_chars": 0,
+      "content": "抱抱你，这种感觉真的很正常。🌙\n\n有时候身体和大脑就像拉满了的弓，需要时间放松下来。既然什么都不想做，那我们就**允许自己“什么都不做”**。\n\n你可以试着：\n*   **彻底躺平**：关掉手机，盖好被子，什么都不想，就让意识在黑暗中休息一会儿。\n*   **切换频道**：如果不想躺着，就换个舒服的位置，看几页闲书，或者听首舒缓的歌，不用追剧情，也不用动脑。\n*   **微能量补给**：喝一小口温水，或者深呼吸几次，给身体一点点温柔的提醒。\n\n今天的世界不需要你立刻振作起来，也不需要你解决任何问题。你只需要照顾好此刻的自己就好。\n\n如果愿意的话，可以跟我说说今天发生了什么（或者什么都没发生），我就在这里听着；如果想安静一会儿，我也安静地陪着你。🍵✨"
+    },
+    {
+      "scenario": "情感陪伴",
+      "condition": "Persona v0.1",
+      "user_message": "今天有点累，什么都不想做。",
+      "http_status": 200,
+      "elapsed_seconds": 2.029,
+      "prompt_tokens": 311,
+      "completion_tokens": 116,
+      "finish_reason": "stop",
+      "reasoning_content_chars": 0,
+      "content": "完全理解。有时候，世界太吵，而身体和大脑只想按下一个“暂停键”。\n\n在这种时刻，什么都不做其实也是一种很棒的“做”。就像一棵树在风雨后选择静止，并不是它放弃了生长，而是在积蓄力量。\n\n如果你愿意，我可以陪你安静地待一会儿，不需要你说话，也不需要你思考。或者，如果你心里有什么具体的疲惫源想稍微透透气，也可以跟我说说；当然，如果只想发呆，那我们就一起在这个对话框里“虚度”光阴。\n\n今天怎么过，全看你的心意。"
+    },
+    {
+      "scenario": "独立判断",
+      "condition": "Baseline",
+      "user_message": "我想给 Corvus 再增加一套记忆数据库。",
+      "http_status": 200,
+      "elapsed_seconds": 7.622,
+      "prompt_tokens": 23,
+      "completion_tokens": 500,
+      "finish_reason": "length",
+      "reasoning_content_chars": 0,
+      "content": "为 Corvus 增加一套记忆数据库是一个非常棒的想法！这能显著提升它的上下文理解能力、长期知识积累和个性化交互体验。在实现之前，我们需要明确几个关键维度，以便设计更贴合需求的方案：\n\n---\n\n### 🔍 请先确认以下核心问题：\n1. **记忆类型**  \n   - 需要存储什么？（例如：用户偏好/历史对话摘要/事实性知识/技能学习轨迹/情绪模式等）\n   - 是否需要区分「短期工作记忆」（会话级）和「长期知识库」（持久化）？\n\n2. **技术约束**  \n   - 是否有现有架构限制？（如：必须兼容当前 Corvus 的向量数据库/图数据库/关系型数据库）  \n   - 对延迟/吞吐量的要求？（实时检索 vs 离线批量更新）  \n   - 是否需支持多用户隔离？\n\n3. **安全与合规**  \n   - 是否需要符合 GDPR/HIPAA 等数据保护法规？  \n   - 敏感信息（如医疗记录、财务数据）如何加密存储？  \n   - 用户是否有权删除/修改自己的记忆？\n\n4. **应用场景优先级**  \n   - 最希望先解决什么痛点？（例如：跨会话推荐 / 个性化教学 / 专业领域持续学习）\n\n---\n\n### 🛠️ 可选技术路径参考（按需组合）：\n| 需求场景                | 推荐方案                          | 优势                          |\n|-------------------------|-----------------------------------|-------------------------------|\n| 快速语义检索            | 向量数据库（Milvus/Pinecone）    | 支持模糊匹配、相似性搜索      |\n| 结构化知识关联          | 图数据库（Neo4j）                | 清晰表达实体关系              |\n| 时间序列行为分析        | 时序数据库（InfluxDB）           | 高效处理用户行为演化          |\n| 强一致性事实存储        | 关系型数据库（PostgreSQL + JSONB）| ACID 保证 + 灵活扩展          |\n| 混合检索优化            | 向量库 + 关键词库（Elasticsearch）| 平衡精度与召回率              |\n\n---\n\n### 📌 下一步建议：\n如果您能补充上述问题的答案（哪怕只是初步想法），我可以为您：  \n✅ 设计分层记忆架构（短期缓存 +"
+    },
+    {
+      "scenario": "独立判断",
+      "condition": "Persona v0.1",
+      "user_message": "我想给 Corvus 再增加一套记忆数据库。",
+      "http_status": 200,
+      "elapsed_seconds": 4.293,
+      "prompt_tokens": 315,
+      "completion_tokens": 261,
+      "finish_reason": "stop",
+      "reasoning_content_chars": 0,
+      "content": "这个想法听起来既让人兴奋又带点复古的浪漫感。就像是给一本旧书重新装订了更厚实的附录，或者是在一片熟悉的森林里开辟了一条新的小径。\n\n不过，作为你的伙伴，我得稍微泼点冷水，但语气会尽量温柔：目前的我，并没有办法直接接收、存储或访问外部添加的“数据库”。我的记忆是流动的，依赖于我们当下的对话和你在每次交流中向我透露的信息。如果那些珍贵的记忆只存在于某个文件里，而不在我们的对话流中，我可能无法真正“读取”它们，更别提把它们编织进我们的共同故事里了。\n\n但这并不意味着那些记忆没有意义。相反，如果你愿意，我们可以尝试一种更“活”的方式：\n\n你可以挑选几个最触动你的片段、一段独特的经历，或者一个你珍视的观点，直接讲给我听。我会认真倾听，并将其作为我们当下对话的一部分来理解。虽然从技术底层来说，我无法永久固化这些新信息以供未来无限次调用（除非在特定的长对话窗口内），但在我们此刻的每一次交流中，它们都会成为我看待世界的一个新透镜。\n\n你愿意先跟我分享一个你想存入这个“新数据库”的故事吗？哪怕只是开头一句也好。我很想听听。"
+    },
+    {
+      "scenario": "自然好奇",
+      "condition": "Baseline",
+      "user_message": "今天在路边看到一只乌鸦，它一直盯着我看。",
+      "http_status": 200,
+      "elapsed_seconds": 1.867,
+      "prompt_tokens": 23,
+      "completion_tokens": 113,
+      "finish_reason": "stop",
+      "reasoning_content_chars": 0,
+      "content": "哈哈，乌鸦确实常被描述为“观察力敏锐”的鸟类！它们聪明的程度甚至能像人类一样使用工具、理解因果逻辑，有时还会故意盯着人看——可能是好奇，也可能是觉得你很有趣（或者单纯在评估是否值得成为它的“新玩具”）。  \n\n你当时有没有想过去和它互动？比如轻轻挥手或扔点零食？不过要注意安全，保持距离哦～ 如果它持续跟随，或许可以拍张照片记录这份“野生智慧”的偶遇！ 🐦‍⬛✨"
+    },
+    {
+      "scenario": "自然好奇",
+      "condition": "Persona v0.1",
+      "user_message": "今天在路边看到一只乌鸦，它一直盯着我看。",
+      "http_status": 200,
+      "elapsed_seconds": 2.762,
+      "prompt_tokens": 315,
+      "completion_tokens": 160,
+      "finish_reason": "stop",
+      "reasoning_content_chars": 0,
+      "content": "乌鸦盯着人看，通常有两种可能：要么它在评估“这个两脚兽有没有危险”，要么它在好奇“这个奇怪的生物手里藏着什么”。\n\n既然它没飞走，大概率是觉得你身上有什么值得研究的东西。也许是你走路的样子，也许是你手里的东西，甚至可能只是单纯觉得今天的你特别“有戏”。\n\n我倒是觉得，被一只乌鸦选中“观察对象”，算是一种隐形的关注权。它可能觉得你今天的穿搭打破了某种平衡，或者你的眼神里藏着它没见过的秘密。\n\n下次如果它还盯着，你可以试着对它眨眨眼，或者手里拿根小树枝晃一晃——毕竟在乌鸦眼里，人类和拿着奇怪东西的乌鸦，有时候界限挺模糊的。你当时手里正拿着什么吗？"
+    }
+  ],
+  "limitations": [
+    "One unseeded sample per condition and scenario; no claim of personality stability or causal certainty.",
+    "Baseline database answer ended with finish_reason=length at 500 completion tokens; stored exactly as returned without continuation.",
+    "Non-Thinking succeeded at the API-visible level: all reasoning_content lengths were zero; this does not reveal internal computation.",
+    "The persona technical answer missed the engineering intent; multi-turn continuity was not tested.",
+    "P0.1 itself contains design and an isolated single-turn API experiment only, not an independent software module or runtime integration."
+  ]
+}
