@@ -1,0 +1,47 @@
+{
+  "services": {
+    "corvus-kokoro": {
+      "restart": "unless-stopped",
+      "container_name": "corvus-kokoro",
+      "command": null,
+      "entrypoint": null,
+      "environment": {
+        "DEFAULT_VOICE": "af_mica",
+        "DEFAULT_VOICE_CODE": "z",
+        "KOKORO_V1_FILE": "v1_1_zh/kokoro-v1_1-zh.pth",
+        "PYTHONUNBUFFERED": "1",
+        "REPO_ID": "hexgrad/Kokoro-82M-v1.1-zh",
+        "USE_GPU": "false",
+        "VOICES_DIR": "/app/api/src/voices/v1_1_zh"
+      },
+      "image": "corvus-kokoro:tts21-privacy-offline",
+      "networks": {
+        "existing": null
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/home/ethan/srv/shared/models/kokoro-voices/community",
+          "target": "/app/api/src/voices/v1_1_zh",
+          "read_only": true,
+          "bind": {}
+        }
+      ],
+      "ports": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 8880,
+          "published": "8105",
+          "protocol": "tcp"
+        }
+      ]
+    }
+  },
+  "networks": {
+    "existing": {
+      "external": true,
+      "name": "small-vram-companion_default"
+    }
+  }
+}
