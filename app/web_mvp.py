@@ -172,11 +172,11 @@ def _answer_sources(accepted):
     return tuple(sources)
 
 
-# Fenced blocks (including an unfinished final block) and matching backtick spans.
+# Fenced blocks (including an unfinished final block) and same-line backtick spans.
 _CODE = re.compile(
     r'(?m:^ {0,3}(`{3,})[^\n]*\n[\s\S]*?'
     r'(?:^ {0,3}\1`*[ \t]*(?=\n|$)|\Z))'
-    r'|(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\2(?!`)'
+    r'|(?<!`)(`+)(?!`)[^\n]*?(?<!`)\2(?!`)'
 )
 _URL = re.compile(r'(?i)(?:[a-z][a-z0-9+.-]*://|www\.)[^\s<>`"\[\]]+')
 

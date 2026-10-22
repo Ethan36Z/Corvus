@@ -137,6 +137,32 @@ class MVPIntegrationTests(unittest.TestCase):
         paren=replace(p,sources=(MVPSource(paren_url,source_identity(paren_url),('web_1',)),))
         self.assertTrue(present_grounded_answer(paren_url,paren).startswith(paren_url))
 
+    def test_inline_code_cannot_hide_malicious_links_across_paragraphs(self):
+        h=Harness([controlled()]);p=prepare_web_mvp('concurrent.futures',provider_builder=h.provider,
+            fetch_search_result_fn=h.fetch,extract_web_page_fn=h.extract)
+        for separator in ('\n','\n\n'):
+            with self.subTest(separator=repr(separator)):
+                answer='`opening'+separator+'[malicious](javascript:alert(1))'+separator+'closing`'
+                text=present_grounded_answer(answer,p)
+                body=text.split('\n\nSources:')[0]
+                self.assertIn('malicious',body)
+                self.assertNotIn('javascript:',body)
+                self.assertNotIn('](',body)
+                self.assertEqual(text.count('](<'),1)
+                self.assertIn(p.sources[0].url,text)
+
+    def test_inline_code_cannot_hide_raw_html_across_paragraphs(self):
+        h=Harness([controlled()]);p=prepare_web_mvp('concurrent.futures',provider_builder=h.provider,
+            fetch_search_result_fn=h.fetch,extract_web_page_fn=h.extract)
+        for separator in ('\n','\n\n'):
+            with self.subTest(separator=repr(separator)):
+                answer='`opening'+separator+'<script>alert(1)</script><img src=x onerror=alert(1)>'+separator+'closing`'
+                text=present_grounded_answer(answer,p)
+                body=text.split('\n\nSources:')[0]
+                self.assertNotIn('<',body)
+                self.assertIn('&lt;script>alert(1)&lt;/script>',body)
+                self.assertIn('&lt;img src=x onerror=alert(1)>',body)
+
     def test_grounded_answer_uses_packer_and_persists_exact_used_evidence_once(self):
         r=Runtime(Harness([controlled()]),Requirements(required_text=('concurrent.futures',)))
         result=r.run()
