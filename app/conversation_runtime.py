@@ -36,7 +36,7 @@ from app.runtime_config import (
     WEB_MVP_ENABLED,
     WEB_PROVIDER,
 )
-from app.web_mvp import prepare_web_mvp, failed_preparation, present_grounded_answer
+from app.web_mvp import prepare_web_mvp, failed_preparation, present_grounded_answer, grounded_citation_counts
 
 from memory.attachments import (
     link_attachment_to_message,
@@ -520,6 +520,7 @@ def process_turn(
                         mvp_prepared = failed_preparation(search_query)
                 grounding = mvp_prepared
                 deterministic_reply = mvp_prepared.deterministic_reply
+                result["web_answer_basis"] = mvp_prepared.answer_basis
                 result["web_acceptance_status"] = mvp_prepared.evidence_status
                 result["web_coverage_missing"] = list(mvp_prepared.missing)
                 result["web_discovery_status"] = mvp_prepared.retrieval_status
@@ -758,6 +759,7 @@ def process_turn(
 
     if mvp_prepared is not None and deterministic_reply is None:
         try:
+            citation_counts = grounded_citation_counts(reply, mvp_prepared)
             reply = present_grounded_answer(
                 reply, mvp_prepared, chinese=any('\u3400' <= ch <= '\u9fff' for ch in user_content),
             )
@@ -765,6 +767,7 @@ def process_turn(
             result["model_status"] = "WEB_PRESENTATION_FAILED"
             result["error"] = "Web source presentation failed; no automatic retry."
             return result
+        result.update(citation_counts)
     result["model_status"] = "OK" if deterministic_reply is None else "NOT_CALLED"
     result["reply"] = reply
 

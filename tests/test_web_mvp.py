@@ -14,6 +14,7 @@ from test_web_acceptance import Harness, controlled, historical, facts
 from app.web_acceptance import EvidenceRequirements as Requirements, source_identity
 from app.web_mvp import prepare_web_mvp, present_grounded_answer, MVPSource, source_section
 from app.conversation_runtime import process_turn
+from app.model_client import ModelClientError
 from app import playground_api as api
 from app.searxng_provider import SearXNGProvider
 import httpx
@@ -50,15 +51,91 @@ class Runtime:
 
 
 class MVPIntegrationTests(unittest.TestCase):
-    def test_unknown_requirements_get_links_not_sufficiency_or_generation(self):
-        r=Runtime(Harness([controlled()]));result=r.run()
+    def test_unknown_requirements_with_evidence_generate_answer(self):
+        for req in (None, Requirements()):
+            with self.subTest(requirements=req):
+                r=Runtime(Harness([controlled()]),req);result=r.run()
+                self.assertEqual(result['web_presentation_outcome'],'GROUNDED_ANSWER')
+                self.assertEqual(result['web_answer_basis'],'RETRIEVED_EVIDENCE')
+                self.assertEqual(result['web_acceptance_status'],'EVIDENCE_RETRIEVED')
+                self.assertEqual(result['model_status'],'OK')
+                self.assertEqual(result['web_coverage_missing'],['requirements_not_specified'])
+                self.assertEqual([x[0] for x in r.events],['add','context','generate','add','evidence','dense'])
+                saved=next(e[2] for e in r.events if e[0]=='evidence')
+                expected=[dict(ordinal=e.ordinal,source_title=e.source_title,
+                    source_url=e.source_url,excerpt=e.excerpt)
+                    for e in r.prepared.used_web_evidence]
+                self.assertEqual(saved,expected)
+                self.assertIn('[web_1]',result['reply'])
+                self.assertIn(r.prepared.sources[0].url,result['reply'])
+                self.assertNotIn('web_999',result['reply']);self.assertNotIn('127.0.0.1',result['reply'])
+                self.assertEqual(result['web_citations_kept'],1)
+                self.assertEqual(result['web_citations_removed'],1)
+                self.assertEqual(result['web_query_rewrite_status'],'NOT_REQUESTED')
+
+    def test_unknown_requirements_partial_provider_failure_still_generates(self):
+        p=controlled();h=Harness([p]);r=Runtime(h)
+        payload={'results':[{'url':p.source_url,'title':'source','content':'concurrent.futures'}],
+                 'unresponsive_engines':[['google cse','access denied']]}
+        h.provider=lambda a:SearXNGProvider(fetch_json=lambda *a,**kw:payload)
+        result=r.run()
+        self.assertEqual(result['web_presentation_outcome'],'GROUNDED_ANSWER')
+        self.assertEqual(result['web_answer_basis'],'RETRIEVED_EVIDENCE')
+        self.assertEqual(result['web_acceptance_status'],'EVIDENCE_RETRIEVED')
+        self.assertEqual(result['web_coverage_missing'],['requirements_not_specified','provider_partial_failure'])
+        self.assertIn('Some search providers failed; source coverage may be incomplete.',result['reply'])
+        self.assertEqual([e[0] for e in r.events],['add','context','generate','add','evidence','dense'])
+
+    def test_unknown_requirements_without_relevant_passages_do_not_generate(self):
+        p=controlled();p=replace(p,text='Unrelated apples and pears.',original_chars=26,extracted_chars=26)
+        r=Runtime(Harness([p]));result=r.run()
         self.assertEqual(result['web_presentation_outcome'],'SOURCES_WITH_LIMITATIONS')
-        self.assertEqual(result['web_acceptance_status'],'EVIDENCE_INSUFFICIENT')
-        self.assertEqual(result['model_status'],'NOT_CALLED')
-        self.assertEqual([x[0] for x in r.events],['add','add','dense'])
         self.assertEqual(result['web_evidence_status'],'NOT_USED')
-        self.assertIn('Source 1',result['reply']);self.assertNotIn('web_1',result['reply'])
-        self.assertEqual(len([e for e in r.events if e[0]=='add']),2)
+        self.assertEqual(result['model_status'],'NOT_CALLED')
+        self.assertEqual([e[0] for e in r.events],['add','add','dense'])
+
+    def test_unknown_requirements_model_failure_never_retries_or_writes_assistant(self):
+        r=Runtime(Harness([controlled()]))
+        def fail(messages):
+            r.events.append(('generate',))
+            raise ModelClientError('MODEL_UNAVAILABLE','synthetic model failure')
+        r.generate=fail
+        result=r.run()
+        self.assertEqual(result['model_status'],'MODEL_UNAVAILABLE')
+        self.assertIsNone(result['assistant_message_id'])
+        self.assertEqual([e[0] for e in r.events],['add','context','generate'])
+        self.assertNotIn('web_presentation_outcome',result)
+
+    def test_grounded_markdown_preserved_with_filtered_links_and_citations(self):
+        h=Harness([controlled()]);p=prepare_web_mvp('concurrent.futures',provider_builder=h.provider,
+            fetch_search_result_fn=h.fetch,extract_web_page_fn=h.extract)
+        markdown='# Heading\n- **bold**\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n> quote\n'
+        code='```python\nprint("[web_999] [3] <tag> [t](dest)")\n```\n`[web_999] <tag>`'
+        answer=markdown+code+'\n<script> [t](http://x) ![alt](http://x) [web_1] [web_999] [3]\n'
+        answer+='[ref]: https://evil.invalid\nhttps://evil.invalid/path\n'+p.sources[0].url
+        answer+='\n```text\nhttps://evil.invalid/path\n```\n`https://evil.invalid/path`'
+        text=present_grounded_answer(answer,p)
+        self.assertIn(markdown,text);self.assertIn(code,text)
+        self.assertIn('&lt;script>',text);self.assertIn('t alt [web_1]',text)
+        body=text.split('\n\nSources:')[0]
+        self.assertNotIn('[web_999]',body.replace(code,''));self.assertNotIn('[3]',body.replace(code,''))
+        self.assertNotIn('evil.invalid',text);self.assertNotIn('http://x',text)
+        self.assertNotIn('[ref]:',text);self.assertIn(p.sources[0].url,body)
+        self.assertEqual(text.count('](<'),1)
+        self.assertIn('```text\n[link removed]\n```',text)
+        self.assertIn('`[link removed]`',text)
+        zh=present_grounded_answer('事实 [web_1] https://evil.invalid',
+            replace(p,missing=('provider_partial_failure',)),chinese=True)
+        self.assertIn('[链接已移除]',zh);self.assertIn('\n\n来源：',zh)
+        self.assertIn('部分搜索服务失败，来源覆盖可能不完整。',zh)
+        canonical=present_grounded_answer(p.sources[0].url+'#section',p)
+        self.assertIn(p.sources[0].url+'#section',canonical)
+        extra='``literal `tick` [web_999]``\n````text\n```\n[web_999]\n````'
+        self.assertTrue(present_grounded_answer(extra,p).startswith(extra))
+        self.assertIn('`'+p.sources[0].url+'`',present_grounded_answer('`'+p.sources[0].url+'`',p))
+        paren_url='https://docs.python.org/page_(example)'
+        paren=replace(p,sources=(MVPSource(paren_url,source_identity(paren_url),('web_1',)),))
+        self.assertTrue(present_grounded_answer(paren_url,paren).startswith(paren_url))
 
     def test_grounded_answer_uses_packer_and_persists_exact_used_evidence_once(self):
         r=Runtime(Harness([controlled()]),Requirements(required_text=('concurrent.futures',)))
@@ -117,7 +194,7 @@ class MVPIntegrationTests(unittest.TestCase):
         self.assertNotIn('PRIVATE_BACKEND_DETAIL',prepared.deterministic_reply)
 
     def test_assistant_commit_failure_stops_provenance_and_never_retries(self):
-        r=Runtime(Harness([controlled()]),fail_assistant=True);result=r.run()
+        r=Runtime(Harness([controlled()]),Requirements(required_text=('absent condition',)),fail_assistant=True);result=r.run()
         self.assertEqual(result['persistence_status'],'ASSISTANT_PERSISTENCE_FAILED')
         self.assertEqual(result['assistant_message_id'],None)
         self.assertEqual([x[0] for x in r.events],['add','add']);self.assertEqual(r.h.calls,1)
@@ -128,8 +205,9 @@ class MVPIntegrationTests(unittest.TestCase):
         self.assertEqual(request.web_requirements.required_text,('concurrent.futures',))
         r=Runtime(Harness([controlled()]));result=r.run()
         response=api.build_chat_response(result,load_messages_fn=lambda ids:[])
-        self.assertEqual(response['web_presentation_outcome'],'SOURCES_WITH_LIMITATIONS')
-        self.assertEqual(response['status']['model'],'NOT_CALLED')
+        self.assertEqual(response['web_presentation_outcome'],'GROUNDED_ANSWER')
+        self.assertEqual(response['status']['model'],'OK')
+        self.assertEqual(response['web_answer_basis'],'RETRIEVED_EVIDENCE')
         self.assertEqual(response['status']['persistence'],'NORMAL')
         self.assertNotIn('excerpt',json.dumps(response['web_sources']))
         self.assertEqual(response['web_sources'][0]['verification'],'FETCHED_EXTRACTED')
@@ -189,7 +267,7 @@ class MVPIntegrationTests(unittest.TestCase):
         with patch.object(api,'process_turn',runtime):response=api.post_chat(request)
         self.assertEqual(captured[0]['web_requirements'].required_text,('concurrent.futures',))
         self.assertNotIn('web_mvp_enabled',captured[0]);self.assertNotIn('web_source_facts',captured[0])
-        self.assertEqual(response['web_presentation_outcome'],'SOURCES_WITH_LIMITATIONS')
+        self.assertEqual(response['web_presentation_outcome'],'GROUNDED_ANSWER')
 
     def test_partial_provider_failure_with_content_stays_visible(self):
         p=controlled();h=Harness([p])

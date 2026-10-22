@@ -3,7 +3,6 @@
 No persistence, personal recall, model calls, event emission, or new pipeline.
 """
 from dataclasses import dataclass
-from html import escape
 import re
 from urllib.parse import quote
 
@@ -33,16 +32,19 @@ class MVPPreparation:
     selected_result_id: str | None = None
     deterministic_reply: str | None = None
     retrieval_status: str = "NOT_RUN"
+    answer_basis: str | None = None
 
 
 def _chinese(text):
     return any('\u3400' <= ch <= '\u9fff' for ch in text)
 
 
-def source_section(sources, *, chinese=False):
+def source_section(sources, *, chinese=False, concise=False):
     """Only validated retrieval URLs; no source titles or model-provided links."""
     lines = ['\n\n来源（已抓取页面，完整性和时效性另见说明）：' if chinese else
              '\n\nSources (pages fetched; coverage and freshness may remain limited):']
+    if concise:
+        lines = ['\n\n来源：' if chinese else '\n\nSources:']
     for i, source in enumerate(sources, 1):
         url = canonical_url(source.url)
         if source.identity != source_identity(url):
@@ -92,9 +94,8 @@ def failed_preparation(query, code='WEB_PREPARATION_FAILED'):
 
 def prepare_web_mvp(query, *, provider_builder, requirements=None,
                     source_facts=lambda page: None, **collector_options):
-    """Unknown requirements deliberately select the conservative link fallback.
+    """Explicit constraints establish sufficiency; otherwise use selected evidence.
 
-    Explicit constraints define the scope of sufficiency, never universal truth.
     SourceFacts is server-supplied; clients cannot assert trusted page metadata.
     """
     failures = []
@@ -123,20 +124,18 @@ def prepare_web_mvp(query, *, provider_builder, requirements=None,
     )
     sufficient = (explicit and accepted.evidence_status == 'EVIDENCE_SUFFICIENT'
                   and not accepted.provider_failures)
-    if sufficient:
-        mapped = source_map(accepted)
-        sources = []
-        for entry in mapped:
-            index = next((i for i, s in enumerate(sources) if s.identity == entry.source_identity), None)
-            if index is None:
-                sources.append(MVPSource(entry.url, entry.source_identity, (entry.evidence_ref,)))
-            else:
-                old = sources[index]
-                sources[index] = MVPSource(old.url, old.identity, old.refs + (entry.evidence_ref,))
-        return MVPPreparation(accepted.technical_status, 'GROUNDED_ANSWER',
-                              accepted.evidence_status, (), tuple(sources), accepted.evidence,
-                              accepted.grounding.selected_result_id,
-                              retrieval_status=accepted.retrieval_status)
+    if sufficient or (not explicit and accepted.evidence):
+        missing = () if explicit else ('requirements_not_specified',)
+        if accepted.provider_failures:
+            missing += ('provider_partial_failure',)
+        return MVPPreparation(
+            accepted.technical_status, 'GROUNDED_ANSWER',
+            accepted.evidence_status if explicit else 'EVIDENCE_RETRIEVED',
+            missing, _answer_sources(accepted), accepted.evidence,
+            accepted.grounding.selected_result_id,
+            retrieval_status=accepted.retrieval_status,
+            answer_basis='EXPLICIT_REQUIREMENTS' if explicit else 'RETRIEVED_EVIDENCE',
+        )
 
     sources = []
     # Only actual extracted pages can become fallback links. Never expose an
@@ -161,22 +160,83 @@ def prepare_web_mvp(query, *, provider_builder, requirements=None,
     return failed_preparation(query, accepted.retrieval_status)
 
 
-def present_grounded_answer(answer, prepared, *, chinese=False):
-    """Keep model prose, but build all clickable source links from metadata.
+def _answer_sources(accepted):
+    sources = []
+    for entry in source_map(accepted):
+        index = next((i for i, s in enumerate(sources) if s.identity == entry.source_identity), None)
+        if index is None:
+            sources.append(MVPSource(entry.url, entry.source_identity, (entry.evidence_ref,)))
+        else:
+            old = sources[index]
+            sources[index] = MVPSource(old.url, old.identity, old.refs + (entry.evidence_ref,))
+    return tuple(sources)
 
-    This is conservative presentation filtering, not a factual claim verifier.
-    """
+
+# Fenced blocks (including an unfinished final block) and matching backtick spans.
+_CODE = re.compile(
+    r'(?m:^ {0,3}(`{3,})[^\n]*\n[\s\S]*?'
+    r'(?:^ {0,3}\1`*[ \t]*(?=\n|$)|\Z))'
+    r'|(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\2(?!`)'
+)
+_URL = re.compile(r'(?i)(?:[a-z][a-z0-9+.-]*://|www\.)[^\s<>`"\[\]]+')
+
+
+def _filter_grounded_answer(answer, prepared, *, chinese=False):
+    """Pure presentation filter; counts citations only in prose, never code."""
     if not isinstance(answer, str) or not answer.strip():
         raise ValueError('Empty grounded answer')
     refs = {ref for source in prepared.sources for ref in source.refs}
-    text = escape(answer, quote=False)
-    # Remove link/image destinations and link definitions from model output.
-    text = re.sub(r'!?\[([^\]\n]*)\]\([^\n]*?\)', r'\1', text)
-    text = re.sub(r'(?m)^\s*\[[^\]\n]+\]:[^\n]*$', '', text)
-    text = re.sub(r'(?i)(?:[a-z][a-z0-9+.-]*://|www\.)[^\s<>]+', '[unverified link omitted]', text)
-    text = re.sub(r'\[(web_\d+)\]', lambda m: m[0] if m[1] in refs else '[unverified citation]', text)
-    text = re.sub(r'\[\d+\]', '[unverified citation]', text)
-    # Treat model output as prose, not executable Markdown link syntax.
-    specials = set('\\`*_{}[]()#+.!|>~-')
-    text = ''.join('\\' + ch if ch in specials else ch for ch in text)
-    return text + source_section(prepared.sources, chinese=chinese)
+    urls = {canonical_url(source.url) for source in prepared.sources}
+    kept = removed = 0
+
+    def citation(match):
+        nonlocal kept, removed
+        if match[1] in refs:
+            kept += 1
+            return match[0]
+        removed += 1
+        return ''
+
+    def url(match):
+        # Sentence punctuation is not part of a bare URL.
+        candidate = match[0].rstrip('.,;:!?)}，。；！？”')
+        suffix = match[0][len(candidate):]
+        for value in (match[0], candidate):
+            try:
+                if canonical_url(value) in urls:
+                    return match[0]
+            except ValueError:
+                pass
+        return ('[链接已移除]' if chinese else '[link removed]') + suffix
+
+    def prose(text):
+        text = re.sub(r'!?\[([^\]\n]*)\]\([^\n]*?\)', r'\1', text)
+        text = re.sub(r'(?m)^\s*\[[^\]\n]+\]:[^\n]*$', '', text)
+        text = text.replace('](', ']\\(').replace('<', '&lt;')
+        return re.sub(r'\[(web_\d+|\d+)\]', citation, text)
+
+    parts = []
+    cursor = 0
+    for match in _CODE.finditer(answer):
+        parts.extend((prose(answer[cursor:match.start()]), match[0]))
+        cursor = match.end()
+    parts.append(prose(answer[cursor:]))
+    return _URL.sub(url, ''.join(parts)), kept, removed
+
+
+def grounded_citation_counts(answer, prepared):
+    """Share the exact presentation rules for non-persisted runtime diagnostics."""
+    _, kept, removed = _filter_grounded_answer(answer, prepared)
+    return {'web_citations_kept': kept, 'web_citations_removed': removed}
+
+
+def present_grounded_answer(answer, prepared, *, chinese=False):
+    """Preserve Markdown and build source links only from fetched metadata.
+
+    This is presentation filtering, not a factual claim verifier.
+    """
+    text, _, _ = _filter_grounded_answer(answer, prepared, chinese=chinese)
+    if 'provider_partial_failure' in prepared.missing:
+        text += ('\n\n部分搜索服务失败，来源覆盖可能不完整。' if chinese else
+                 '\n\nSome search providers failed; source coverage may be incomplete.')
+    return text + source_section(prepared.sources, chinese=chinese, concise=True)

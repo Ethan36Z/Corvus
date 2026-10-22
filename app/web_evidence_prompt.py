@@ -20,7 +20,14 @@ WEB_EVIDENCE_SYSTEM_INSTRUCTION = (
     "When relying on an excerpt, cite its reference "
     "exactly, for example [web_1]. "
     "If the supplied evidence does not support a claim, "
-    "do not invent support."
+    "do not invent support. "
+    "Answer the question directly in the user's language, using Markdown "
+    "headings, lists, tables, and code blocks when useful. "
+    "Base factual and time-sensitive claims only on the supplied evidence. "
+    "If it answers only part or none of the question, explicitly identify "
+    "what the evidence does not cover; do not guess. "
+    "Cite only supplied [web_n] references. Do not output URLs, Markdown "
+    "links, or an invented source list; sources will be listed separately."
 )
 
 _EVIDENCE_REF_RE = re.compile(
