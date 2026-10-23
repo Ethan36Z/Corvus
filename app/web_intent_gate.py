@@ -211,6 +211,63 @@ _WEB_PATTERNS = (
 )
 
 
+# Release / feature questions. A feature word alone is not enough: it must
+# co-occur with a concrete subject or a recency word, so that casual chat or
+# questions about Corvus itself ("你有什么新功能？") stay off the Web.
+_RELEASE_TERMS_EN = re.compile(
+    r"\b(?:new\s+features?|what['’]?s\s+new|release\s+notes?|changelog|"
+    r"released?|release\s+date|latest\s+version)\b",
+    re.IGNORECASE,
+)
+_RELEASE_TERMS_ZH = re.compile(
+    r"新特性|新功能|更新了什么|有什么新|有哪些新|发布日期|什么时候发布|"
+    r"最新版本|版本号|更新日志|发行说明"
+)
+_VERSION = re.compile(r"(?<![\w.])v?\d+(?:\.\d+)*(?![\w.])", re.IGNORECASE)
+_RECENCY = re.compile(
+    r"最新|最近|今年|目前|现在|\b(?:latest|current|recent|this\s+year)\b",
+    re.IGNORECASE,
+)
+_ASCII_WORD = re.compile(r"[A-Za-z][A-Za-z0-9.+#-]*[A-Za-z0-9+#]")
+_DOTTED_NAME = re.compile(r"\b[A-Za-z]+\.[A-Za-z]+\b")
+# Corvus itself and generic words are never an external subject.
+_SELF_OR_GENERIC = {
+    "corvus", "you", "your", "i", "my", "we", "it", "this", "that", "app",
+}
+
+
+def _external_subject_en(query):
+    if _DOTTED_NAME.search(query):
+        return True
+    # A capitalized word that does not start a sentence.
+    sentence_start = True
+    for word in re.findall(r"[A-Za-z][A-Za-z0-9+#'’-]*|[.!?]", query):
+        if word in ".!?":
+            sentence_start = True
+            continue
+        if (not sentence_start and word[0].isupper()
+                and word.lower() not in _SELF_OR_GENERIC):
+            return True
+        sentence_start = False
+    return False
+
+
+def _external_subject_zh(query):
+    return any(
+        word.lower() not in _SELF_OR_GENERIC
+        for word in _ASCII_WORD.findall(query)
+    )
+
+
+def _release_feature_signal(query):
+    anchored = _VERSION.search(query) or _RECENCY.search(query)
+    if _RELEASE_TERMS_ZH.search(query) and (anchored or _external_subject_zh(query)):
+        return "release_feature_zh"
+    if _RELEASE_TERMS_EN.search(query) and (anchored or _external_subject_en(query)):
+        return "release_feature_en"
+    return None
+
+
 def _normalized_text(
     user_query,
 ):
@@ -264,6 +321,16 @@ def detect_deterministic_web_intent(
                 source="DETERMINISTIC",
                 signal=signal,
             )
+
+    signal = _release_feature_signal(
+        query
+    )
+    if signal is not None:
+        return WebIntentDecision(
+            decision="WEB",
+            source="DETERMINISTIC",
+            signal=signal,
+        )
 
     return None
 

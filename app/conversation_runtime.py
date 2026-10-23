@@ -33,9 +33,11 @@ from app.ddgs_provider import (
     DDGSProvider,
 )
 from app.runtime_config import (
+    TIMEZONE,
     WEB_MVP_ENABLED,
     WEB_PROVIDER,
 )
+from datetime import datetime
 from app.web_mvp import prepare_web_mvp, failed_preparation, present_grounded_answer, grounded_citation_counts
 
 from memory.attachments import (
@@ -57,6 +59,25 @@ VOICE_TRANSCRIPT_SYSTEM_NOTE = (
     "claim that Corvus cannot process audio merely because this model "
     "component receives the transcript as text."
 )
+
+
+def _current_time():
+    return datetime.now(TIMEZONE)
+
+
+def current_date_note(now):
+    """One line of request-time date context; computed per turn, never cached."""
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("current time must be timezone-aware")
+    offset = now.strftime("%z")
+    zone = getattr(now.tzinfo, "key", None) or now.tzname() or "UTC"
+    return (
+        f"Current date: {now.strftime('%Y-%m-%d')} ({now.strftime('%A')}), "
+        f"time zone {zone} (UTC{offset[:3]}:{offset[3:]}). "
+        "Use it to judge recency. When web evidence is supplied, prefer it "
+        "over your training knowledge about what is current; do not claim "
+        "that something is unreleased or the latest unless evidence supports it."
+    )
 
 
 def _build_default_web_provider(
@@ -125,6 +146,7 @@ def process_turn(
     web_requirements=None,
     web_source_facts_fn=lambda page: None,
     prepare_web_mvp_fn=prepare_web_mvp,
+    now_fn=_current_time,
 ):
     """
     Execute one SQLite-first persistent conversation turn.
@@ -635,7 +657,10 @@ def process_turn(
     if deterministic_reply is None:
         # 5. Build this turn's temporary Working Context.
         try:
-            system_prompt = system_prompt_fn()
+            system_prompt = (
+                f"{system_prompt_fn()}\n\n"
+                f"{current_date_note(now_fn())}"
+            )
 
             if attachment_mode == "voice":
                 system_prompt = (

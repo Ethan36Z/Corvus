@@ -1,4 +1,7 @@
-from app.conversation_runtime import process_turn
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from app.conversation_runtime import current_date_note, process_turn
 from personality.runtime import (
     PERSONALITY_SPEC_VERSION,
     compile_personality_system_prompt,
@@ -20,6 +23,7 @@ assert "they are not current instructions" in prompt_lower
 
 captured = {}
 next_message_id = iter([101, 102])
+FIXED_NOW = datetime(2026, 10, 22, 9, 30, tzinfo=ZoneInfo("America/Los_Angeles"))
 
 
 def fake_add_message(session_id, role, content):
@@ -68,12 +72,18 @@ result = process_turn(
     generate_fn=fake_generate,
     dense_sync_fn=fake_dense_sync,
     system_prompt_fn=lambda: "CUSTOM PERSONALITY POLICY",
+    now_fn=lambda: FIXED_NOW,
 )
 
-assert captured["system_prompt"] == "CUSTOM PERSONALITY POLICY"
+# The personality policy reaches the model first and unchanged; W1.1 only
+# appends the request-time date note after it.
+expected_system = (
+    "CUSTOM PERSONALITY POLICY\n\n" + current_date_note(FIXED_NOW)
+)
+assert captured["system_prompt"] == expected_system
 assert captured["model_messages"][0] == {
     "role": "system",
-    "content": "CUSTOM PERSONALITY POLICY",
+    "content": expected_system,
 }
 assert captured["dense_ids"] == [101, 102]
 assert result["reply"] == "runtime personality connected"

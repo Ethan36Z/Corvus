@@ -27,7 +27,11 @@ WEB_EVIDENCE_SYSTEM_INSTRUCTION = (
     "If it answers only part or none of the question, explicitly identify "
     "what the evidence does not cover; do not guess. "
     "Cite only supplied [web_n] references. Do not output URLs, Markdown "
-    "links, or an invented source list; sources will be listed separately."
+    "links, or an invented source list; sources will be listed separately. "
+    "Be concise: lead with the direct answer, then only the key supporting "
+    "points; unless the user asks for detail, stay within about 300 words "
+    "(or about 500 Chinese characters). Never drop a needed fact, code, or "
+    "its citation to save space."
 )
 
 _EVIDENCE_REF_RE = re.compile(

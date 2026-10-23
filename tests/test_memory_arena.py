@@ -153,6 +153,12 @@ class ArenaTurnTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("memory #00123", self.generated[1][0]["content"])
         self.assertTrue(all(messages[0]["content"].startswith("FROZEN_PERSONALITY")
                             for messages in self.generated))
+        # Fairness: both arms receive the same effective system prompt
+        # (personality + the per-request date note), then their own memory.
+        effective = kwargs["system_prompt"]
+        self.assertTrue(effective.startswith("FROZEN_PERSONALITY\n\nCurrent date: "))
+        self.assertTrue(all(messages[0]["content"].startswith(effective)
+                            for messages in self.generated))
         self.assertEqual([row["content"] for row in self.rows[-2:]], ["query", "RAG_REPLY"])
         self.assertEqual(self.dense_calls, [[4, 5]])
         self.h1_retain.assert_not_awaited()
@@ -216,7 +222,9 @@ class ArenaTurnTests(unittest.IsolatedAsyncioTestCase):
         response = await self.run_turn()
         self.assertEqual(response["shadow"]["status"], "OK")
         self.assertEqual(response["shadow"]["evidence"], [])
-        self.assertEqual(self.generated[1][0]["content"], "FROZEN_PERSONALITY")
+        self.assertEqual(self.generated[1][0]["content"],
+                         self.builder.call_args.kwargs["system_prompt"])
+        self.assertTrue(self.generated[1][0]["content"].startswith("FROZEN_PERSONALITY\n\n"))
 
     async def test_shadow_error_is_contained_and_foreground_returns_idle(self):
         def generate(messages):
@@ -254,7 +262,9 @@ class ArenaTurnTests(unittest.IsolatedAsyncioTestCase):
         response = await self.run_turn()
         self.assertEqual(response["main"]["status"]["retrieval"], "DEGRADED")
         self.assertEqual(response["main"]["reply"], "RAG_REPLY")
-        self.assertEqual(self.generated[0][0]["content"], "FROZEN_PERSONALITY")
+        self.assertEqual(self.generated[0][0]["content"],
+                         self.builder.call_args.kwargs["system_prompt"])
+        self.assertTrue(self.generated[0][0]["content"].startswith("FROZEN_PERSONALITY\n\n"))
         self.assertEqual(response["shadow"]["status"], "OK")
 
     async def test_unchanged_h1_task_runs_after_response_with_duplicate_recall(self):

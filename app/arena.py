@@ -176,7 +176,7 @@ def _successful_main(main):
 def _generate_shadow(shadow, captured, prompt, query):
     try:
         messages, evidence, tokens = build_shadow_messages(
-            prompt, captured["context"]["recent_messages"], query,
+            captured.get("system_prompt", prompt), captured["context"]["recent_messages"], query,
             shadow["recall"]["results"], count_tokens=count_input_tokens,
             historical_token_budget=captured["historical_token_budget"],
             input_token_budget=captured["input_token_budget"],
@@ -210,7 +210,9 @@ async def run_arena_turn(request, *, build_response):
         context = build_working_context(**kwargs)
         bound = _CONTEXT_SIGNATURE.bind(**kwargs)
         bound.apply_defaults()
-        captured.update(context=deepcopy(context), **{
+        # The effective system prompt (personality + per-request date note) is
+        # reused by the Hindsight arm so both arms see identical system text.
+        captured.update(context=deepcopy(context), system_prompt=bound.arguments["system_prompt"], **{
             name: bound.arguments[name]
             for name in ("historical_token_budget", "input_token_budget")
         })

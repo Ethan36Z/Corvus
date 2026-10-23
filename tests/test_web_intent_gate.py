@@ -171,6 +171,59 @@ print(
     "WEB INTENT EXPLICIT-NO-WEB PRECEDENCE CONTRACT OK"
 )
 
+
+# W1.1: version / feature / release questions trigger Web deterministically,
+# but only with a concrete subject or recency word.
+release_feature_web = [
+    "Node.js 22 有哪些新特性？",
+    "What's new in Python 3.14?",
+    "React 19 什么时候发布的？",
+    "macOS 最新版本是多少",
+    "Rust 1.80 更新了什么",
+    "What are the main new features in Node.js 22? Use a short table.",
+    "When is the release date of Kubernetes 1.32?",
+    "iOS 18 有哪些新功能",
+    "What's new in TypeScript?",
+]
+
+for query in release_feature_web:
+    result = decide_web_intent(
+        query,
+        generate_fn=must_not_generate,
+    )
+    assert result.decision == "WEB", query
+    assert result.source == "DETERMINISTIC", query
+
+# Casual chat and questions about Corvus itself must not be routed to Web by
+# the new rules. Either NO_WEB deterministically or left to the existing model
+# classifier (None), never a deterministic WEB.
+release_feature_not_web = [
+    "你好，今天心情不错",
+    "你有什么新功能？",
+    "我最近在学 Python",
+    "帮我写一个 Python 快速排序",
+    "What's new with you?",
+    "What new features would you add to Corvus?",
+    "Corvus 有什么新功能",
+    "最近怎么样？",
+    "Release me from this stress, I need a break",
+]
+
+for query in release_feature_not_web:
+    result = detect_deterministic_web_intent(query)
+    assert result is None or result.decision == "NO_WEB", query
+
+# Explicit no-web still wins over the new rules.
+result = decide_web_intent(
+    "不要联网，Python 3.14 有什么新特性",
+    generate_fn=must_not_generate,
+)
+assert result.decision == "NO_WEB"
+
+print(
+    "WEB INTENT RELEASE/FEATURE CONTRACT OK"
+)
+
 print(
     "A3_4_WEB_INTENT_GATE=PASS"
 )

@@ -121,3 +121,20 @@ WEB_PROVIDER = _choice_env(
 WEB_MVP_ENABLED = _choice_env(
     "CORVUS_WEB_MVP_ENABLED", "FALSE", {"TRUE", "FALSE"},
 ) == "TRUE"
+
+
+def _timezone_env(name, default):
+    """An explicit IANA zone; never inferred from the host's local time."""
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    value = os.getenv(name, default).strip()
+    try:
+        return ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError(
+            f"{name} must be a valid IANA time zone"
+        ) from exc
+
+
+# Used for the per-request current-date note given to the model.
+TIMEZONE = _timezone_env("CORVUS_TIMEZONE", "America/Los_Angeles")
