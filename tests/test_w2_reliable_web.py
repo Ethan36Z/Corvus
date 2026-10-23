@@ -192,5 +192,51 @@ class RelevanceGateTests(unittest.TestCase):
         self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")   # 147-char page still accepted
 
 
+class MultiSourceTests(unittest.TestCase):
+    O1R = "Python 3.13 有哪些主要的新特性？"
+
+    def prepare(self, pages):
+        h = Harness(pages)
+        return prepare_web_mvp(self.O1R, provider_builder=h.provider,
+                               fetch_search_result_fn=h.fetch, extract_web_page_fn=h.extract)
+
+    def second_page(self):
+        page = real_page("py313_whatsnew")
+        # A distinct source (different URL and text) about the same release.
+        text = "\n".join(reversed(page.text.split("\n")))
+        url = "https://realpython.com/python313-new-features/"
+        return replace(page, source_url=url, fetched_url=url, text=text,
+                       original_chars=len(text), extracted_chars=len(text))
+
+    def test_two_distinct_sources_share_the_budget(self):
+        prepared = self.prepare([real_page("py313_whatsnew"), self.second_page()])
+        self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")
+        self.assertEqual(len(prepared.sources), 2)
+        self.assertNotIn("single_source", prepared.missing)
+        refs = [e.evidence_ref for e in prepared.used_web_evidence]
+        self.assertEqual(refs, [f"web_{i + 1}" for i in range(len(refs))])
+        by_url = {}
+        for e in prepared.used_web_evidence:
+            by_url[e.source_url] = by_url.get(e.source_url, 0) + len(e.excerpt)
+        self.assertEqual(len(by_url), 2)
+        self.assertTrue(all(chars <= 1800 for chars in by_url.values()))
+
+    def test_one_source_still_answers_with_the_full_budget(self):
+        prepared = self.prepare([real_page("py313_whatsnew")])
+        self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")
+        self.assertIn("single_source", prepared.missing)
+        total = sum(len(e.excerpt) for e in prepared.used_web_evidence)
+        self.assertGreater(total, 1800)
+        self.assertLessEqual(total, 3600)
+        self.assertEqual([e.evidence_ref for e in prepared.used_web_evidence],
+                         [f"web_{i + 1}" for i in range(len(prepared.used_web_evidence))])
+
+    def test_fallback_text_does_not_complain_about_source_count(self):
+        prepared = self.prepare([real_page("o1r_docs_index")])
+        self.assertEqual(prepared.outcome, "SOURCES_WITH_LIMITATIONS")
+        self.assertFalse(any(m.startswith("sources:") for m in prepared.missing))
+        self.assertNotIn("独立来源覆盖不完整", prepared.deterministic_reply)
+
+
 if __name__ == "__main__":
     unittest.main()

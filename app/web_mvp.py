@@ -190,6 +190,30 @@ def relevance_gate(query):
     return check
 
 
+TOTAL_EVIDENCE_CHARS = 3600  # unchanged overall evidence budget
+
+
+def _full_budget_if_single_source(accepted, query):
+    """W2-c: one qualifying source gets the whole budget, not half of it.
+
+    Re-runs the existing passage build/rank/select on the same page; the
+    evidence can only grow from that page and is renumbered from web_1.
+    """
+    if len(accepted.sources) != 1:
+        return accepted
+    from app.web_evidence_select import select_used_web_evidence
+    from app.web_passages import build_web_passages, rank_web_passages
+
+    source = accepted.sources[0]
+    ranked = rank_web_passages(query, build_web_passages(source.page))
+    evidence = select_used_web_evidence(source.page, ranked, max_total_chars=TOTAL_EVIDENCE_CHARS)
+    if sum(len(e.excerpt) for e in evidence) <= sum(len(e.excerpt) for e in source.evidence):
+        return accepted
+    evidence = tuple(replace(e, ordinal=i, evidence_ref=f"web_{i + 1}")
+                     for i, e in enumerate(evidence))
+    return replace(accepted, sources=(replace(source, evidence=evidence),), evidence=evidence)
+
+
 def clean_search_query(query):
     """Strip request phrasing; keep the original if too little topic remains."""
     cleaned = _REQUEST_PREFIX.sub('', query, count=1)
@@ -225,16 +249,25 @@ def _prepare_web_mvp(query, *, provider_builder, requirements=None,
         or req.publication_window or req.required_text
     )
     search_query = clean_search_query(query)
+    if not explicit:
+        # W2-c: prefer two distinct qualifying sources, never require them.
+        req = replace(req, min_sources=max(req.min_sources, 2))
     accepted = accept_web_evidence(
         search_query, requirements=req, provider_builder=builder,
         source_facts=source_facts, provider_failures=lambda: tuple(failures),
         candidate_relevance=None if explicit else relevance_gate(search_query),
         **collector_options,
     )
+    if not explicit:
+        accepted = _full_budget_if_single_source(accepted, search_query)
+        accepted = replace(accepted, missing=tuple(
+            m for m in accepted.missing if not m.startswith('sources:')))
     sufficient = (explicit and accepted.evidence_status == 'EVIDENCE_SUFFICIENT'
                   and not accepted.provider_failures)
     if sufficient or (not explicit and accepted.evidence):
         missing = () if explicit else ('requirements_not_specified',)
+        if not explicit and len(accepted.sources) == 1:
+            missing += ('single_source',)
         if accepted.provider_failures:
             missing += ('provider_partial_failure',)
         return MVPPreparation(

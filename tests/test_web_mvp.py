@@ -60,7 +60,7 @@ class MVPIntegrationTests(unittest.TestCase):
                 self.assertEqual(result['web_answer_basis'],'RETRIEVED_EVIDENCE')
                 self.assertEqual(result['web_acceptance_status'],'EVIDENCE_RETRIEVED')
                 self.assertEqual(result['model_status'],'OK')
-                self.assertEqual(result['web_coverage_missing'],['requirements_not_specified'])
+                self.assertEqual(result['web_coverage_missing'],['requirements_not_specified','single_source'])  # W2-c diagnostic
                 self.assertEqual([x[0] for x in r.events],['add','context','generate','add','evidence','dense'])
                 saved=next(e[2] for e in r.events if e[0]=='evidence')
                 expected=[dict(ordinal=e.ordinal,source_title=e.source_title,
@@ -83,7 +83,7 @@ class MVPIntegrationTests(unittest.TestCase):
         self.assertEqual(result['web_presentation_outcome'],'GROUNDED_ANSWER')
         self.assertEqual(result['web_answer_basis'],'RETRIEVED_EVIDENCE')
         self.assertEqual(result['web_acceptance_status'],'EVIDENCE_RETRIEVED')
-        self.assertEqual(result['web_coverage_missing'],['requirements_not_specified','provider_partial_failure'])
+        self.assertEqual(result['web_coverage_missing'],['requirements_not_specified','single_source','provider_partial_failure'])  # W2-c
         self.assertIn('Some search providers failed; source coverage may be incomplete.',result['reply'])
         self.assertEqual([e[0] for e in r.events],['add','context','generate','add','evidence','dense'])
 
