@@ -192,6 +192,20 @@ class RelevanceGateTests(unittest.TestCase):
         self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")   # 147-char page still accepted
 
 
+class TableMarkerTests(unittest.TestCase):
+    def test_marker_mid_row_keeps_the_column_count(self):
+        # Shape observed in the Plan C Lab acceptance (HW2).
+        from app.web_mvp import support_check
+        ev = NS(used_web_evidence=(NS(evidence_ref="web_1", excerpt="Ollama supports GGUF models."),))
+        row = "| **全能型** | 7B - 8B | **Q4_K_M** | 流畅 | 日常对话的最佳平衡点。 |"
+        text, unverified, _ = support_check(
+            "| 类型 | 参数 | 量化 | 体验 | 备注 |\n|---|---|---|---|---|\n" + row, ev, chinese=True)
+        last = text.split("\n")[-1]
+        self.assertEqual(unverified, 1)
+        self.assertEqual(last.count("|"), row.count("|"))
+        self.assertIn("（未经来源核实）", last)
+
+
 class MultiSourceTests(unittest.TestCase):
     O1R = "Python 3.13 有哪些主要的新特性？"
 

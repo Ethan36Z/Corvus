@@ -446,10 +446,12 @@ def _mark_unverified(sentence, chinese):
     marker = (_UNVERIFIED_ZH if chinese else _UNVERIFIED_EN.strip() + ' ')
     stripped = text.rstrip()
     if stripped.lstrip().startswith('|'):
-        # Table row: keep the qualifier inside the last cell.
+        # Table row: keep the qualifier inside the current cell and never
+        # add a cell delimiter (a sentence may end mid-row, before " |").
         trailing = text[len(stripped):]
-        body = stripped[:-1].rstrip() if stripped.endswith('|') else stripped
-        return body + ' ' + marker.strip() + ' |' + trailing
+        if stripped.endswith('|'):
+            return stripped[:-1].rstrip() + ' ' + marker.strip() + ' |' + trailing
+        return stripped + ' ' + marker.strip() + trailing
     lead = _LEAD.match(text).group(1)
     return lead + marker + text[len(lead):]
 
