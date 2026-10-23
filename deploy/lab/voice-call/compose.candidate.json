@@ -1,0 +1,8 @@
+{
+  "services": {
+    "open-webui": {
+      "image": "corvus-lab-webui:voice-v1-f6d94ff-candidate",
+      "pull_policy": "never"
+    }
+  }
+}

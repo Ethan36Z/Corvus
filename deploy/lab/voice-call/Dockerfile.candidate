@@ -1,0 +1,12 @@
+# Offline packaging recipe; no successful full build/candidate image exists yet.
+# Use a clean context containing ONLY this Dockerfile and an exit-0 Vite build/.
+FROM corvus-lab-webui@sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc
+# Remove old hashed assets inside the NEW image; no runtime volume is involved.
+RUN rm -rf /app/build
+COPY build/ /app/build/
+RUN test -s /app/build/index.html && test -d /app/build/_app/immutable
+LABEL io.corvus.scope="lab" \
+      io.corvus.voice="v1-half-duplex-candidate" \
+      io.corvus.voice.frontend-revision="f6d94ffe48b2e07bd1adf0c5dc776850bb9c1980" \
+      io.corvus.voice.base="sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc"
+# Backend, entrypoint, dependencies, permissions and runtime configuration inherited.

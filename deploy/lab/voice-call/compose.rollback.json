@@ -1,0 +1,8 @@
+{
+  "services": {
+    "open-webui": {
+      "image": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
+      "pull_policy": "never"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-23",
+  "status": "BLOCKED_RESOURCE",
+  "ready_for_lab_activation": false,
+  "implementation_commit": "f6d94ffe48b2e07bd1adf0c5dc776850bb9c1980",
+  "base_commit": "93315415cf9efb541108e6f4fbcd3eb5967c9823",
+  "full_build": {
+    "success": false,
+    "attempts": 2,
+    "exit_codes": [
+      139,
+      139
+    ],
+    "ssr_modules": 1214,
+    "container_memory_mib": 768,
+    "node_heap_mib": 512,
+    "failure_phase": "client production build",
+    "reason": "V8 heap exhausted",
+    "larger_budget_started": false
+  },
+  "candidate_image": {
+    "reserved_tag": "corvus-lab-webui:voice-v1-f6d94ff-candidate",
+    "created": false,
+    "id": null,
+    "base": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc"
+  },
+  "compatibility": {
+    "suite_modules": 20,
+    "unittest_cases": 261,
+    "passed": 259,
+    "skipped": 2,
+    "module_assertion_scripts": 6,
+    "vision_frontend_pass": true,
+    "network_and_provider_calls": "isolated/mocked",
+    "arena_ui1_cases": 15,
+    "arena_ui2_cases": 4,
+    "fixture_failure_resolved": true
+  },
+  "source_provenance": {
+    "live_frontend_mapped_sources_matched": 347,
+    "overlay_files": 7,
+    "verified_cached_packages": 990,
+    "skipped_optional_other_platform_packages": 111,
+    "lock_sha256": "d140bb9648ff22a039826c710fc5bfa4e5e36b8660ea6e97c9253025cbb1ead9"
+  },
+  "live_backend_hashes": {
+    "routers/audio.py": "ad4fb24a6122b6be8f88d341d29a67d5ea0ac10fd8a77b416492f2b77c8e00b3",
+    "routers/corvus_stt.py": "8312304b7e201682bae3691ea66ff0529ceec7dac58c7a52762ce1744db3610b",
+    "routers/corvus_stt_active.py": "863a52cf50aee92b786d1b9a05389df67104ba771089eb40054146dcfa295a41",
+    "routers/corvus_stt_protocol.py": "f5c2d56e46af4129c837c8850de8b10c2e2cac6e725d003542b5df946b06e23e",
+    "routers/corvus_tts.py": "ffbb52cbc47b6b20d535ab0e9747b41b95432b0cbe392e6edd636d43f62f3ccb",
+    "routers/corvus_vision.py": "5ff6c518a79725f89ba79bafe9cdedf89cb9f57bb33ed4581e6c4f3d0f222433",
+    "models/files.py": "1b89cb4e60cdce4a4a0add62c9c3661de2d647a8b84fdade18a7cff55e66b5dc",
+    "main.py": "f541f307960d0598e54d3cbfe72e7896d09687666c60f483343337fcbdcde9e2"
+  },
+  "pending": [
+    "successful full Vite build",
+    "candidate image and backend byte/config parity",
+    "separate activation authorization and fresh consistent backup",
+    "real authenticated browser/microphone/listening and deployed persistence acceptance"
+  ],
+  "known_risks": [
+    "BackgroundTasks to durable retain-intent crash window remains",
+    "No automatic retain reconciliation guarantee",
+    "P0.2 BLOCK unchanged",
+    "No new STT API refactor deployed"
+  ],
+  "protected_state_verification": {
+    "protected_state": {
+      "unchanged": true,
+      "difference_paths": []
+    },
+    "lab_webui": {
+      "id": "f3bd24cb443a07be013e9a2791ce4e6db4b8c0a99221bdae67bb7ccdeb8e6299",
+      "image": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
+      "status": "running",
+      "health": "healthy"
+    },
+    "lab_dirty_file_count": 28
+  },
+  "compose_validation": {
+    "candidate": {
+      "merged_configuration_difference_paths": [
+        "/services/open-webui/image"
+      ],
+      "services": [
+        "open-webui"
+      ]
+    },
+    "rollback": {
+      "merged_configuration_difference_paths": [],
+      "services": [
+        "open-webui"
+      ]
+    }
+  }
+}
