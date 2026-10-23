@@ -1,0 +1,125 @@
+{
+ "_note": "Real Corvus Lab acceptance data (2026-10-22). Web excerpts and model answers from acceptance sessions only.",
+ "cases": {
+  "O1": {
+   "assistant_message_id": 186,
+   "question": "Python 3.13 有哪些主要的新特性？",
+   "answer": "Python 3.13 于 2024 年 10 月发布，主要新特性包括：\n\n- **交互式解释器改进**：默认启用新的交互式 shell（基于 PyPy），支持多行编辑、保留历史记录，并引入 `help`、`exit`、`quit` 等直接命令。提示和回溯信息默认启用彩色显示，支持 F1（帮助）、F2（历史）、F3（粘贴模式）快捷键 [web_1]。\n- **错误消息优化**：回溯信息默认使用彩色高亮，提升可读性 [web_1]。\n- **`locals()` 语义明确化**：修改 `locals()` 返回的映射现在具有已定义语义，调试器在并发代码中更新局部变量更可靠 [web_1]。\n- **实验性 JIT 编译器**：引入基础即时编译器（JIT），默认禁用，未来可能启用，预计逐步提升性能 [web_1]。\n- **自由线程模式支持**：实验性支持运行时禁用全局解释器锁（GIL），需结合 PEP 703 使用 [web_1]。\n- **标准库清理**：移除 19 个“死电池”模块（如 `aifc`、`cgi`、`crypt` 等），移除 `2to3` 工具、`tkinter.tix` 等 [web_1]。\n- **平台支持更新**：iOS 和 Android 成为官方支持平台（第 3 层级），`wasm32-wasi` 升至第 2 层级 [web_1]。\n- **数据模型增强**：新增 `__static_attributes__` 和 `__firstlineno__` 属性，提升类定义的可查询性 [web_1]。\n\n注意：Python 3.14 尚未发布，当前最新稳定版为 3.13。若你确实需要 3.14 的信息，可能是版本记忆有误。",
+   "evidence": [
+    {
+     "ref": "web_1",
+     "url": "https://docs.python.org/zh-cn/3.13/whatsnew/index.html",
+     "excerpt": "Python 文档目录\nPython 3.13 有什么新变化\n这个“Python 有什么新变化？”系列内容会带您浏览 Python 大版本之间重要的变化。在新版发布后，如果您希望掌握最新变化，请务必阅读这些内容。\nconcurrent.futures\nprint\n这个“更新日志”是基于 Misc/NEWS.d 目录树内容的 file built 的 HTML 版本，它包含了对于当前 Python 版本的 全部 较重要更改。\nPython 文档目录\nPython 3.13 有什么新变化"
+    }
+   ]
+  },
+  "A1": {
+   "assistant_message_id": 178,
+   "question": "Node.js 22 有哪些新特性？",
+   "answer": "Node.js 22 已发布，主要聚焦于性能优化、ES 模块支持增强及开发工作流改进。以下是核心新特性：\n\n*   **同步加载 ES 模块**：`require()` 现在支持同步加载 ES 模块（需配合 `--experimental-require-module` 或类似机制），直接返回命名空间对象，无需 `import()` 异步调用 [web_3]。\n*   **`--run` 脚本执行**：新增 `node --run <script>` 命令，可直接执行 `package.json` 中定义的脚本（如 `test`），简化启动流程 [web_3]。\n*   **流默认高水位标记提升**：Stream 的默认 High Water Mark 从 16KiB 提升至 64KiB，显著改善吞吐量，但内存占用略增 [web_3]。\n*   **V8 引擎升级**：内置 V8 引擎更新，提升了垃圾回收和 JIT 编译效率 [web_2]。\n*   **WebSocket 客户端**：原生支持 WebSocket 客户端功能 [web_2]。\n*   **AbortSignal 性能优化**：创建 AbortSignal 实例的效率显著提高，利好 `fetch` 和测试运行器 [web_1]。\n\n**注意**：Node.js 18 将于 2025 年 4 月停止维护，建议规划升级至 Node.js 20 (LTS) 或 22 [web_1]。",
+   "evidence": [
+    {
+     "ref": "web_1",
+     "url": "https://nodejs.org/en/blog/announcements/v22-release-announce",
+     "excerpt": "release enhances the efficiency of creating AbortSignal instances, leading to significantly improved performance in fetch and the test runner.\nContributed by Raz Luvaton in #52505\nCall to action\nTry out the new Node.js 22 release! We’re always happy to hear your feedback. Testing your applications and modules with Node.js 22 helps to ensure the future compatibility of your project with the latest Node.js changes and features.\nAlso of note is that Node.js 18 will go End-of-Life in April 2025, so we advise you to start planning to upgrade to Node.js 20 (LTS) or Node.js 22 (soon to be LTS).\nLooking to the future, the Next-10 team is running a survey to gather info from the ecosystem. Help shape the future of Node.js by participating. Submit your feedback here."
+    },
+    {
+     "ref": "web_2",
+     "url": "https://nodejs.org/en/blog/announcements/v22-release-announce",
+     "excerpt": "Node.js 22 is now available!\nThe Node.js Project\nWe're excited to announce the release of Node.js 22! Highlights include require()ing ES modules, a WebSocket client, updates of the V8 JavaScript engine, and more!\nNode.js 22 will enter long-term support (LTS) in October, but until then, it will be the \"Current\" release for the next six months. We encourage you to explore the new features and benefits offered by this latest release and evaluate their potential impact on your applications.\nThe project continues to make progress across a number of areas, with many new features and fixes flowing into existing LTS releases. For that reason, the changes outlined in the changelog for Node.js 22 only represent a small subset of the features and work since the last major release. This blog post will add some additional context on the larger body of work in relation to those changes.\nYou can read more about our release policy at https://github.com/nodejs/release.\nTo download Node.js 22.0.0, visit: https://nodejs.org/download/current/. You can find the release post at https://nodejs.org/blog/release/v22.0.0, which contains the full list of commits included in this release.\nNotable Changes"
+    },
+    {
+     "ref": "web_3",
+     "url": "https://nodejs.org/en/blog/announcements/v22-release-announce",
+     "excerpt": "extension.\n- Fully synchronous (contains no top-level await).\nrequire() will load the requested module as an ES Module, and return\nthe module name space object. In this case it is similar to dynamic\nimport() but is run synchronously and returns the name space object\ndirectly.\nWe intend to eventually enable require(esm) by default in the future, without\nthe flag.\nContributed by Joyee Cheung in #51977\nRunning package.json scripts\nNode.js 22 includes a new experimental feature for the execution of scripts from the package.json with the cli flag node --run <script-in-package-json>.\nIt also supports node --run test which executes the test command inside package.json scripts.\nContributed by Yagiz Nizipli #52190\nStream default High Water Mark\nIncreased the default High Water Mark for streams from 16KiB to 64KiB.\nThis provides a performance boost across the board at the cost of slightly higher memory usage.\nUsers in memory sensitive environments are encouraged to explicitly set setDefaultHighWaterMark.\nContributed by Robert Nagy in #52037\nWatch Mode (node --watch)"
+    }
+   ]
+  },
+  "A2": {
+   "assistant_message_id": 180,
+   "question": "What's new in Python 3.14?",
+   "answer": "Python 3.14 was released on October 7, 2025. It is a stable release with significant changes to the language, implementation, and standard library.\n\nKey highlights include:\n\n*   **Template String Literals**: A new syntax for string interpolation.\n*   **Deferred Evaluation of Annotations**: Annotations are now evaluated later, improving performance and flexibility.\n*   **Subinterpreters in the Standard Library**: Support for running multiple Python interpreters within a single process.\n*   **Improved `compression` Module**: Includes a new `compression.zstd` module for Zstandard compression and updates to `tarfile`, `zipfile`, and `shutil` for handling Zstandard archives [web_2].\n*   **Safe External Debugger Interface**: Introduces `sys.remote_exec()` for attaching debuggers to running processes without overhead or stopping execution [web_3].\n*   **Enhanced `asyncio` Introspection**: Better capabilities for inspecting asynchronous tasks.\n*   **REPL Syntax Highlighting**: Improved readability in the interactive shell.\n\nFor full details, see the official changelog [web_1].",
+   "evidence": [
+    {
+     "ref": "web_1",
+     "url": "https://docs.python.org/3/whatsnew/3.14.html",
+     "excerpt": "What’s new in Python 3.14¶\n- Editors:\n- Adam Turner and Hugo van Kemenade\nThis article explains the new features in Python 3.14, compared to 3.13. Python 3.14 was released on 7 October 2025. For full details, see the changelog.\nSee also\nPEP 745 – Python 3.14 release schedule\nSummary – Release highlights¶\nPython 3.14 is a stable release of the Python programming language, with a mix of changes to the language, the implementation, and the standard library. The biggest changes include template string literals, deferred evaluation of annotations, and support for subinterpreters in the standard library.\nThe library changes include significantly improved capabilities for\nintrospection in asyncio,\nsupport for Zstandard via a new\ncompression.zstd module, syntax highlighting in the REPL,\nas well as the usual deprecations and removals,\nand improvements in user-friendliness and correctness."
+    },
+    {
+     "ref": "web_2",
+     "url": "https://docs.python.org/3/whatsnew/3.14.html",
+     "excerpt": "support in the standard library¶\nThe new compression package contains modules compression.lzma,\ncompression.bz2, compression.gzip and compression.zlib\nwhich re-export the lzma, bz2, gzip and zlib\nmodules respectively. The new import names under compression are the\npreferred names for importing these compression modules from Python 3.14. However,\nthe existing modules names have not been deprecated. Any deprecation or removal\nof the existing compression modules will occur no sooner than five years after\nthe release of 3.14.\nThe new compression.zstd module provides compression and decompression\nAPIs for the Zstandard format via bindings to Meta’s zstd library. Zstandard is a widely adopted, highly\nefficient, and fast compression format. In addition to the APIs introduced in\ncompression.zstd, support for reading and writing Zstandard compressed\narchives has been added to the tarfile, zipfile, and\nshutil modules.\nHere’s an example of using the new module to compress some data:\nfrom compression import zstd\nimport math\ndata = str(math.pi).encode() * 20\ncompressed = zstd.compress(data)\nratio = len(compressed) / len(data)\nprint(f\"Achieved compression ratio of {ratio}\")"
+    },
+    {
+     "ref": "web_3",
+     "url": "https://docs.python.org/3/whatsnew/3.14.html",
+     "excerpt": "can write systems that sanitise SQL, make safe shell operations, improve logging, tackle modern ideas in web development (HTML, CSS, and so on), and implement lightweight custom business DSLs.\n(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono, Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran, and Pablo Galindo Salgado in gh-132661.)\nSee also\nPEP 768: Safe external debugger interface¶\nPython 3.14 introduces a zero-overhead debugging interface that allows debuggers and profilers to safely attach to running Python processes without stopping or restarting them. This is a significant enhancement to Python’s debugging capabilities, meaning that unsafe alternatives are no longer required.\nThe new interface provides safe execution points for attaching debugger code without modifying the interpreter’s normal execution path or adding any overhead at runtime. Due to this, tools can now inspect and interact with Python applications in real-time, which is a crucial capability for high-availability systems and production environments.\nFor convenience, this interface is implemented in the sys.remote_exec()\nfunction. For example:\nimport sys"
+    }
+   ]
+  },
+  "M1": {
+   "assistant_message_id": 184,
+   "question": "我的 iPhone 能升级到最新的 iOS 版本吗？",
+   "answer": "你问的是 iPhone 18 Pro 吗？如果是，目前已有用户反馈升级到 iOS 27.0.1 后，Face ID 死机、扬声器异响和卡顿等问题仍未完全解决 [web_1]。\n\n如果你指的是其他型号，请告诉我具体机型，我可以帮你确认是否支持最新系统。",
+   "evidence": [
+    {
+     "ref": "web_1",
+     "url": "https://www.sohu.com/a/1091161536_121761735",
+     "excerpt": "iPhone 18 Pro 又上热搜了，这次是扬声器异响。\n事情要从9月底说起。Reddit上有不少iPhone 18 Pro用户反馈，手机听筒扬声器会随机发出噼啪声、轻微滴答声甚至咔哒声，使用应用、滚动网页、接收通知、键盘弹出都可能触发，有人连触摸屏幕、触发触觉反馈都会爆音。Pro和Pro Max两个型号都中招，而且升到iOS 27.0.1也没修好。更关键的是，截至目前苹果还没有公开回应。\n但这只是今年新机问题的冰山一角。把时间线拉出来，iPhone 18 Pro上市这一个月，问题一个接一个。\n先说最严重的Face ID死机。9月18日首批用户拿到新机，很快有人发现：Face ID解锁失败，手机直接死机重启。9月26日苹果官方证实，iPhone 18 Pro和Pro Max存在一个和面容识别相关的系统漏洞，特定解锁或身份验证场景会卡死并自动重启。有外媒分析，这跟苹果把灵动岛视觉面积缩小约25%的硬件改动有关，首批用户里已经有人走换机流程了。\n然后是卡顿。新机到手反应慢，一开始被归咎于iOS 27的Bug，结果苹果官方解释是：不是Bug，是Spotlight聚焦搜索在后台建索引，跑完就好了。话虽如此，升级27.0.1之后，还是有用户反馈下拉控制中心直接卡死、触控失灵，只能重启。\n再往前翻，首发那波还有划痕、发热、镜头眩光，以及被不少人吐槽的闪存混用——1TB和2TB大容量版本，大多用的是规格更差的QLC闪存颗粒。\n10月中旬，掉漆问题又来了。多位用户反馈，勃艮第酒红色版本正常使用三周，机身四角磨白、镜头模组周边掉漆，有的酒红直接变深红。有用户直言：全程戴着手机壳都挡不住掉漆，完全配不上这个价位。苹果客服的回应是：建议戴个壳。\n网友的态度分两派。悲观派觉得苹果品控下滑明显：旗舰机卖到一万块，不是划痕就是掉漆，还得靠戴壳续命，这几年苹果是真飘了。乐观派倒是见惯不怪：哪年新iPhone首发没点问题？Face ID这种软件漏洞OTA就能修，扬声器异响看后续批次，没必要一棍子打死。纠结派最真实：又想冲首发，又怕中奖，还是等双十一看看行情再说。\n我的看法是，得把这些问题分开看。Face ID死机是明确的软件漏洞，官方已经证实，等版本更新就行，性质不严重；卡顿大概率也是新系统索引和适配问题，会随更新缓解。但扬声器异响和掉漆这两项，性质不一样——异响涉及硬件，如果是个别批次品控问题，靠软件永远修不好；掉漆则暴露了这代在材质工艺上的取舍，酒红配色尤其冒险。再加上闪存混用，今年Pro系列的缩水感确实比往年强，这也解释了为什么用户落差大。"
+    },
+    {
+     "ref": "web_2",
+     "url": "https://www.sohu.com/a/1091161536_121761735",
+     "excerpt": "我的看法是，得把这些问题分开看。Face ID死机是明确的软件漏洞，官方已经证实，等版本更新就行，性质不严重；卡顿大概率也是新系统索引和适配问题，会随更新缓解。但扬声器异响和掉漆这两项，性质不一样——异响涉及硬件，如果是个别批次品控问题，靠软件永远修不好；掉漆则暴露了这代在材质工艺上的取舍，酒红配色尤其冒险。再加上闪存混用，今年Pro系列的缩水感确实比往年强，这也解释了为什么用户落差大。\n所以能不能买，我的建议很直接。已经入手的，异响先录视频留证，掉漆直接走售后，别自己忍着；还没入手的，不差这一两个月就等等——等iOS更新把软件问题修完，等第二批产线批次落地，顺便看看官方对扬声器异响到底什么态度再下手。急着换机的话，优先走官方渠道，14天无理由退换是个保底。这代机器本身性能、影像、续航都是顶配，问题在于中奖率比往年高，不是不能用。\n接下来该盯的就两件事：苹果什么时候针对扬声器异响发声，iOS下个版本能不能把卡顿和Face ID问题彻底收干净。首发这批用户的真实口碑，会直接影响你双十一要不要冲。你会等还是直接入手？评论区聊聊。返回搜狐，查看更多"
+    }
+   ]
+  },
+  "W1_139_own_evidence": {
+   "assistant_message_id": 139,
+   "question": "Python 3.13 有哪些主要的新特性？请简要介绍。",
+   "answer": "Python 3.13 于 2024 年 10 月发布，主要新特性包括：\n\n- **交互式解释器改进**：默认启用新的交互式 shell（基于 PyPy），支持多行编辑、保留历史记录，并引入 `help`、`exit`、`quit` 等直接命令。提示和回溯信息默认启用彩色显示，支持 F1（帮助）、F2（历史）、F3（粘贴模式）快捷键 [web_1][web_2]。\n- **错误消息优化**：回溯信息默认使用彩色高亮，提升可读性 [web_1]。\n- **`locals()` 语义明确化**：修改 `locals()` 返回的映射现在具有已定义语义，调试器在并发代码中更新局部变量更可靠 [web_1]。\n- **实验性 JIT 编译器**：引入基础即时编译器（JIT），默认禁用，未来可能启用，预计逐步提升性能 [web_1]。\n- **自由线程模式支持**：实验性支持运行时禁用全局解释器锁（GIL），需结合 PEP 703 使用 [web_1]。\n- **标准库清理**：移除 19 个“死电池”模块（如 `aifc`、`cgi`、`crypt` 等），移除 `2to3` 工具、`tkinter.tix` 等 [web_2]。\n- **平台支持更新**：iOS 和 Android 成为官方支持平台（第 3 层级），`wasm32-wasi` 升至第 2 层级 [web_2]。\n- **数据模型增强**：新增 `__static_attributes__` 和 `__firstlineno__` 属性，提升类定义的可查询性 [web_1]。\n\n注意：Python 3.14 尚未发布，当前最新稳定版为 3.13。若你确实需要 3.14 的信息，可能是版本记忆有误。",
+   "evidence": [
+    {
+     "ref": "web_1",
+     "url": "https://docs.python.org/zh-cn/3.15/whatsnew/3.13.html",
+     "excerpt": "Python 3.13 有什么新变化¶\n- 编者:\n- Adam Turner 和 Thomas Wouters\n本文介绍了 Python 3.13 相比 3.12 增加的新特性。 Python 3.13 已于 2024 年 10 月 7 日发布。 要获取详细信息，可参阅 更新日志。\n参见\nPEP 719 -- Python 3.13 发布计划\n摘要 -- 发布重点¶\nPython 3.13 Python 编程语言的一个稳定发布版，包含多项针对语言、实现和标准库的改变。 最大的变化包括一个新的 交互式解释器，对于在 自由线程模式 (PEP 703) 下运行以及对于 即时编译器 (PEP 744) 的实验性支持。\n错误消息继续得到改进，回溯信息现在默认使用彩色高亮显示。 locals() 内置函数现在对于修改所返回的映射具有 已定义的语义，并且类型形参现在支持设置默认值。\n针对标准库的改变包括移除已弃用的 API 和模块，以及用户友好度和正确性方面的常规提升。 一些旧式标准库模块自 Python 3.11 起被弃用 (PEP 594) 之后现在 已被移除。\n本文并不试图提供所有新特性的完整规范说明，而是提供一个方便的概览。 要了解完整细节请参阅相应文档，如 标准库参考 和 语言参考。 要了解某项改变的完整实现和设计理念，请参阅相应新特性的 PEP；但请注意一旦某项特性已完全实现则相应 PEP 通常不会再继续更新。 请参阅 Porting to Python 3.13 了解如何从较早版本的 Python 进行升级的指导。\n解释器的改进：\n- 大幅改进的 交互式解释器 和 改进的错误消息。\n- PEP 667: 现在 locals() 内置函数在修改被返回的映射时具有 已定义语义。 Python 调试器及类似的工具现在即使在并发代码执行期间也能更可靠地在已优化的作用域中更新局部变量。\n- PEP 703: CPython 3.13 具有对在运行时禁用 global interpreter lock 的实验性支持。 请参阅 自由线程 CPython 了解详情。\n- PEP 744: 增加了一个基本的 JIT 编译器。 目前默认是禁用的（但以后可能启用）。 能够小幅提升性能 -- 我们预计在接下来的几个发布版中不断改进它。\n- 在新的 交互式解释器 中，以及 回溯信息 和 文档测试 输出中的颜色支持。 这可以通过 PYTHON_COLORS andNO_COLOR 环境变量来禁用。\n对 Python 数据模型的改进：\n- __static_attributes__ 保存了可在一个类体的任何函数中通过self.X 来访问的属性名称。\n- __firstlineno__ 记录了一个类定义的首行的行号。\n标准库中的重大改进："
+    },
+    {
+     "ref": "web_2",
+     "url": "https://docs.python.org/zh-cn/3.15/whatsnew/3.13.html",
+     "excerpt": "的替代。\n平台支持：\n- PEP 730: 现在 Apple 的 iOS 是 官方支持的平台，处于 第 3 层级。\n- PEP 738: 现在 Android 是 官方支持的平台，处于 第 3 层级。\n- 现在 wasm32-wasi 作为 第 2 层级 的平台受到支持。\n- wasm32-emscripten 不再是受到官方支持的平台。\n重要的移除：\n- PEP 594: 剩余的 19 个“死电池”（老旧 stdlib 模块）已从标准库中移除: aifc ,audioop ,cgi ,cgitb ,chunk ,crypt ,imghdr ,mailcap ,msilib ,nis ,nntplib ,ossaudiodev ,pipes ,sndhdr ,spwd ,sunau ,telnetlib ,uu 和xdrlib 。\n- 移除了 2to3 工具和 lib2to3 模块（在 Python 3.11 中已被弃用）。\n- 移除了 tkinter.tix 模块（在 Python 3.6 中已被弃用）。\n- 移除了 locale.resetlocale() 函数。\n- 移除了 typing.io 和typing.re 命名空间。\n- 移除了链式的 classmethod 描述器。\n发布计划的变化：\nPEP 602 (\"Annual Release Cycle for Python\") 已被更新为将新发布版的完整支持 ('bugfix') 期扩展至两年。 这个更新的政策意味着：\n- Python 3.9--3.12 有一年半的完整支持，另加三年半的安全修正。\n- Python 3.13 及以后的版本有两年的完整支持，另加三年的安全修正。\n新的特性¶\n更好的交互式解释器¶\nPython 现在默认会使用新的 interactive shell，它基于来自 PyPy 项目 的代码。 当使用从交互式终端启动 REPL 时，下列新特性将受到支持：\n- 多行编辑并保留历史记录。\n- 对 REPL 专属的命令如 help, exit 和 quit 的直接支持，无需以函数形式调用它们。\n- 提示和回溯 默认启用彩色显示。\n- 使用 F1 浏览交互式帮助并带有单独的命令历史。\n- 使用 F2 浏览去除了输出以及 >>> 和 ... 提示符的历史。\n- 使用 F3 进入“粘贴模式”以更方便地粘贴大段代码（再次按 F3 返回常规提示符）。\n要禁用新的交互式 shell，可设置 PYTHON_BASIC_REPL 环境变量。 有关交互模式的详情，请参见 交互模式。"
+    },
+    {
+     "ref": "web_3",
+     "url": "https://docs.python.org/zh-cn/3.15/whatsnew/3.13.html",
+     "excerpt": "Python 3.12 起已被弃用。\n- threading :\n- RLock() will take no arguments in Python 3.15.\nPassing any arguments has been deprecated since Python 3.14,\nas the Python version does not permit any arguments,\nbut the C version allows any number of positional or keyword arguments,\nignoring every argument.\n- types :\n- types.CodeType : 访问codeobject.co_lnotab 的做法自 3.10 起已根据 PEP 626 被弃用并曾计划在 3.12 中移除，但在 3.12 中仅设置了DeprecationWarning 。 可能会在 3.15 中移除。 （由 Nikita Sobolev 在 gh-101866 中贡献。）\n- typing :\n- 未写入文档的用于创建 NamedTuple 类的关键字参数语法 (例如Point = NamedTuple(\"Point\", x=int, y=int) ) 自 Python 3.13 起已被弃用。 请改用基于类的语法或函数语法。\n- 当使用 TypedDict 的函数式语法时，不向 fields 形参传递值 (TD = TypedDict(\"TD\") ) 或传递None (TD = TypedDict(\"TD\", None) ) 的做法自 Python 3.13 起已被弃用。 请改用class TD(TypedDict): pass 或TD = TypedDict(\"TD\", {}) 来创建一个零字段的 TypedDict。\n- @typing.no_type_check_decorator 装饰器自 Python 3.13 起已被弃用。 存在于typing 模块八年之后，它仍未被任何主要类型检查器所支持。\n- sre_compile ,sre_constants 和sre_parse 模块。\n- wave :\n- Wave_read 和Wave_write 类的getmark() ,setmark() 和getmarkers() 方法自 Python 3.13 起已被弃用。\n- zipimport :\n- zipimport.zipimporter.load_module() 自 Python 3.10 起已被弃用。 请改用exec_module() 。 (gh-125746。)\n计划在 Python 3.16 中移除¶\n- 导入系统："
+    }
+   ]
+  }
+ },
+ "o1_polluting_recall": [
+  {
+   "id": 138,
+   "session_id": "w1-lab-accept-1792649584-web1",
+   "role": "user",
+   "content": "Python 3.13 有哪些主要的新特性？请简要介绍。",
+   "created_at": "2026-10-22 06:13:04"
+  },
+  {
+   "id": 139,
+   "session_id": "w1-lab-accept-1792649584-web1",
+   "role": "assistant",
+   "content": "Python 3.13 于 2024 年 10 月发布，主要新特性包括：\n\n- **交互式解释器改进**：默认启用新的交互式 shell（基于 PyPy），支持多行编辑、保留历史记录，并引入 `help`、`exit`、`quit` 等直接命令。提示和回溯信息默认启用彩色显示，支持 F1（帮助）、F2（历史）、F3（粘贴模式）快捷键 [web_1][web_2]。\n- **错误消息优化**：回溯信息默认使用彩色高亮，提升可读性 [web_1]。\n- **`locals()` 语义明确化**：修改 `locals()` 返回的映射现在具有已定义语义，调试器在并发代码中更新局部变量更可靠 [web_1]。\n- **实验性 JIT 编译器**：引入基础即时编译器（JIT），默认禁用，未来可能启用，预计逐步提升性能 [web_1]。\n- **自由线程模式支持**：实验性支持运行时禁用全局解释器锁（GIL），需结合 PEP 703 使用 [web_1]。\n- **标准库清理**：移除 19 个“死电池”模块（如 `aifc`、`cgi`、`crypt` 等），移除 `2to3` 工具、`tkinter.tix` 等 [web_2]。\n- **平台支持更新**：iOS 和 Android 成为官方支持平台（第 3 层级），`wasm32-wasi` 升至第 2 层级 [web_2]。\n- **数据模型增强**：新增 `__static_attributes__` 和 `__firstlineno__` 属性，提升类定义的可查询性 [web_1]。\n\n注意：Python 3.14 尚未发布，当前最新稳定版为 3.13。若你确实需要 3.14 的信息，可能是版本记忆有误。\n\n来源：\n- [来源 1](<https://docs.python.org/zh-cn/3.15/whatsnew/3.13.html>) — web_1 / web_2 / web_3",
+   "created_at": "2026-10-22 06:13:28"
+  }
+ ],
+ "hindsight_world_fact": {
+  "id": "hindsight:7f3c",
+  "role": "derived",
+  "content": "Python 3.14 官方尚未发布，Python 3.13 是截至 2024 年的最新稳定版本。 | When: 2024-01-01 to 2024-12-31",
+  "metadata": {
+   "type": "world",
+   "document_id": "corvus-lab:turn:57:58"
+  }
+ }
+}

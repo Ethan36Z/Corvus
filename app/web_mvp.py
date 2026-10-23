@@ -230,12 +230,135 @@ def grounded_citation_counts(answer, prepared):
     return {'web_citations_kept': kept, 'web_citations_removed': removed}
 
 
-def present_grounded_answer(answer, prepared, *, chinese=False):
+# --- Support check (E2): a cheap guard, not a semantic verifier. -------------
+# A sentence is "supported" only if its strong anchors (versions, years and
+# other numbers >= 32, identifiers containing digits, dotted names, dunders)
+# occur in the excerpts it cites (or, if uncited, in this turn's evidence), or
+# in the user's own words. Release-status negations must also appear in the
+# evidence itself. Matching anchors does NOT prove a sentence true: a claim
+# that reverses the evidence with the same anchors passes this check.
+_FENCE = re.compile(r'(?m)^ {0,3}(`{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1`*[ \t]*(?=\n|$)|\Z)')
+_TOKEN = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.+#-]*')
+_CITATION = re.compile(r'\s*\[web_\d+\]')
+_RELEASE_NEGATION = re.compile(
+    r'尚未(?:正式)?(?:发布|推出|发行)|(?<!是否)未(?:正式)?(?:发布|推出|发行)|'
+    r'还没(?:有)?(?:正式)?(?:发布|推出|发行)|没有(?:正式)?(?:发布|推出)|'
+    r"\b(?:not|n['’]t)\s+(?:yet\s+)?(?:been\s+)?released\b|"
+    r'\bunreleased\b|\bnot\s+(?:out|available)\s+yet\b',
+    re.IGNORECASE,
+)
+_UNVERIFIED_ZH = '（未经来源核实）'
+_UNVERIFIED_EN = ' (not verified by sources)'
+
+
+def _strong_anchors(text):
+    anchors = set()
+    for raw in _TOKEN.findall(text):
+        token = raw.strip('.-+').lower()
+        if not token:
+            continue
+        if token.startswith('__') and token.endswith('__') and len(token) > 4:
+            anchors.add(token)
+        elif re.fullmatch(r'\d+(?:\.\d+)+', token):
+            anchors.add(token)  # version / decimal
+        elif token.isdigit():
+            if int(token) >= 32:
+                anchors.add(token)  # years, larger quantities; not days/months
+        elif re.search(r'\d', token):
+            anchors.add(token)  # F1, wasm32, 2to3, 11gb, v8
+        elif re.search(r'[a-z]\.[a-z]', token):
+            anchors.add(token)  # node.js, sys.remote_exec
+    return anchors
+
+
+def _normalize_corpus(text):
+    text = text.lower()
+    return text + '\n' + re.sub(r'(\d)\s+([a-z])', r'\1\2', text)
+
+
+def _anchor_present(anchor, corpus):
+    return re.search(
+        r'(?<![0-9a-z_])' + re.escape(anchor) + r'(?![0-9a-z_])', corpus,
+    ) is not None
+
+
+def _split_sentences(line):
+    pieces = [p for p in re.split(r'(?<=[。！？!?])|(?<=\.)(?=\s)', line) if p]
+    merged = []
+    for piece in pieces:
+        # A citation placed after the full stop belongs to that sentence.
+        if merged and re.fullmatch(r'(?:\s*\[web_\d+\])+[\s。.]*', piece):
+            merged[-1] += piece
+        else:
+            merged.append(piece)
+    return merged
+
+
+def _mark_unverified(sentence, chinese):
+    text = _CITATION.sub('', sentence)
+    marker = _UNVERIFIED_ZH if chinese else _UNVERIFIED_EN
+    stripped = text.rstrip()
+    trailing = text[len(stripped):]
+    if stripped.endswith('|'):
+        return stripped[:-1].rstrip() + marker + ' |' + trailing
+    match = re.search(r'[。！？!?.]+$', stripped)
+    if match:
+        return stripped[:match.start()] + marker + stripped[match.start():] + trailing
+    return stripped + marker + trailing
+
+
+def support_check(text, prepared, *, user_texts=(), chinese=False):
+    """Return (text, unverified_count). Fenced code is never checked."""
+    excerpts = {
+        item.evidence_ref: item.excerpt for item in prepared.used_web_evidence
+    }
+    if not excerpts:
+        return text, 0
+    all_evidence = _normalize_corpus('\n'.join(excerpts.values()))
+    user_corpus = _normalize_corpus('\n'.join(t for t in user_texts if isinstance(t, str)))
+    unverified = 0
+
+    def check_sentence(sentence):
+        nonlocal unverified
+        refs = re.findall(r'\[(web_\d+)\]', sentence)
+        claim = _CITATION.sub('', sentence)
+        evidence = (_normalize_corpus('\n'.join(excerpts.get(r, '') for r in refs))
+                    if refs else all_evidence)
+        missing = [a for a in _strong_anchors(claim)
+                   if not _anchor_present(a, evidence) and not _anchor_present(a, user_corpus)]
+        negation_unsupported = (_RELEASE_NEGATION.search(claim) is not None
+                                and _RELEASE_NEGATION.search(evidence) is None)
+        if missing or negation_unsupported:
+            unverified += 1
+            return _mark_unverified(sentence, chinese)
+        return sentence
+
+    def prose(block):
+        lines = []
+        for line in block.split('\n'):
+            lines.append(''.join(check_sentence(s) for s in _split_sentences(line)))
+        return '\n'.join(lines)
+
+    parts, cursor = [], 0
+    for match in _FENCE.finditer(text):
+        parts.extend((prose(text[cursor:match.start()]), match[0]))
+        cursor = match.end()
+    parts.append(prose(text[cursor:]))
+    return ''.join(parts), unverified
+
+
+def present_grounded_answer(answer, prepared, *, chinese=False, user_texts=(),
+                            diagnostics=None):
     """Preserve Markdown and build source links only from fetched metadata.
 
-    This is presentation filtering, not a factual claim verifier.
+    Presentation filtering plus the cheap E2 support check; not a factual
+    claim verifier.
     """
     text, _, _ = _filter_grounded_answer(answer, prepared, chinese=chinese)
+    text, unverified = support_check(text, prepared, user_texts=user_texts,
+                                     chinese=chinese)
+    if diagnostics is not None:
+        diagnostics['web_claims_unverified'] = unverified
     if 'provider_partial_failure' in prepared.missing:
         text += ('\n\n部分搜索服务失败，来源覆盖可能不完整。' if chinese else
                  '\n\nSome search providers failed; source coverage may be incomplete.')

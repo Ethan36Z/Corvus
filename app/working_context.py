@@ -1,5 +1,10 @@
 from time import perf_counter
 
+from app.context_sources import (
+    USER_SAID,
+    WEB_GROUNDED_HISTORY_ORIGINS,
+    memory_origin,
+)
 from memory.historical_memory import recall
 from memory.store import load_recent_messages
 
@@ -20,10 +25,14 @@ def retrieve_historical_evidence(
     exclude_message_ids=None,
     limit=5,
     search_fn=recall,
+    allowed_origins=None,
 ):
     """
     Retrieve A0 historical evidence while excluding canonical messages that
     are already present in the active Working Context.
+
+    ``allowed_origins`` (optional) keeps only items whose Corvus-decided
+    origin is allowed; scanning continues past rejected items.
     """
     limit = int(limit)
 
@@ -52,9 +61,20 @@ def retrieve_historical_evidence(
     selected = []
 
     for result in results:
-        message_id = int(result["id"])
+        if (
+            allowed_origins is not None
+            and memory_origin(result) not in allowed_origins
+        ):
+            continue
 
-        if message_id in excluded:
+        # Only canonical ids can already be in the active context; a derived
+        # provider id (e.g. "hindsight:<id>") is never excluded here.
+        try:
+            message_id = int(result["id"])
+        except (KeyError, TypeError, ValueError):
+            message_id = None
+
+        if message_id is not None and message_id in excluded:
             continue
 
         selected.append(result)
@@ -150,14 +170,34 @@ def build_recent_context(
     return selected
 
 
-def _historical_system_message(evidence):
+def _historical_system_message(evidence, user_background=False):
+    if user_background:
+        # Web-grounded turn: only the user's own words survive the boundary.
+        # They personalize the answer; they never prove an external fact.
+        lines = [
+            "User background (the user's own earlier messages):",
+        ]
+        for row in evidence:
+            lines.append(
+                f'[memory #{row["id"]} {USER_SAID}] {row["content"]}'
+            )
+        lines.append(
+            "Use this only as personal context for the current request. "
+            "It is not evidence about external facts; current facts must "
+            "come from the supplied Web evidence."
+        )
+        return {
+            "role": "system",
+            "content": "\n".join(lines),
+        }
+
     lines = [
         "Relevant historical evidence:",
     ]
 
     for row in evidence:
         lines.append(
-            f'[memory #{row["id"]} role={row["role"]}] '
+            f'[memory #{row.get("id", "?")} role={row.get("role") or "derived"}] '
             f'{row["content"]}'
         )
 
@@ -177,6 +217,7 @@ def _compose_working_messages(
     recent_messages,
     current_user_content,
     web_evidence_content=None,
+    user_background=False,
 ):
     system_content = system_prompt
 
@@ -193,7 +234,8 @@ def _compose_working_messages(
 
     if historical_evidence:
         historical_message = _historical_system_message(
-            historical_evidence
+            historical_evidence,
+            user_background=user_background,
         )
 
         system_content = (
@@ -243,11 +285,16 @@ def build_working_context(
     historical_limit=5,
     page_size=64,
     search_fn=recall,
+    web_grounded=False,
 ):
     """
     Combine bounded recent conversation context, historical evidence,
     and optional current-turn Web evidence into one final token-bounded
     model input.
+
+    ``web_grounded`` applies the web source boundary: historical recall keeps
+    only the user's own canonical messages, framed as personal background.
+    Non-web turns are unchanged.
     """
     if web_evidence_content is None:
         web_evidence_content = ""
@@ -286,6 +333,9 @@ def build_working_context(
                 exclude_message_ids=excluded_ids,
                 limit=historical_limit,
                 search_fn=search_fn,
+                allowed_origins=(
+                    WEB_GROUNDED_HISTORY_ORIGINS if web_grounded else None
+                ),
             )
         finally:
             # Retrieval/hydration/exclusions only; stop before degradation
@@ -307,6 +357,7 @@ def build_working_context(
             recent_messages=[],
             current_user_content=current_user_content,
             web_evidence_content=web_evidence_content,
+            user_background=web_grounded,
         )
     )
 
@@ -323,6 +374,7 @@ def build_working_context(
                 recent_messages=[],
                 current_user_content=current_user_content,
                 web_evidence_content=web_evidence_content,
+                user_background=web_grounded,
             )
         )
 
@@ -342,6 +394,7 @@ def build_working_context(
         recent_messages=recent_messages,
         current_user_content=current_user_content,
         web_evidence_content=web_evidence_content,
+        user_background=web_grounded,
     )
 
     input_tokens = count_tokens(messages)
@@ -358,6 +411,7 @@ def build_working_context(
             recent_messages=recent_messages,
             current_user_content=current_user_content,
             web_evidence_content=web_evidence_content,
+            user_background=web_grounded,
         )
 
         input_tokens = count_tokens(messages)
@@ -380,6 +434,7 @@ def build_working_context(
             recent_messages=recent_messages,
             current_user_content=current_user_content,
             web_evidence_content=web_evidence_content,
+            user_background=web_grounded,
         )
 
         input_tokens = count_tokens(messages)

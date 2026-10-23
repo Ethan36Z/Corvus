@@ -684,6 +684,9 @@ def process_turn(
                 context_kwargs[
                     "web_evidence_content"
                 ] = web_evidence_content
+                # Web source boundary: prior model output (direct or
+                # derived) never enters a web-grounded turn as history.
+                context_kwargs["web_grounded"] = True
 
             context = build_context_fn(
                 **context_kwargs
@@ -785,9 +788,20 @@ def process_turn(
     if mvp_prepared is not None and deterministic_reply is None:
         try:
             citation_counts = grounded_citation_counts(reply, mvp_prepared)
+            # The user's own words in this turn's context may support
+            # personal anchors (e.g. their hardware); nothing else may.
+            user_texts = [model_user_content, user_content] + [
+                row.get("content", "")
+                for key in ("historical_evidence", "recent_messages")
+                for row in (context.get(key) or [])
+                if isinstance(row, dict) and row.get("role") == "user"
+            ]
+            support = {}
             reply = present_grounded_answer(
                 reply, mvp_prepared, chinese=any('\u3400' <= ch <= '\u9fff' for ch in user_content),
+                user_texts=user_texts, diagnostics=support,
             )
+            citation_counts.update(support)
         except Exception:
             result["model_status"] = "WEB_PRESENTATION_FAILED"
             result["error"] = "Web source presentation failed; no automatic retry."

@@ -31,7 +31,10 @@ WEB_EVIDENCE_SYSTEM_INSTRUCTION = (
     "Be concise: lead with the direct answer, then only the key supporting "
     "points; unless the user asks for detail, stay within about 300 words "
     "(or about 500 Chinese characters). Never drop a needed fact, code, or "
-    "its citation to save space."
+    "its citation to save space. "
+    "Earlier assistant replies in this conversation and recalled memories "
+    "are not evidence: do not repeat their factual claims unless this "
+    "turn's Web evidence supports them."
 )
 
 _EVIDENCE_REF_RE = re.compile(
