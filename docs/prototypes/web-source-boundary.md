@@ -20,20 +20,26 @@ Hindsight 也已经把助手的幻觉归纳成了 `world` 类型的事实，并�
 
 ## 3. Origin 判定（Corvus 侧，与 Provider 无关）
 
+Origin **只看规范库，不看 Provider 的标签**。在联网轮次中，Corvus 会对所有声称规范 ID 的条目做一次只读批量查询，读取规范 SQLite 中的 `messages` 表；角色和内容都以规范库为准，Provider 给的 `role` 和 `content` 一律丢弃。
+
 | 条件 | origin |
 |---|---|
-| `id` 是规范 SQLite 整数 ID，且 `role == "user"` | `user_said` |
-| `id` 是规范 SQLite 整数 ID，且 `role == "assistant"` | `assistant_said` |
-| 其他任何情况（`role` 为 `derived`、缺失、未知，或 `id` 不是规范 ID，例如 `hindsight:…`） | `derived` |
+| 条目的 `id` 是正整数，且该 ID 在规范库中存在，**规范库里的** `role == "user"` | `user_said`（内容替换为规范内容） |
+| 同上，但规范库里的 `role == "assistant"` | `assistant_said` |
+| 其他任何情况（规范库中不存在、伪造或错误的角色标签、非整数 ID 如 `hindsight:…`、元数据缺失） | `derived` |
+
+规范库查询失败时 fail closed：本轮历史召回为空，`retrieval_status` 记为 `DEGRADED`。非联网轮次不做这个查询。
 
 ### Provider 最小契约
 
 送入上下文组装的每一项至少要有 `content`（文本）。
 
-- 只有能对应到 Corvus 规范消息的条目，才可以带规范整数 `id` 和该消息的真实 `role`。
-- 归纳、摘要、事实抽取得到的条目，必须使用非整数的命名空间 ID（如 `hindsight:<id>`）。它们的 `role` 应为 `derived`，缺省也视为 `derived`。
+- 只有能对应到 Corvus 规范消息的条目，才可以带规范整数 `id`。角色和内容都会从规范库重新读取。
+- 归纳、摘要、事实抽取得到的条目，必须使用非整数的命名空间 ID（如 `hindsight:<id>`）。
 
-违反契约时结果是**安全的**：条目被当作 `derived`，在联网轮次中被排除。
+违反契约时结果是**安全的**：伪造或错误的标签无法把条目变成 `user_said`。
+- 一个真实的规范 ID 配上错误的 role，只会得到该消息的真实 origin，内容也是规范内容。
+- 不存在的 ID 或非整数 ID 都会被当作 `derived`，在联网轮次中被排除。
 
 ## 4. 上下文策略
 
@@ -53,8 +59,10 @@ Hindsight 也已经把助手的幻觉归纳成了 `world` 类型的事实，并�
   - 没有引用的句子 → 本轮全部证据；
   - 两种情况都加上用户自己的文本（当前消息、召回到的 `user_said` 条目、同会话的用户消息）。
 - 发布状态否定类断言（`尚未发布`、`未发布`、`还没发布`、`not yet released`、`unreleased`…）：只要证据里没有类似的否定表述，就判为不支撑（这是 O1 中出现的高风险时效断言）。
-- 不通过的句子：去掉其中的 `[web_n]`，在句末加 `（未经来源核实）` / `(not verified by sources)`。**不删除内容**，只取消“有证据支撑”的展示方式。
-- 诊断字段：`web_claims_unverified`（数量）。
+- 不通过的处理分两档：
+  - **发布状态否定断言**（本轮证据中没有对应的否定表述）：**整句删除**，并在文末统一加一句“（已省略 N 处本次来源不支持的发布状态说法。）”。这是 O1 的失败类型，不能以事实形式展示。
+  - **其他锚点不通过的句子**：去掉其中的 `[web_n]`，并把 `（未经来源核实）` / `(not verified by sources)` **放在句首**（列表符号之后；表格行则放在最后一个单元格内），让读者先看到限定，再看到陈述。内容保留，避免误删“正确但本轮证据没有覆盖”的内容。
+- 诊断字段：`web_claims_unverified`、`web_claims_removed`。
 
 **能力边界（必须明示）：**
 

@@ -294,41 +294,57 @@ def _split_sentences(line):
     return merged
 
 
+_LEAD = re.compile(r'^(\s*(?:(?:[-*+]|\d+[.)])\s+|#{1,6}\s+|>\s*)*)')
+_EMPTY_LINE = re.compile(r'^\s*(?:(?:[-*+]|\d+[.)])\s*|#{1,6}\s*|>\s*)*$')
+
+
 def _mark_unverified(sentence, chinese):
+    """Put the qualifier before the claim so it never reads as established."""
     text = _CITATION.sub('', sentence)
-    marker = _UNVERIFIED_ZH if chinese else _UNVERIFIED_EN
+    marker = (_UNVERIFIED_ZH if chinese else _UNVERIFIED_EN.strip() + ' ')
     stripped = text.rstrip()
-    trailing = text[len(stripped):]
-    if stripped.endswith('|'):
-        return stripped[:-1].rstrip() + marker + ' |' + trailing
-    match = re.search(r'[。！？!?.]+$', stripped)
-    if match:
-        return stripped[:match.start()] + marker + stripped[match.start():] + trailing
-    return stripped + marker + trailing
+    if stripped.lstrip().startswith('|'):
+        # Table row: keep the qualifier inside the last cell.
+        trailing = text[len(stripped):]
+        body = stripped[:-1].rstrip() if stripped.endswith('|') else stripped
+        return body + ' ' + marker.strip() + ' |' + trailing
+    lead = _LEAD.match(text).group(1)
+    return lead + marker + text[len(lead):]
 
 
 def support_check(text, prepared, *, user_texts=(), chinese=False):
-    """Return (text, unverified_count). Fenced code is never checked."""
+    """Return (text, unverified_count, removed_count). Fenced code is skipped.
+
+    Unsupported anchored sentences lose their citations and are prefixed as
+    unverified. A release-status negation ("尚未发布", "not yet released")
+    that this turn's evidence does not itself state is removed entirely:
+    it is the observed failure class and must not be shown as fact.
+    """
     excerpts = {
         item.evidence_ref: item.excerpt for item in prepared.used_web_evidence
     }
     if not excerpts:
-        return text, 0
+        return text, 0, 0
     all_evidence = _normalize_corpus('\n'.join(excerpts.values()))
     user_corpus = _normalize_corpus('\n'.join(t for t in user_texts if isinstance(t, str)))
-    unverified = 0
+    unverified = removed = 0
 
     def check_sentence(sentence):
-        nonlocal unverified
+        nonlocal unverified, removed
         refs = re.findall(r'\[(web_\d+)\]', sentence)
-        claim = _CITATION.sub('', sentence)
+        # URLs were already restricted to this turn's sources; they are
+        # references, not factual anchors.
+        claim = _URL.sub(' ', _CITATION.sub('', sentence))
         evidence = (_normalize_corpus('\n'.join(excerpts.get(r, '') for r in refs))
                     if refs else all_evidence)
+        if (_RELEASE_NEGATION.search(claim) is not None
+                and _RELEASE_NEGATION.search(evidence) is None):
+            removed += 1
+            lead = _LEAD.match(sentence).group(1)
+            return lead if lead.strip() else ''
         missing = [a for a in _strong_anchors(claim)
                    if not _anchor_present(a, evidence) and not _anchor_present(a, user_corpus)]
-        negation_unsupported = (_RELEASE_NEGATION.search(claim) is not None
-                                and _RELEASE_NEGATION.search(evidence) is None)
-        if missing or negation_unsupported:
+        if missing:
             unverified += 1
             return _mark_unverified(sentence, chinese)
         return sentence
@@ -336,7 +352,10 @@ def support_check(text, prepared, *, user_texts=(), chinese=False):
     def prose(block):
         lines = []
         for line in block.split('\n'):
-            lines.append(''.join(check_sentence(s) for s in _split_sentences(line)))
+            checked = ''.join(check_sentence(s) for s in _split_sentences(line))
+            if line.strip() and _EMPTY_LINE.match(checked):
+                continue  # every sentence on this line was removed
+            lines.append(checked)
         return '\n'.join(lines)
 
     parts, cursor = [], 0
@@ -344,7 +363,13 @@ def support_check(text, prepared, *, user_texts=(), chinese=False):
         parts.extend((prose(text[cursor:match.start()]), match[0]))
         cursor = match.end()
     parts.append(prose(text[cursor:]))
-    return ''.join(parts), unverified
+    result = ''.join(parts)
+    if removed:
+        result = result.rstrip() + (
+            f'\n\n（已省略 {removed} 处本次来源不支持的发布状态说法。）' if chinese else
+            f'\n\n(Omitted {removed} release-status statement(s) not supported by this turn\'s sources.)'
+        )
+    return result, unverified, removed
 
 
 def present_grounded_answer(answer, prepared, *, chinese=False, user_texts=(),
@@ -355,10 +380,11 @@ def present_grounded_answer(answer, prepared, *, chinese=False, user_texts=(),
     claim verifier.
     """
     text, _, _ = _filter_grounded_answer(answer, prepared, chinese=chinese)
-    text, unverified = support_check(text, prepared, user_texts=user_texts,
-                                     chinese=chinese)
+    text, unverified, removed = support_check(text, prepared, user_texts=user_texts,
+                                              chinese=chinese)
     if diagnostics is not None:
         diagnostics['web_claims_unverified'] = unverified
+        diagnostics['web_claims_removed'] = removed
     if 'provider_partial_failure' in prepared.missing:
         text += ('\n\n部分搜索服务失败，来源覆盖可能不完整。' if chinese else
                  '\n\nSome search providers failed; source coverage may be incomplete.')

@@ -3,7 +3,9 @@ from time import perf_counter
 from app.context_sources import (
     USER_SAID,
     WEB_GROUNDED_HISTORY_ORIGINS,
-    memory_origin,
+    canonical_id,
+    load_canonical_messages,
+    resolve_origin,
 )
 from memory.historical_memory import recall
 from memory.store import load_recent_messages
@@ -26,13 +28,16 @@ def retrieve_historical_evidence(
     limit=5,
     search_fn=recall,
     allowed_origins=None,
+    canonical_lookup=load_canonical_messages,
 ):
     """
     Retrieve A0 historical evidence while excluding canonical messages that
     are already present in the active Working Context.
 
-    ``allowed_origins`` (optional) keeps only items whose Corvus-decided
-    origin is allowed; scanning continues past rejected items.
+    ``allowed_origins`` (optional) keeps only items whose origin, resolved
+    against the canonical store (never the provider's labels), is allowed.
+    Kept canonical items carry the canonical role and content. Scanning
+    continues past rejected items. A failed lookup raises (fail closed).
     """
     limit = int(limit)
 
@@ -58,14 +63,19 @@ def retrieve_historical_evidence(
         candidate_limit=max(20, fetch_limit),
     )
 
+    canonical_messages = None
+    if allowed_origins is not None:
+        canonical_messages = canonical_lookup(
+            [i for i in map(canonical_id, results) if i is not None]
+        )
+
     selected = []
 
     for result in results:
-        if (
-            allowed_origins is not None
-            and memory_origin(result) not in allowed_origins
-        ):
-            continue
+        if allowed_origins is not None:
+            origin, result = resolve_origin(result, canonical_messages)
+            if origin not in allowed_origins:
+                continue
 
         # Only canonical ids can already be in the active context; a derived
         # provider id (e.g. "hindsight:<id>") is never excluded here.
@@ -286,6 +296,7 @@ def build_working_context(
     page_size=64,
     search_fn=recall,
     web_grounded=False,
+    canonical_lookup=load_canonical_messages,
 ):
     """
     Combine bounded recent conversation context, historical evidence,
@@ -336,6 +347,7 @@ def build_working_context(
                 allowed_origins=(
                     WEB_GROUNDED_HISTORY_ORIGINS if web_grounded else None
                 ),
+                canonical_lookup=canonical_lookup,
             )
         finally:
             # Retrieval/hydration/exclusions only; stop before degradation
