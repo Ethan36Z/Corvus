@@ -138,6 +138,25 @@ def prepare_web_mvp(query, *, provider_builder, requirements=None,
     return replace(prepared, timings=timings)
 
 
+# W2-r: request wording is not a search topic ("请联网核实你刚才关于 X 的说法").
+_REQUEST_PREFIX = re.compile(
+    r'^\s*(?:请|麻烦|帮我|帮忙)?\s*(?:你)?\s*(?:联网|上网|在网上)?\s*'
+    r'(?:核实|核查|查一下|查查|搜索一下|搜一下|确认)(?:一下)?\s*[:：,，]?\s*'
+    r'|^\s*(?:please\s+)?(?:search\s+(?:the\s+web\s+)?for|look\s+up|verify|fact[- ]check)\s*[:,]?\s+',
+    re.IGNORECASE,
+)
+_SELF_REFERENCE = re.compile(r'你(?:刚才|之前|刚刚|上面)(?:说的|提到的|的说法|的回答)?(?:关于)?')
+_CLAIM_SUFFIX = re.compile(r'(?:的说法|的回答|是否属实|对不对|是不是真的)\s*[。？?！!.]*\s*$')
+
+
+def clean_search_query(query):
+    """Strip request phrasing; keep the original if too little topic remains."""
+    cleaned = _REQUEST_PREFIX.sub('', query, count=1)
+    cleaned = _SELF_REFERENCE.sub('', cleaned)
+    cleaned = _CLAIM_SUFFIX.sub('', cleaned).strip(' ，,。:：')
+    return cleaned if len(cleaned) >= 4 else query
+
+
 def _prepare_web_mvp(query, *, provider_builder, requirements=None,
                      source_facts=lambda page: None, **collector_options):
     """Explicit constraints establish sufficiency; otherwise use selected evidence.
@@ -160,8 +179,9 @@ def _prepare_web_mvp(query, *, provider_builder, requirements=None,
     if not isinstance(req, EvidenceRequirements):
         raise TypeError('Explicit EvidenceRequirements required')
     accepted = accept_web_evidence(
-        query, requirements=req, provider_builder=builder, source_facts=source_facts,
-        provider_failures=lambda: tuple(failures), **collector_options,
+        clean_search_query(query), requirements=req, provider_builder=builder,
+        source_facts=source_facts, provider_failures=lambda: tuple(failures),
+        **collector_options,
     )
     # Domain/source count alone does not establish factual question coverage.
     explicit = requirements is not None and bool(

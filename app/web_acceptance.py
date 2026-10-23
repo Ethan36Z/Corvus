@@ -242,19 +242,21 @@ def accept_web_evidence(query, *, requirements, provider_builder,
         focus = " ".join((query, *requirements.required_text, *requirements.versions))
         return rank_web_passages(focus, passages)
 
-    def single_attempt(query):
-        plan = build_search_plan(query)
-        return replace(plan, attempts=plan.attempts[:1])
-
+    # W2-r: run the whole bounded plan (at most MAX_SEARCH_ATTEMPTS); a later
+    # attempt only runs when the earlier ones failed or returned nothing.
     grounding = prepare_web_grounding(
         query, provider_builder=provider_builder, max_fetch_candidates=3,
         candidate_acceptor=collect, rank_web_passages_fn=rank,
-        build_search_plan_fn=single_attempt, extract_web_page_fn=extract,
+        build_search_plan_fn=build_search_plan, extract_web_page_fn=extract,
         **orchestration_options,
     )
     failures = list(provider_failures())
-    failures.extend(ProviderFailure(o.name, o.error_code or "PROVIDER_FAILED")
-                    for o in grounding.search_execution.outcomes if o.status == "provider_failed")
+    outcomes = grounding.search_execution.outcomes
+    if not any(o.status == "success" for o in outcomes):
+        # A failed attempt followed by a successful fallback is not a
+        # coverage limitation of the evidence actually used.
+        failures.extend(ProviderFailure(o.name, o.error_code or "PROVIDER_FAILED")
+                        for o in outcomes if o.status == "provider_failed")
     discovery = grounding.search_execution.discovery
     if extracted:
         retrieval = "RETRIEVAL_SUCCESS"

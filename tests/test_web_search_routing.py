@@ -47,6 +47,7 @@ assert english_news.news_intent is True
 assert names(english_news) == (
     "en-news",
     "en-general-fallback",
+    "en-general-broad",
 )
 
 assert (
@@ -73,6 +74,7 @@ assert chinese_general.language_family == (
 assert chinese_general.news_intent is False
 assert names(chinese_general) == (
     "zh-general-goc",
+    "zh-general-broad",
 )
 
 zh_general_attempt = (
@@ -108,6 +110,7 @@ assert chinese_news.news_intent is True
 assert names(chinese_news) == (
     "zh-news",
     "zh-general-goc",
+    "zh-general-broad",
 )
 
 zh_news_primary = (

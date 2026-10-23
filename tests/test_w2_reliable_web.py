@@ -73,5 +73,55 @@ class TimingTests(unittest.TestCase):
             self.assertIn(key, t)
 
 
+class RetrievalReliabilityTests(unittest.TestCase):
+    def test_version_questions_are_not_day_restricted_news(self):
+        from app.web_search_routing import build_search_plan
+        for query in ("Node.js 最新的 LTS 版本是多少？", "最新的 macOS 正式版是哪个？",
+                      "latest Python release"):
+            plan = build_search_plan(query)
+            self.assertFalse(plan.news_intent, query)
+            self.assertTrue(all(a.time_range is None for a in plan.attempts), query)
+        self.assertTrue(build_search_plan("洛杉矶 今日 新闻").news_intent)
+
+    def test_every_plan_ends_with_a_bounded_broad_fallback(self):
+        from app.web_search_routing import MAX_SEARCH_ATTEMPTS, build_search_plan
+        for query in ("洛杉矶 今日 新闻", "uv 和 pip 有什么区别", "OpenAI latest news", "Qwen3.5 llama.cpp"):
+            plan = build_search_plan(query)
+            last = plan.attempts[-1]
+            self.assertEqual((last.category, last.time_range, last.engine_bang), ("general", None, None))
+            self.assertLessEqual(len(plan.attempts), MAX_SEARCH_ATTEMPTS)
+
+    def test_request_wording_is_removed_from_the_search_query(self):
+        from app.web_mvp import clean_search_query as clean
+        self.assertEqual(clean("请联网核实你刚才关于 Python 3.14 是否发布的说法。"), "Python 3.14 是否发布")
+        self.assertEqual(clean("帮我查一下 uv 和 pip 有什么区别"), "uv 和 pip 有什么区别")
+        self.assertEqual(clean("Please look up the latest Node.js LTS"), "the latest Node.js LTS")
+        # Too little topic left: keep the original rather than search for nothing.
+        self.assertEqual(clean("联网核实一下你刚才说的"), "联网核实一下你刚才说的")
+        self.assertEqual(clean("Node.js 最新的 LTS 版本是多少？"), "Node.js 最新的 LTS 版本是多少？")
+
+    def test_failed_first_attempt_then_fallback_success_is_not_partial_failure(self):
+        p = controlled()
+        attempts = []
+
+        def builder(attempt):
+            attempts.append(attempt.name)
+            fixture = Harness([p]).provider(attempt)
+            if len(attempts) == 1:
+                class Failing:
+                    name = "failing"
+                    def search(self, query, *, limit):
+                        raise RuntimeError("DDGS: No results found")
+                return Failing()
+            return fixture
+        h = Harness([p])
+        prepared = prepare_web_mvp("concurrent.futures 新特性", provider_builder=builder,
+                                   fetch_search_result_fn=h.fetch, extract_web_page_fn=h.extract)
+        self.assertGreaterEqual(len(attempts), 2)
+        self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")
+        self.assertNotIn("provider_partial_failure", prepared.missing)
+        self.assertEqual(len(prepared.timings["search_ms"]), len(attempts))
+
+
 if __name__ == "__main__":
     unittest.main()

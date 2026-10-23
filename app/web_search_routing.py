@@ -20,6 +20,14 @@ EN_NEWS_TERMS = (
     "recent news",
 )
 
+# Version / release questions are not day-old news: "最新的 LTS 版本" must not
+# be searched as news restricted to the past day (W2-r, measured failure).
+_VERSION_RELEASE_TERMS = (
+    "版本", "正式版", "lts", "release", "version", "发布", "更新日志",
+    "changelog", "新特性", "新功能",
+)
+MAX_SEARCH_ATTEMPTS = 3
+
 
 @dataclass(
     frozen=True,
@@ -118,6 +126,8 @@ def build_search_plan(
     news_intent = _has_news_intent(
         query,
         chinese=chinese,
+    ) and not any(
+        term in query.casefold() for term in _VERSION_RELEASE_TERMS
     )
 
     if chinese:
@@ -173,9 +183,24 @@ def build_search_plan(
 
         language_family = "default"
 
+    # Last resort: a broad general search in the same language, without a
+    # time range or engine restriction. Only runs if earlier attempts fail or
+    # return nothing (execute_search_plan stops at the first success).
+    broad = SearchAttempt(
+        name="zh-general-broad" if chinese else "en-general-broad",
+        category="general",
+        language="zh-CN" if chinese else None,
+    )
+    if not any(
+        (a.category, a.language, a.engine_bang, a.time_range)
+        == (broad.category, broad.language, broad.engine_bang, broad.time_range)
+        for a in attempts
+    ):
+        attempts = (*attempts, broad)
+
     return SearchPlan(
         query=query,
         language_family=language_family,
         news_intent=news_intent,
-        attempts=attempts,
+        attempts=attempts[:MAX_SEARCH_ATTEMPTS],
     )

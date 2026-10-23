@@ -186,6 +186,8 @@ assert tuple(
     for outcome
     in empty_execution.outcomes
 ) == (
+    # W2-r adds a broad last-resort attempt to every plan.
+    "empty",
     "empty",
     "empty",
 )
