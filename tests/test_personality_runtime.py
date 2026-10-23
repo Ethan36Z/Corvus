@@ -127,7 +127,9 @@ def run_default_personality_turn():
 with patch.dict("os.environ",{},clear=True):
     original_messages = run_default_personality_turn()
     original_policy = compile_personality_system_prompt()
-    assert original_messages[0]["content"] == original_policy
+    # Integration (W1.1 + P0.3): the personality policy reaches the model
+    # first and unchanged; the request-time date note follows it.
+    assert original_messages[0]["content"].startswith(original_policy + "\n\nCurrent date: ")
 
 with patch.dict("os.environ",{
     "CORVUS_PERSONALITY_ENABLED":"TRUE",
