@@ -1,6 +1,8 @@
 # Voice V1 — opt-in half-duplex Call overlay
 
-Status: **implemented and tested offline; not deployed**.
+Status: **READY_FOR_LAB_ACTIVATION; not deployed**.
+Full Vite/static build and independent candidate image passed offline checks.
+See [Lab activation plan](LAB_ACTIVATION.md) and [build evidence](build-readiness.json).
 Base: `93315415cf9efb541108e6f4fbcd3eb5967c9823`.
 
 Reliability and Memory Integrity First. Latency Optimization Second.
@@ -142,9 +144,9 @@ Before any separately authorized Lab activation:
 - Recheck Lab isolation, current image/source/Function/valves and all dirty files;
   use only the reviewed Lab `corvus_pipe` bound to API 18096 and current STT/TTS.
 - Produce and inspect the full WebUI build/image through existing packaging,
-  with sufficient **bounded** offline build resources; this implementation pass
-  compiled the five touched Svelte components and browser test bundle, not a full
-  production Vite application or deployable image.
+  with sufficient **bounded** offline build resources. This gate now passed with
+  a 3 GiB old-space cap; retain the verified candidate/provenance in the activation
+  plan rather than rebuilding or deploying an unverified artifact.
 - Snapshot the existing Lab WebUI artifact/config/data and prepare image-only
   rollback. Do not restore databases or cancel accepted memory work.
 - Verify real login, permission handling, Chinese/English microphone/edit/send,

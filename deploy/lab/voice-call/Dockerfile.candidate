@@ -1,4 +1,4 @@
-# Offline packaging recipe; no successful full build/candidate image exists yet.
+# Offline packaging recipe; requires a successful full Vite build before use.
 # Use a clean context containing ONLY this Dockerfile and an exit-0 Vite build/.
 FROM corvus-lab-webui@sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc
 # Remove old hashed assets inside the NEW image; no runtime volume is involved.

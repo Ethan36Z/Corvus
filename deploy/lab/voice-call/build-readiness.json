@@ -1,28 +1,79 @@
 {
   "date": "2026-10-23",
-  "status": "BLOCKED_RESOURCE",
-  "ready_for_lab_activation": false,
+  "status": "READY_FOR_LAB_ACTIVATION",
+  "ready_for_lab_activation": true,
   "implementation_commit": "f6d94ffe48b2e07bd1adf0c5dc776850bb9c1980",
   "base_commit": "93315415cf9efb541108e6f4fbcd3eb5967c9823",
   "full_build": {
-    "success": false,
-    "attempts": 2,
-    "exit_codes": [
-      139,
-      139
+    "success": true,
+    "previous_512m_attempts": 2,
+    "new_attempts": [
+      {
+        "exit_code": 134,
+        "watchdog_stopped": false,
+        "stop_reason": null,
+        "seconds": 83.14,
+        "minimum_host_available_bytes": 3872157696,
+        "sampled_maximum_cgroup_current_bytes": 2965970944,
+        "cgroup_peak_bytes": 2966634496,
+        "memory_limit_bytes": 3221225472,
+        "node_old_space_mib": 2048,
+        "config": "original vite.config.ts (sourcemaps enabled)",
+        "network": "none",
+        "log": "/tmp/corvus-voice-v1-stage-ku_7qzxo/heap2048/vite.log"
+      },
+      {
+        "exit_code": 0,
+        "watchdog_stopped": false,
+        "stop_reason": null,
+        "seconds": 114.1,
+        "minimum_host_available_bytes": 5968793600,
+        "sampled_maximum_cgroup_current_bytes": 4559896576,
+        "cgroup_peak_bytes": 4563402752,
+        "memory_limit_bytes": 4563402752,
+        "node_old_space_mib": 3072,
+        "config": "original vite.config.ts (sourcemaps enabled)",
+        "network": "none",
+        "log": "/tmp/corvus-voice-v1-stage-ku_7qzxo/heap3072/vite.log"
+      }
     ],
     "ssr_modules": 1214,
-    "container_memory_mib": 768,
-    "node_heap_mib": 512,
-    "failure_phase": "client production build",
-    "reason": "V8 heap exhausted",
-    "larger_budget_started": false
+    "client_modules": 4544,
+    "static_adapter_complete": true,
+    "sourcemaps_enabled": true,
+    "extra_swap_allowed": false,
+    "maximum_simultaneous_large_builds": 1,
+    "minimum_host_available_watchdog_bytes": 1610612736,
+    "origin_of_previous_limit": "Explicit NODE_OPTIONS in isolated build command; previous container cap was 768MiB",
+    "host_inherited_NODE_OPTIONS": null,
+    "host_ancestor_memory_max_and_high": "unlimited in inspected session/user slices",
+    "peak_note": "cgroup memory includes anonymous memory and charged page cache; successful build reached 4.25GiB cap (max events 161), oom/oom_kill both 0"
   },
   "candidate_image": {
-    "reserved_tag": "corvus-lab-webui:voice-v1-f6d94ff-candidate",
-    "created": false,
-    "id": null,
-    "base": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc"
+    "image_tag": "corvus-lab-webui:voice-v1-f6d94ff-candidate",
+    "image_id": "sha256:5058ab1bdfd1112c38dda284f67c76717c0d6faf5eb425e59a0229f980c3ec6d",
+    "base_image_id": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
+    "image_build_exit": 0,
+    "image_build_seconds": 52.01,
+    "minimum_host_available_during_packaging_bytes": 9422077952,
+    "frontend_file_count": 4751,
+    "frontend_total_bytes": 312431993,
+    "mapped_application_sources_verified": 349,
+    "overlay_sources_verified": 7,
+    "call_gate_baked_enabled": true,
+    "unchanged_native_dictation_normalizer_vision_sources": true,
+    "backend_files_identical": true,
+    "backend_file_count": 207,
+    "inherited_image_configuration_identical": true,
+    "base_labels_preserved": true,
+    "base_layer_prefix_identical": true,
+    "packaged_frontend_matches_build": true,
+    "no_server_started": true,
+    "network": "none",
+    "no_live_mounts": true,
+    "created": true,
+    "deployed": false,
+    "frontend_manifest_sha256": "ffc53a37fe6a7cdd230a6388ee22600d450b68c759aedd92bcd0a121145a1f80"
   },
   "compatibility": {
     "suite_modules": 20,
@@ -41,7 +92,8 @@
     "overlay_files": 7,
     "verified_cached_packages": 990,
     "skipped_optional_other_platform_packages": 111,
-    "lock_sha256": "d140bb9648ff22a039826c710fc5bfa4e5e36b8660ea6e97c9253025cbb1ead9"
+    "lock_sha256": "d140bb9648ff22a039826c710fc5bfa4e5e36b8660ea6e97c9253025cbb1ead9",
+    "candidate_application_sources_matched": 349
   },
   "live_backend_hashes": {
     "routers/audio.py": "ad4fb24a6122b6be8f88d341d29a67d5ea0ac10fd8a77b416492f2b77c8e00b3",
@@ -54,9 +106,7 @@
     "main.py": "f541f307960d0598e54d3cbfe72e7896d09687666c60f483343337fcbdcde9e2"
   },
   "pending": [
-    "successful full Vite build",
-    "candidate image and backend byte/config parity",
-    "separate activation authorization and fresh consistent backup",
+    "separate deployment authorization, idle Lab and fresh verified consistent backup",
     "real authenticated browser/microphone/listening and deployed persistence acceptance"
   ],
   "known_risks": [
@@ -66,17 +116,18 @@
     "No new STT API refactor deployed"
   ],
   "protected_state_verification": {
-    "protected_state": {
-      "unchanged": true,
-      "difference_paths": []
-    },
-    "lab_webui": {
-      "id": "f3bd24cb443a07be013e9a2791ce4e6db4b8c0a99221bdae67bb7ccdeb8e6299",
-      "image": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
-      "status": "running",
-      "health": "healthy"
-    },
-    "lab_dirty_file_count": 28
+    "protected_state_unchanged": true,
+    "comparison_includes": "all integration/main/Lab tracked/untracked file hashes, HEAD/status/index; service PIDs/environment hashes/dropins; existing container identity/configuration",
+    "protected_lab_dirty_file_count": 28,
+    "lab_webui_health": "healthy",
+    "live_image_unchanged": "sha256:2427456fa33f5eccf8a854f9ad37f3af05f0cc443ae6348468f136a25a0745dc",
+    "candidate_image_id": "sha256:5058ab1bdfd1112c38dda284f67c76717c0d6faf5eb425e59a0229f980c3ec6d",
+    "candidate_image_deployed": false,
+    "candidate_compose_diff_paths": [
+      "/services/open-webui/image"
+    ],
+    "rollback_compose_diff_paths": [],
+    "large_builds_running": ""
   },
   "compose_validation": {
     "candidate": {
@@ -93,5 +144,7 @@
         "open-webui"
       ]
     }
-  }
+  },
+  "build_preparation_commit": "b415ac958aa501c2d2bb33be57fed07c82a6411b",
+  "validation_reuse": "Prior 261 unittest cases (259 passed, 2 offline skips), six assertion scripts and Vision/frontend/Call checks reused; source and payload unchanged. New validation covers full build and packaged artifact parity."
 }
