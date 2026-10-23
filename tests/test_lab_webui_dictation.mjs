@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const root = process.argv[2] || '/tmp/corvus-stt-r4-prepared';
 const original = process.argv[3] || '/tmp/corvus-arena-ui1/source';
-const require = createRequire('/tmp/corvus-arena-ui1/work/package.json');
+const require = createRequire(process.env.CORVUS_FRONTEND_PACKAGE || '/tmp/corvus-arena-ui1/work/package.json');
 const svelte = require('svelte/compiler');
 const ts = require('typescript');
 const voicePath = 'src/lib/components/chat/MessageInput/VoiceRecording.svelte';
@@ -83,7 +83,7 @@ function environment({ mime='audio/wav', chunk=wav(), answer, permission, decode
  script=script.replace(/\bimport[\s\S]*?;/g,'').replace(/export let /g,'let ');
  script=script.replace(/\$:\s*if \(recording\) \{\s*startRecording\(\);\s*\} else \{\s*stopRecording\(\);\s*\}/,'');
  script=script.replace(/\$:\s*maxVisibleItems =[^;]+;/,'');
- vm.runInContext(helperJS+'\n'+js(script)+`\nglobalThis.component={startRecording,stopRecording,confirmRecording,transcribeHandler,recordingBlob,validateDictationWav,setRecording:(v)=>recording=v};`,context);
+ vm.runInContext(helperJS+'\n'+js(script)+`\nglobalThis.component={startRecording,stopRecording,confirmRecording,transcribeHandler,recordingBlob,validateDictationWav,setRecording:(v)=>recording=v,setCallMode:(v)=>callMode=v};`,context);
  return {component:context.component,events,calls,errors,logs,tracks,contexts,recorders,pending,settings,intervals,ticks,
   destroy:()=>destroy(), async start(){context.component.setRecording(true);await context.component.startRecording();},
   async finish(){await turn();await Promise.all(pending);}};
@@ -140,7 +140,8 @@ test('native confirm appends editable composer, never sends even with preference
  assert.deepEqual(settings,{speechAutoSend:true});
  const old=await readFile(path.join(original,composerPath),'utf8');
  const auto="if ($settings?.speechAutoSend ?? false) {\n\t\t\t\t\t\t\t\t\tdispatch('submit', prompt);\n\t\t\t\t\t\t\t\t}";
- assert.equal(composer,old.replace(auto,'// Dictation stays editable; retain speechAutoSend for future voice modes.'));
+ const withoutCallLauncher = composer.replace(/\t{14}if \(selectedModelIds\.at\(0\) === 'corvus_pipe'\) \{[\s\S]*?\n\t{14}\}\n/,'');
+ assert.equal(withoutCallLauncher,old.replace(auto,'// Dictation stays editable; retain speechAutoSend for future voice modes.'));
 });
 
 test('cancel before stop discards data and releases native tracks',async()=>{
@@ -190,7 +191,10 @@ test('STT API keeps auth/multipart, rejects redirects, aborts, and never logs pr
  await assert.rejects(()=>context.transcribeAudio('synthetic-token',file),/Dictation is unavailable/);
  assert.equal(logs.length,0);
  const prior=await readFile(path.join(original,apiPath),'utf8');
- assert.equal(apiSource.slice(apiSource.indexOf('export const synthesizeOpenAISpeech =')),prior.slice(prior.indexOf('export const synthesizeOpenAISpeech =')));
+ // Voice V1 may add only its audited optional TTS AbortSignal; STT and other routes stay exact.
+ const speech = apiSource.slice(apiSource.indexOf('export const synthesizeOpenAISpeech ='));
+ const compatible = speech.replace('\tmodel?: string,\n\tsignal?: AbortSignal\n','\tmodel?: string\n').replace('\t\tsignal,\n','');
+ assert.equal(compatible,prior.slice(prior.indexOf('export const synthesizeOpenAISpeech =')));
  assert.ok(!voice.includes('console.'));assert.ok(!source.includes('console.'));assert.ok(!voice.includes("new (window.SpeechRecognition"));
 });
 
@@ -224,4 +228,30 @@ test('encoded accumulation and recording duration caps cancel without submission
  assert.equal(e.calls.length,0);assert.equal(e.events[0].event,'cancel');assert.equal(e.tracks[0].stopped,1);
  const d=environment();await d.start();for(let i=0;i<120;i++)d.ticks[0]();await d.finish();
  assert.equal(d.calls.length,0);assert.equal(d.events[0].event,'cancel');assert.equal(d.tracks[0].stopped,1);
+});
+
+
+test('Call mode uses the same recorder and announces transcription without sending chat', {skip:!voice.includes('callMode')}, async()=>{
+ const e=environment();e.component.setCallMode(true);await e.start();await e.component.confirmRecording();await e.finish();
+ assert.equal(e.events.filter(x=>x.event==='callphase').length,1);assert.equal(e.events.filter(x=>x.event==='confirm').length,1);assert.equal(e.events.filter(x=>x.event==='submit').length,0);assert.ok(e.tracks.every(x=>x.stopped>0));
+});
+test('Call mode reports failed/empty STT and never emits a draft confirmation', {skip:!voice.includes('callMode')}, async()=>{
+ for(const answer of [async()=>{throw Error('synthetic failure');},async()=>({text:''})]){const e=environment({answer});e.component.setCallMode(true);await e.start();await e.component.confirmRecording();await e.finish();assert.equal(e.events.filter(x=>x.event==='callerror').length,1);assert.equal(e.events.filter(x=>x.event==='confirm').length,0);}
+});
+test('optional TTS cancellation preserves existing payload and authentication', async()=>{
+ const source=apiSource.slice(apiSource.indexOf('export const synthesizeOpenAISpeech ='),apiSource.indexOf('interface AvailableModelsResponse'));
+ const calls=[];const context=vm.createContext({AUDIO_API_BASE_URL:'/api/v1/audio',fetch:async(...args)=>{calls.push(args);return {ok:true};},console:{log(){}}});
+ vm.runInContext(js(source).replace('export const','globalThis.'),context);
+ await context.synthesizeOpenAISpeech('synthetic-token','af_mica','saved reply','kokoro');
+ const controller=new AbortController();await context.synthesizeOpenAISpeech('synthetic-token','af_mica','saved reply','kokoro',controller.signal);
+ assert.equal(calls[0][1].signal,undefined);assert.deepEqual(JSON.parse(calls[0][1].body),{input:'saved reply',voice:'af_mica',model:'kokoro'});assert.equal(calls[0][1].headers.Authorization,'Bearer synthetic-token');
+ if(source.includes('signal?: AbortSignal'))assert.equal(calls[1][1].signal,controller.signal);
+});
+
+
+test('Corvus Call launcher is opt-in and never starts legacy microphone/browser TTS', {skip:!composer.includes('VITE_CORVUS_VOICE_CALL')}, async()=>{
+ const html=composer.replace(/<script[\s\S]*?<\/script>/,'');const ast=svelte.parse(html);let handler;
+ function walk(node){if(!node||typeof node!=='object')return;if(node.type==='Element'&&node.name==='button'&&node.attributes?.some(a=>a.name==='aria-label'&&a.value?.[0]?.data==='Call'))handler=node.attributes.find(a=>a.type==='EventHandler'&&a.name==='click')?.expression;for(const [k,v] of Object.entries(node))if(k!=='parent'){if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')walk(v);}}
+ walk(ast.html);assert.ok(handler);const source=html.slice(handler.start,handler.end);
+ for(const enabled of ['false','true']){const opened=[],errors=[];const ctx=vm.createContext({selectedModels:[{id:'corvus_pipe'}],selectedModelIds:['corvus_pipe'],$config:{audio:{stt:{engine:''}}},$settings:{audio:{tts:{engine:'browser-kokoro'}}},$i18n:{t:x=>x},toast:{error:x=>errors.push(x)},showCallOverlay:{set:x=>opened.push(x)},showControls:{set:x=>opened.push(x)},navigator:{mediaDevices:{getUserMedia:()=>{throw Error('Unexpected microphone acquisition')}}},KokoroWorker:class{constructor(){throw Error('Unexpected browser TTS')}}});vm.runInContext('globalThis.click='+source.replaceAll('import.meta.env.VITE_CORVUS_VOICE_CALL',JSON.stringify(enabled)),ctx);await ctx.click();assert.equal(opened.length,enabled==='true'?2:0);assert.equal(errors.length,enabled==='true'?0:1);}
 });
