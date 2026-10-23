@@ -1,3 +1,10 @@
+from personality.profiles import (
+    PersonalityConfig,
+    load_personality_profile,
+    render_personality_instructions,
+)
+
+
 PERSONALITY_SPEC_VERSION = "0.1"
 
 
@@ -36,6 +43,22 @@ Historical conversation and retrieved memories are evidence about what happened 
 """
 
 
-def compile_personality_system_prompt():
-    """Return the compact model-independent PERS-A runtime policy."""
-    return _RUNTIME_POLICY.strip()
+def compile_personality_system_prompt(*, base_system_prompt=None, config=None):
+    """Preserve PERS-A by default; optionally append an exact versioned profile.
+
+    P0.3 selection is off by default. Missing/invalid selections fail back to
+    the caller's original instructions, not an empty prompt or a new policy.
+    The conversation loop's existing zero-argument callback remains valid.
+    """
+    base = _RUNTIME_POLICY.strip() if base_system_prompt is None else base_system_prompt
+    if not isinstance(base, str):
+        raise TypeError("base_system_prompt must be text")
+    settings = PersonalityConfig.from_env() if config is None else config
+    if not isinstance(settings, PersonalityConfig) or settings.enabled is not True:
+        return base
+    try:
+        profile = load_personality_profile(settings.profile_id, settings.version)
+        instructions = render_personality_instructions(profile)
+    except (OSError, ValueError, TypeError):
+        return base
+    return base + "\n\n" + instructions

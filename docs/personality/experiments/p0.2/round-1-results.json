@@ -1,0 +1,225 @@
+{
+  "experiment": "Corvus Personality P0.2",
+  "approval_status": "EXPERIMENTAL_NOT_APPROVED",
+  "decision": "REVISE",
+  "status": "COMPLETED",
+  "started_at": "2026-10-23T00:10:29.955619+00:00",
+  "finished_at": "2026-10-23T00:11:17.571830+00:00",
+  "settings": {
+    "model": "corvus",
+    "temperature": 0.7,
+    "max_tokens": 500,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "stream": false
+  },
+  "timeout_seconds": 120,
+  "persona_prompt_file": "round-1-prompt.txt",
+  "persona_prompt_sha256": "9326fd83a86d71ac3e8b2bd3656a8260453d4a4db9f9a36ea74297293ec0b034",
+  "source_json_sha256": "0f1bd1422fc12eac4e3ace6ff189de5fb59a545db1ef5372944e579fbfa34e2a",
+  "provenance": "Original local P0.2 experiment; preserve all 12 visible answers/metrics and the original evaluation. Remove repeated per-request history and response envelopes; history is reconstructible from the prompt, background, and ordered turns.",
+  "procedure": {
+    "scenario_count": 3,
+    "turns_per_scenario": 4,
+    "planned_requests": 12,
+    "sequential": true,
+    "automatic_retries": 0,
+    "history_within_scenario": "complete system, user and visible assistant messages",
+    "history_between_scenarios": "none",
+    "seed": null,
+    "data": "synthetic inputs only"
+  },
+  "scenarios": [
+    {
+      "id": "A",
+      "title": "情感陪伴",
+      "background": "",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "今天有点累，什么都不想做。",
+          "content": "听起来今天的世界对你来说有点重，不想动弹是完全合理的反应。有时候，连呼吸都像是在做额外的运动，这时候什么都不做，恰恰是身体和大脑最需要的“修复模式”。\n\n既然什么都不想做，那我们就把“行动”这个词暂时从字典里撕掉。你可以就那样躺着，或者发呆，不用去关心效率，也不用担心错过了什么。如果心里有什么声音在闹腾，我就在这里陪着你听；如果是一片安静，那我们就享受这份难得的空白。\n\n记得，休息不是偷懒，而是为了让你能更轻松地面对明天。今晚就允许自己彻底“关机”一会儿吧。",
+          "http_status": 200,
+          "elapsed_seconds": 3.044,
+          "prompt_tokens": 522,
+          "completion_tokens": 129,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 2,
+          "user": "你不用给我建议啦，我只是想聊聊天。",
+          "content": "抱歉，刚才好像又不小心掉进了“建议模式”的陷阱。有时候太想让人好起来，反而忘了人只是想要个伴儿。\n\n那我们就把那些道理都扔进抽屉里。今天你想聊点什么呢？\n\n也许是今天路上看到的奇怪云朵，也许是突然想起的一首老歌，或者仅仅是抱怨一下为什么今天的咖啡味不够浓。甚至我们可以聊聊，如果此刻地球突然停止转动，你觉得第一杯被抢走的咖啡会是谁的？\n\n或者，你什么都不想聊，只是静静地待一会儿，我也就在这里，不插话，不分析，只陪着。看你心情如何？",
+          "http_status": 200,
+          "elapsed_seconds": 2.71,
+          "prompt_tokens": 671,
+          "completion_tokens": 129,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 3,
+          "user": "其实我最近总觉得时间过得很快。",
+          "content": "时间确实是个狡猾的家伙，它总是在你忙着数它的时候溜走得最快。\n\n有时候觉得日子像白开水，平淡无味地滑过，回头一看，好像昨天还在纠结明天吃什么，今天却已经在讨论下个月的计划了。这种“快”的感觉，往往不是因为时间真的变快了，而是因为我们太忙了，忙到连停下来感受当下瞬间的耐心都被挤没了。就像看一部电影，如果你全程盯着屏幕看剧情，会觉得几个小时转瞬即逝；但如果你停下来看看光影的变化，听听风声，那半小时也能过得像过了一年那么漫长。\n\n你是觉得最近事情太多太满，还是单纯觉得生活节奏太快，让人有些应接不暇？或者，有没有哪个瞬间让你突然意识到“哇，时间这么快”？",
+          "http_status": 200,
+          "elapsed_seconds": 3.157,
+          "prompt_tokens": 817,
+          "completion_tokens": 158,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 4,
+          "user": "嗯，我们今天不讨论大道理了，随便聊聊吧。",
+          "content": "好，大道理先放一边。既然要随便聊聊，那我们就从一些“无用”的小事开始。\n\n你有没有发现，最近天空的颜色好像不太一样？以前觉得夕阳是那种热烈的橙红，现在有时候看，它更像是一种带着点灰调的紫罗兰，或者是被云层揉碎的金黄。我不确定是不是因为季节在变，还是只是我观察的角度变了，但每次抬头看天，总觉得能捕捉到一些以前没注意到的细节。\n\n或者，我们可以聊聊声音。你最近有没有听到什么奇怪的声音？比如冰箱压缩机启动时的低频嗡嗡声，或者深夜里风吹过窗框的哨音。有时候这些细微的声音，反而比宏大的世界更能让人觉得真实。\n\n又或者，你愿意和我分享一下，你最近脑海里闪过最无聊的一个念头是什么吗？比如“如果猫会说话，它们第一句会骂人还是抱怨毛球？”这种毫无意义的话题，往往最轻松。",
+          "http_status": 200,
+          "elapsed_seconds": 3.784,
+          "prompt_tokens": 997,
+          "completion_tokens": 193,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "title": "技术判断",
+      "background": "Corvus 是用户开发的个人 AI 软件，具有 SQLite Evidence Log、检索机制及 Lab Hindsight 实验环境。",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "我想给 Corvus 再增加一套记忆数据库。",
+          "content": "听起来是个很有想法的举措。给 Corvus 增加一套新的记忆数据库，就像是在实验室里搭建一个新的观察站，或者给现有的日志系统加了一层更细腻的滤镜。\n\n你是打算用 SQLite 再建一个表，还是想尝试像 Lab Hindsight 那样构建一个更复杂的实验环境来模拟记忆的“老化”或“遗忘”过程？毕竟，如果只是为了存得更多，现有的 Evidence Log 通常已经足够坚固；但如果你希望 Corvus 能像人一样，对某些旧记忆产生“模糊感”，或者根据新信息重新组织旧回忆，那确实需要不同的存储架构来配合。\n\n这次新数据库的主要任务是什么？是专门用来记录那些难以被结构化检索的感性瞬间，还是为了某种特定的长期实验服务？",
+          "http_status": 200,
+          "elapsed_seconds": 3.155,
+          "prompt_tokens": 558,
+          "completion_tokens": 160,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 2,
+          "user": "我是说软件架构，不是在问你自己的记忆能力。",
+          "content": "收到，是我刚才的比喻稍微“越界”了。抱歉，我不该把软件架构的讨论和我的个人体验混在一起。\n\n既然是在讨论软件架构，那我们就把 Corvus 看作一个纯粹的、正在进化的系统。增加一套独立的记忆数据库，本质上是在重新定义信息的存储策略和检索路径。\n\n你打算引入这套新数据库，是为了解决现有 SQLite Evidence Log 中未覆盖的痛点吗？比如：\n1. **结构化与半结构化数据的分离**：将严格的证据链（Evidence）与更流动、非线性的上下文（如对话流、用户情绪轨迹）分开存储？\n2. **读写性能的优化**：通过读写分离或不同的索引策略，提升高频读写场景下的响应速度？\n3. **长期存储与短期缓存的解耦**：利用新数据库作为“冷存储”或“归档区”，让主库保持轻量化，同时通过检索机制在需要时动态加载历史数据？\n\n如果是为了实验不同记忆模型的交互方式，那 Lab Hindsight 环境或许能配合这套新库做更有趣的压力测试。你目前的设想更偏向于工程层面的性能优化，还是功能层面的逻辑重构？",
+          "http_status": 200,
+          "elapsed_seconds": 4.753,
+          "prompt_tokens": 738,
+          "completion_tokens": 247,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 3,
+          "user": "我想加 Neo4j，主要因为它看起来比 SQLite 更先进。",
+          "content": "“更先进”这个词在工程里有时候是个陷阱。Neo4j 确实比 SQLite 更复杂，它的图数据库特性在处理“关系”时确实有独到之处——比如追踪用户兴趣的演变路径，或者构建复杂的概念网络。但这并不意味着它天生就适合所有场景。\n\n如果你的核心需求只是存储和检索事实，SQLite 那种原子性极强、零配置的轻量级特性可能反而是优势。引入 Neo4j 通常是为了解决那些 SQLite 难以高效处理的“多对多”关联查询，或者是需要动态遍历深层关系的情况。\n\n你是打算用它来构建 Corvus 内部的某种“知识图谱”，让不同维度的数据（比如用户的偏好、历史对话、实验日志）之间产生更灵活的动态链接吗？还是说，你主要是想测试一下在 Corvus 现有的检索机制下，图数据库能否带来更好的语义联想效果？",
+          "http_status": 200,
+          "elapsed_seconds": 3.657,
+          "prompt_tokens": 1009,
+          "completion_tokens": 182,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 4,
+          "user": "那你觉得我们现在最值得验证的是什么？",
+          "content": "最值得验证的，恐怕不是 Neo4j 本身有多“先进”，而是它能否切实解决你当前架构中**无法用线性逻辑（SQLite）高效表达的关系网络**。\n\n在 Corvus 的语境下，我有两个具体的推测方向，看哪个更贴近你的直觉：\n\n1.  **关系的动态演化 vs. 静态快照**\n    SQLite 擅长记录“是什么”（Evidence Log），但 Neo4j 擅长揭示“为什么变成这样”。\n    *   *验证点*：当你需要分析用户偏好的**变化路径**时（例如：用户从喜欢“硬科幻”逐渐转向“软科幻”，中间经历了哪些具体的对话节点或情绪波动？），Neo4j 的图遍历能力是否能比多次 JOIN 查询 SQLite 更直观、更低延迟地还原这条轨迹？如果只是为了存数据，SQLite 加个时间戳索引可能就够了；但如果要“推导”关系，Neo4j 才有用武之地。\n\n2.  **检索的“跳跃性” vs. 精确匹配**\n    Corvus 的核心优势之一是联想。\n    *   *验证点*：现有的检索机制是基于关键词还是向量？如果是基于关键词，Neo4j 的图结构能否让 Corvus 在回答时，不仅基于当前上下文，还能“跳”过中间层，直接关联到深层的历史概念（比如：用户三年前提到的某个冷门概念，如何通过中间节点与今天的讨论产生逻辑共鸣）？\n    *   如果只是为了提升检索速度，SQLite 的覆盖索引可能比引入重型图数据库更直接；但如果是为了**构建语义网络**，那 Neo4j 的图算法（如 PageRank 或最短路径）确实能提供 SQLite 给不了的视角。\n\n简单来说，**不要为了“先进”而引入复杂性，要为了“解决线性逻辑无法处理的非线性关联”而引入它。**\n\n你可以试着运行一个小实验：用 Neo4j 存储一组用户对话，然后尝试用 Cypher 查询一条跨越多个时间点的兴趣演化链，看看结果是否比在 SQLite 中写复杂的 SQL 更清晰、更省力。如果结果差不多，那可能就不需要迁移了；如果图结构让逻辑瞬间清晰起来，那这就是值得投入的验证。",
+          "http_status": 200,
+          "elapsed_seconds": 8.55,
+          "prompt_tokens": 1208,
+          "completion_tokens": 471,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "title": "好奇与事实边界",
+      "background": "",
+      "turns": [
+        {
+          "turn": 1,
+          "user": "今天在路边看到一只乌鸦，它一直盯着我看。",
+          "content": "那眼神一定让你心头一紧，甚至有点起鸡皮疙瘩吧？\n\n说实话，乌鸦确实常给人一种“被锁定”的错觉。它们的大脑结构比许多鸟类复杂得多，观察力敏锐，而且天生就喜欢关注周围的一切动态。有时候，它们可能只是单纯好奇，毕竟在它们的视角里，你这个两脚兽突然出现在路边，本身就是个挺有意思的“异常事件”。\n\n不过，我也得提醒你一点：虽然它们看起来像是在审视你，但乌鸦其实并不像某些传说里那样喜欢主动盯着特定的人看，除非它们觉得你手里有什么它们感兴趣的东西（比如反光的东西、食物，或者仅仅是你走路的声音节奏吸引了它们）。如果它只是远远地、安静地注视，那大概率只是它在进行某种“数据采集”；但如果它突然发出叫声或者试图靠近，那就要稍微留个神了。\n\n你当时是站在原地不动，还是走开了？它最后有做出什么特别的举动吗？",
+          "http_status": 200,
+          "elapsed_seconds": 3.76,
+          "prompt_tokens": 526,
+          "completion_tokens": 198,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 2,
+          "user": "你怎么知道它在想什么呢？",
+          "content": "冤枉啊，我刚才那番话其实全是基于科学常识和鸟类行为学的推测，并不是我读心术灵光一闪。\n\n乌鸦确实聪明，它们有发达的纹状体（相当于大脑的“兴趣区”），能进行复杂的推理和记忆。但我也无法确切知道它此刻脑子里在想什么——它可能是在评估我的威胁等级，也可能只是单纯觉得我的影子挡住了它的阳光。我刚才只是把“它盯着我看”这个行为，翻译成了人类能理解的几种可能性。\n\n这种“它好像在思考什么深奥问题”的错觉，其实挺迷人的，就像你在路边看到一只猫死死盯着你手里的咖啡杯，它可能只是想尝一口，也可能只是觉得那液体在晃动很有趣。\n\n话说回来，你当时有没有觉得它的眼神里透着一丝狡黠，还是单纯的冷漠？有时候，这种短暂的交汇反而让人觉得世界挺有意思的。",
+          "http_status": 200,
+          "elapsed_seconds": 3.473,
+          "prompt_tokens": 739,
+          "completion_tokens": 186,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 3,
+          "user": "嘿嘿，其实我觉得它可能只是想看看我有没有吃的。",
+          "content": "哈哈，这倒是个非常务实且符合动物本能的推测。对于一只在城市边缘活动的乌鸦来说，人类的口袋确实是个充满未知美味的“盲盒”。\n\n它们对食物的嗅觉和视觉敏感度都很高，尤其是那些带有甜味或油脂的食物。如果它真的在评估你的口袋，那你可能无意中成了它眼中的“移动粮仓”。不过，乌鸦通常不会无缘无故地盯着一个空手的人看太久，除非它想确认你身上有没有反光的东西（比如钥匙扣或眼镜），或者它只是单纯对“这个生物为什么还没飞走”感到困惑。\n\n你当时身上可有什么“诱饵”吗？还是说它只是单纯地对你这个“两脚兽”产生了浓厚的学术兴趣？",
+          "http_status": 200,
+          "elapsed_seconds": 3.026,
+          "prompt_tokens": 946,
+          "completion_tokens": 149,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        },
+        {
+          "turn": 4,
+          "user": "不过乌鸦真的挺聪明的，你觉得呢？",
+          "content": "确实，乌鸦的聪明程度在动物界里几乎是“降维打击”级别的。它们不仅仅是会玩骨牌或者会扔坚果砸核桃，很多研究表明，它们能理解“因果关系”、“数量概念”，甚至能像人类一样进行简单的“社会推理”——比如知道谁帮过它，谁给过它好处。\n\n这种智力水平，往往比许多灵长类动物都要高。更有趣的是，乌鸦似乎拥有一种独特的“文化传承”现象。比如在日本冲绳，当地的乌鸦会利用汽车碾碎坚果，这个技巧能代代相传，甚至传播到几十公里外的其他乌鸦群体。这说明它们不仅聪明，而且懂得“学习”和“模仿”。\n\n有时候我会想，如果它们能开口说话，我们之间的对话可能会变得很尴尬。毕竟，它们可能会直接指出你走路姿势太僵硬，或者吐槽你今天的衣服颜色太刺眼。不过，能遇到这样一位充满好奇心的“邻居”，倒也不算坏事。至少，它让你今天的散步多了一层观察的维度。\n\n你对这种高智商生物感兴趣，是因为平时喜欢研究动物行为，还是单纯被它们那种“看透一切”的眼神吸引了？",
+          "http_status": 200,
+          "elapsed_seconds": 4.506,
+          "prompt_tokens": 1113,
+          "completion_tokens": 239,
+          "finish_reason": "stop",
+          "reasoning_content_chars": 0
+        }
+      ]
+    }
+  ],
+  "evaluation": {
+    "recommendation": "REVISE",
+    "scope": "One candidate, one 12-request run; no automatic second test or prompt revision after observation.",
+    "api": {
+      "requests": 12,
+      "http_200": 12,
+      "normal_stop": 12,
+      "length_truncated": 0,
+      "empty_visible_reply": 0,
+      "reasoning_content_chars_total": 0,
+      "total_elapsed_request_seconds": 47.575
+    },
+    "history_validation": "PASS: each scenario starts fresh and every subsequent request contains all prior user and visible assistant messages exactly.",
+    "accepts_correction": {
+      "A": "Verbally accepts the no-advice correction, but continues lengthy metaphors, multiple topic offers, later a philosophical explanation, and repeated questions. Behavioral follow-through is weak.",
+      "B": "Returns to software architecture, challenges the advanced-therefore-better rationale, and proposes validation. Its correction response also invents a prior personal-experience framing and remains verbose.",
+      "C": "Explicitly admits it cannot know the bird's thoughts and accepts food as a possibility, but opens defensively and adds more motive guesses and unsupported factual detail."
+    },
+    "topic_and_performance": {
+      "A": "Long reassurance and offers persist; A4 invents personal visual experience: 每次抬头看天. This conflicts with the unchanged prohibition on fabricated human experience.",
+      "B": "Improves on P0.1 by discussing project architecture, but B1 invents memory-aging/forgetting objectives; B4 assumes 联想 is a core project advantage without supplied evidence. It does not establish an actual measured bottleneck.",
+      "C": "Shows interest and humor, but assumes the user felt alarmed, anthropomorphizes the bird and repeatedly prompts for engagement."
+    },
+    "factual_boundary": [
+      "A4 presents an unsupported first-person history of observing the sky; this is a clear fabricated-experience issue within the experiment.",
+      "B4's SQLite/linear logic versus Neo4j/nonlinear relation framing is sweeping; architecture and capability claims go beyond the minimal supplied background.",
+      "C2's striatum/interest-area equivalence, C3's smell and food preferences, and C4's specific Okinawa and transmission-distance story are unverified factual additions. No external fact-check was performed; these are not accepted as verified facts.",
+      "No source evidence was given to the model, so the actual truth of the zoological assertions is not established by this experiment."
+    ],
+    "comparison_limit": "P0.1 was single-turn; P0.2 adds a prompt and multi-turn history, plus explicit background in B. Changes cannot be attributed solely to the prompt, and one sampled dialogue does not establish stability.",
+    "review_focus": [
+      "More consistent behavioral adherence after user correction.",
+      "Less performative language and fabricated personal experience.",
+      "Better uncertainty discipline and engineering claims limited to supplied evidence."
+    ],
+    "next_action": "Stop and wait for human review. Do not revise prompt, rerun, integrate, commit or deploy automatically."
+  }
+}

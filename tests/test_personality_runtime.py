@@ -91,3 +91,59 @@ assert result["model_status"] == "OK"
 assert result["dense_status"] == "OK"
 
 print("PERSONALITY RUNTIME CONTRACT OK")
+
+
+# P0.3 uses the existing zero-argument compiler callback; no new turn loop.
+from unittest.mock import patch
+from personality import compile_personality_system_prompt
+
+
+def run_default_personality_turn():
+    events = []
+    captured = {}
+    def add(session_id, role, content):
+        events.append("add:" + role)
+        return 1 if role == "user" else 2
+    def context(**kwargs):
+        events.append("context")
+        captured["messages"] = [
+            {"role":"system","content":kwargs["system_prompt"]},
+            {"role":"user","content":kwargs["current_user_content"]},
+        ]
+        return {"messages":captured["messages"],"recent_message_ids":[],
+                "historical_message_ids":[],"input_tokens":12,"retrieval_status":"OK"}
+    def generate(messages):
+        events.append("generate")
+        assert messages == captured["messages"]
+        return "offline reply"
+    turn = process_turn("p03-offline","hello",add_message_fn=add,
+        build_context_fn=context,count_tokens_fn=lambda messages:12,generate_fn=generate,
+        dense_sync_fn=lambda ids:events.append("dense"))
+    assert turn["model_status"] == "OK" and turn["reply"] == "offline reply"
+    assert events == ["add:user","context","generate","add:assistant","dense"]
+    return captured["messages"]
+
+
+with patch.dict("os.environ",{},clear=True):
+    original_messages = run_default_personality_turn()
+    original_policy = compile_personality_system_prompt()
+    assert original_messages[0]["content"] == original_policy
+
+with patch.dict("os.environ",{
+    "CORVUS_PERSONALITY_ENABLED":"TRUE",
+    "CORVUS_PERSONALITY_PROFILE":"corvus-companion",
+    "CORVUS_PERSONALITY_VERSION":"0.1.0",
+},clear=True):
+    selected_messages = run_default_personality_turn()
+    assert selected_messages[0]["content"].startswith(original_policy+"\n\n")
+    assert "corvus-companion@0.1.0" in selected_messages[0]["content"]
+    assert selected_messages[1:] == original_messages[1:]
+
+for invalid_env in (
+    {"CORVUS_PERSONALITY_ENABLED":"invalid"},
+    {"CORVUS_PERSONALITY_ENABLED":"TRUE","CORVUS_PERSONALITY_PROFILE":"corvus-companion","CORVUS_PERSONALITY_VERSION":"99.0.0"},
+):
+    with patch.dict("os.environ",invalid_env,clear=True):
+        assert run_default_personality_turn() == original_messages
+
+print("VERSIONED PERSONALITY ENABLE/DISABLE/FALLBACK RUNTIME CONTRACT OK")
