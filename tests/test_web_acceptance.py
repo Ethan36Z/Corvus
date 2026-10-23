@@ -35,6 +35,25 @@ def controlled(version='3.14', suffix='', published='2026-10-15'):
                             'text/plain', 'controlled-fixture', text, len(text), len(text), False)
 
 
+def substantive(version='3.14', suffix='', published='2026-10-15'):
+    """controlled() plus enough on-topic body to pass the W2-b evidence-size rule."""
+    page = controlled(version, suffix, published)
+    detail = (
+        '\nThe concurrent.futures module provides a high-level interface for '
+        'asynchronously executing callables. Execution can be performed with '
+        'threads, using ThreadPoolExecutor, or separate processes, using '
+        'ProcessPoolExecutor. Both implement the same interface defined by the '
+        'abstract Executor class. submit() schedules a callable and returns a '
+        'Future; map() applies a function across iterables; shutdown() releases '
+        'resources once pending futures finish. Worker controls include '
+        'max_workers, initializer and initargs, which configure each worker '
+        'before tasks run in this synthetic concurrent.futures fixture.'
+    )
+    text = page.text + detail
+    from dataclasses import replace as _replace
+    return _replace(page, text=text, original_chars=len(text), extracted_chars=len(text))
+
+
 def facts(page, version=None, published=None):
     def witness(value):
         start = page.text.index(value)

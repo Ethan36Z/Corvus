@@ -164,7 +164,7 @@ def _missing(req, sources):
 
 def accept_web_evidence(query, *, requirements, provider_builder,
                         source_facts=lambda page: None, provider_failures=lambda: (),
-                        **orchestration_options):
+                        candidate_relevance=None, **orchestration_options):
     """Run existing bounded pipeline with an explicit, conservative collector.
 
     Default Safe Fetch and extraction remain the existing production functions.
@@ -221,6 +221,11 @@ def accept_web_evidence(query, *, requirements, provider_builder,
         missing.extend("text:" + t for t in requirements.required_text if t not in text)
         if not evidence:
             missing.append("selected_evidence")
+        elif candidate_relevance is not None:
+            # W2-b (unspecified requests only): can this page answer at all?
+            reason = candidate_relevance(page, ranked, evidence)
+            if reason:
+                missing.append(reason)
         if any(s.identity == identity or sha256(s.page.text.encode()).hexdigest() == digest for s in sources):
             missing.append("distinct_source")
         if requirements.separate_version_sources and any(s.version == version for s in sources):

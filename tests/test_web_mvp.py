@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).parent))
-from test_web_acceptance import Harness, controlled, historical, facts
+from test_web_acceptance import Harness, historical, facts
+from test_web_acceptance import substantive as controlled  # W2-b: pages must carry real content
 from app.web_acceptance import EvidenceRequirements as Requirements, source_identity
 from app.web_mvp import prepare_web_mvp, present_grounded_answer, MVPSource, source_section
 from app.conversation_runtime import process_turn

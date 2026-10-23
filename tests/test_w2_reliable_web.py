@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from test_web_acceptance import Harness, controlled
+from test_web_acceptance import Harness, substantive as controlled
 from app import model_client
 from app.web_mvp import prepare_web_mvp
 
@@ -121,6 +121,75 @@ class RetrievalReliabilityTests(unittest.TestCase):
         self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")
         self.assertNotIn("provider_partial_failure", prepared.missing)
         self.assertEqual(len(prepared.timings["search_ms"]), len(attempts))
+
+
+REAL = json.loads((Path(__file__).parent / "fixtures" / "w2_relevance_real.json").read_text())
+
+
+def real_page(name):
+    from app.web_extract import ExtractedWebPage
+    record = REAL[name]
+    text = record["text"]
+    return ExtractedWebPage("fixture", "offline", None, record["url"], record["url"],
+                            "text/plain", "real-lab-evidence", text, len(text), len(text), False)
+
+
+class RelevanceGateTests(unittest.TestCase):
+    O1R = "Python 3.13 有哪些主要的新特性？"
+
+    def prepare(self, pages, query, **kw):
+        h = Harness(pages)
+        return prepare_web_mvp(query, provider_builder=h.provider,
+                               fetch_search_result_fn=h.fetch, extract_web_page_fn=h.extract, **kw)
+
+    def test_o1r_docs_index_is_rejected_and_the_real_page_is_used(self):
+        index, whatsnew = real_page("o1r_docs_index"), real_page("py313_whatsnew")
+        prepared = self.prepare([index, whatsnew], self.O1R)
+        self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")
+        self.assertEqual([s.url for s in prepared.sources], [whatsnew.source_url])
+        self.assertTrue(all("whatsnew/index" not in e.source_url for e in prepared.used_web_evidence))
+
+    def test_only_the_docs_index_means_no_answer_and_no_model(self):
+        prepared = self.prepare([real_page("o1r_docs_index")], self.O1R)
+        self.assertEqual(prepared.outcome, "SOURCES_WITH_LIMITATIONS")
+        self.assertIsNotNone(prepared.deterministic_reply)   # links only, no generation
+        self.assertEqual(prepared.used_web_evidence, ())
+
+    def test_weakly_related_page_is_rejected(self):
+        prepared = self.prepare([real_page("weak_unrelated_framework")],
+                                "zqxv-borealt-88417 框架的作者是谁？")
+        self.assertNotEqual(prepared.outcome, "GROUNDED_ANSWER")
+        self.assertEqual(prepared.used_web_evidence, ())
+
+    def test_pure_chinese_query_needs_two_matching_bigrams(self):
+        page = replace(controlled(), text=controlled().text + "\n" + "本地运行开源大模型需要考虑显存与内存。" * 12)
+        page = replace(page, original_chars=len(page.text), extracted_chars=len(page.text))
+        ok = self.prepare([page], "查询适合本地运行的开源大模型")
+        self.assertEqual(ok.outcome, "GROUNDED_ANSWER")
+        off_topic = self.prepare([page], "今天北京天气怎么样")
+        self.assertNotEqual(off_topic.outcome, "GROUNDED_ANSWER")
+
+    def test_fetch_hostile_hosts_are_tried_last_not_excluded(self):
+        good = real_page("py313_whatsnew")
+        blocked = replace(good, source_url="https://zhuanlan.zhihu.com/p/1",
+                          fetched_url="https://zhuanlan.zhihu.com/p/1")
+        h = Harness([blocked, good])   # search returns the zhihu result first
+        order = []
+
+        def fetch(discovery, rid):
+            order.append(discovery.result_by_id(rid).url)
+            return h.fetch(discovery, rid)
+        prepared = prepare_web_mvp(self.O1R, provider_builder=h.provider,
+                                   fetch_search_result_fn=fetch, extract_web_page_fn=h.extract)
+        self.assertEqual(order[0], good.source_url)
+        self.assertEqual(prepared.sources[0].url, good.source_url)
+
+    def test_explicit_requirements_path_is_not_gated(self):
+        from test_web_acceptance import controlled as tiny
+        from app.web_acceptance import EvidenceRequirements
+        prepared = self.prepare([tiny()], "concurrent.futures",
+                                requirements=EvidenceRequirements(required_text=("concurrent.futures",)))
+        self.assertEqual(prepared.outcome, "GROUNDED_ANSWER")   # 147-char page still accepted
 
 
 if __name__ == "__main__":

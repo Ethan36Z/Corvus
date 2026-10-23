@@ -149,6 +149,47 @@ _SELF_REFERENCE = re.compile(r'你(?:刚才|之前|刚刚|上面)(?:说的|提�
 _CLAIM_SUFFIX = re.compile(r'(?:的说法|的回答|是否属实|对不对|是不是真的)\s*[。？?！!.]*\s*$')
 
 
+# --- W2-b relevance gate (unspecified requests only) -------------------------
+# Built only from the existing ranker's output for the passages actually
+# selected as evidence. It answers "can this page plausibly answer?", not
+# "is the answer true": a long, on-topic page that misses the point can pass.
+MIN_EVIDENCE_CHARS = 400
+_GENERIC_ANCHORS = {
+    "new", "latest", "current", "recent", "best", "version", "versions", "release",
+    "releases", "feature", "features", "vs", "versus", "difference", "differences",
+    "between", "compare", "with", "which", "it", "this", "that", "can", "should",
+}
+
+
+def _query_terms(query):
+    from app.web_passages import lexical_terms
+
+    terms = lexical_terms(query)
+    anchors = [t for t in dict.fromkeys(terms)
+               if re.search(r'[a-z0-9]', t) and t not in _GENERIC_ANCHORS]
+    bigrams = {t for t in terms if len(t) == 2 and all('㐀' <= c <= '鿿' for c in t)}
+    return anchors, bigrams
+
+
+def relevance_gate(query):
+    anchors, bigrams = _query_terms(query)
+
+    def check(page, ranked, evidence):
+        if sum(len(e.excerpt) for e in evidence) < MIN_EVIDENCE_CHARS:
+            return 'thin_evidence'  # index/navigation/title-only pages
+        selected = {e.passage_id for e in evidence}
+        used = [r for r in ranked if r.passage.passage_id in selected]
+        matched = set().union(*(r.matched_terms for r in used)) if used else set()
+        if anchors:
+            absent = [a for a in anchors if a not in matched]
+            if len(absent) > (1 if len(anchors) >= 3 else 0):
+                return 'relevance'
+        elif not any(r.exact_phrase_match for r in used) and len(bigrams & matched) < 2:
+            return 'relevance'
+        return None
+    return check
+
+
 def clean_search_query(query):
     """Strip request phrasing; keep the original if too little topic remains."""
     cleaned = _REQUEST_PREFIX.sub('', query, count=1)
@@ -178,15 +219,17 @@ def _prepare_web_mvp(query, *, provider_builder, requirements=None,
     req = requirements if requirements is not None else EvidenceRequirements()
     if not isinstance(req, EvidenceRequirements):
         raise TypeError('Explicit EvidenceRequirements required')
-    accepted = accept_web_evidence(
-        clean_search_query(query), requirements=req, provider_builder=builder,
-        source_facts=source_facts, provider_failures=lambda: tuple(failures),
-        **collector_options,
-    )
     # Domain/source count alone does not establish factual question coverage.
     explicit = requirements is not None and bool(
         req.versions or req.require_publication_date or req.publication_date
         or req.publication_window or req.required_text
+    )
+    search_query = clean_search_query(query)
+    accepted = accept_web_evidence(
+        search_query, requirements=req, provider_builder=builder,
+        source_facts=source_facts, provider_failures=lambda: tuple(failures),
+        candidate_relevance=None if explicit else relevance_gate(search_query),
+        **collector_options,
     )
     sufficient = (explicit and accepted.evidence_status == 'EVIDENCE_SUFFICIENT'
                   and not accepted.provider_failures)

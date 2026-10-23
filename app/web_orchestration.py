@@ -30,6 +30,16 @@ from app.web_search_routing import (
 )
 
 
+FETCH_HOSTILE_HOSTS = ("zhihu.com",)
+
+
+def _fetch_hostile(result):
+    from urllib.parse import urlsplit
+
+    host = (urlsplit(getattr(result, "url", "") or "").hostname or "").lower()
+    return any(host == h or host.endswith("." + h) for h in FETCH_HOSTILE_HOSTS)
+
+
 DEFAULT_SEARCH_LIMIT = 5
 DEFAULT_MAX_FETCH_CANDIDATES = 3
 
@@ -175,10 +185,14 @@ def prepare_web_grounding(
 
     outcomes = []
 
-    candidates = (
-        execution.discovery.results[
-            :max_fetch_candidates
-        ]
+    # W2: hosts that reject automated fetches (measured HTTP 403) go last so
+    # the few fetch slots are spent on pages that can actually be read. This
+    # only reorders; nothing is excluded.
+    candidates = tuple(
+        sorted(
+            execution.discovery.results,
+            key=_fetch_hostile,
+        )[:max_fetch_candidates]
     )
 
     for result in candidates:
