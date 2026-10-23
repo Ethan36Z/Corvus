@@ -1,5 +1,6 @@
 import json
 import socket
+import threading
 import urllib.error
 import urllib.request
 
@@ -17,6 +18,18 @@ MODEL_NAME = "corvus"
 MODEL_HEALTH_URL = f"{MODEL_BASE_URL}/health"
 CHAT_COMPLETIONS_URL = f"{MODEL_BASE_URL}/v1/chat/completions"
 INPUT_TOKENS_URL = f"{CHAT_COMPLETIONS_URL}/input_tokens"
+
+
+# Server-side timings of the latest chat completion on this thread
+# (llama.cpp "timings"); diagnostics only, never persisted.
+_LAST_GENERATION = threading.local()
+
+
+def take_last_generation_timings():
+    """Return and clear this thread's latest llama.cpp timings, or None."""
+    timings = getattr(_LAST_GENERATION, "timings", None)
+    _LAST_GENERATION.timings = None
+    return timings
 
 
 class ModelClientError(RuntimeError):
@@ -171,6 +184,9 @@ def generate_chat_completion(
         timeout=timeout,
         opener=opener,
     )
+
+    timings = data.get("timings") if isinstance(data, dict) else None
+    _LAST_GENERATION.timings = timings if isinstance(timings, dict) else None
 
     choices = data.get(
         "choices"

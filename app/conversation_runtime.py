@@ -1,7 +1,10 @@
+from time import perf_counter
+
 from app.model_client import (
     ModelClientError,
     count_input_tokens,
     generate_chat_completion,
+    take_last_generation_timings,
 )
 from app.foreground_activity import track_foreground_generation
 from app.working_context import build_working_context
@@ -151,6 +154,9 @@ def process_turn(
     """
     Execute one SQLite-first persistent conversation turn.
     """
+    turn_started = perf_counter()
+    stage_ms = {}  # W2-a diagnostics; reported for Web turns only
+
     if attachment_id is not None:
         attachment_id = str(
             attachment_id
@@ -688,9 +694,11 @@ def process_turn(
                 # derived) never enters a web-grounded turn as history.
                 context_kwargs["web_grounded"] = True
 
+            context_started = perf_counter()
             context = build_context_fn(
                 **context_kwargs
             )
+            stage_ms["context_ms"] = round((perf_counter() - context_started) * 1000, 1)
         except ModelClientError as exc:
             result["model_status"] = exc.code
             result["error"] = str(exc)
@@ -772,6 +780,8 @@ def process_turn(
             result["attachment_status"] = "READY"
 
         # 5. Ask the existing local model.
+        take_last_generation_timings()  # never attribute a stale value
+        generation_started = perf_counter()
         try:
             with track_foreground_generation():
                 reply = generate_fn(
@@ -781,6 +791,17 @@ def process_turn(
             result["model_status"] = exc.code
             result["error"] = str(exc)
             return result
+        finally:
+            stage_ms["generation_ms"] = round((perf_counter() - generation_started) * 1000, 1)
+        server = take_last_generation_timings()
+        if server:
+            compute = float(server.get("prompt_ms") or 0) + float(server.get("predicted_ms") or 0)
+            stage_ms["model_compute_ms"] = round(compute, 1)
+            # Wall time not spent computing: queueing behind other users of
+            # the shared llama server (e.g. Hindsight), HTTP and decoding.
+            stage_ms["model_wait_ms"] = round(max(0.0, stage_ms["generation_ms"] - compute), 1)
+            stage_ms["prompt_tokens"] = server.get("prompt_n")
+            stage_ms["completion_tokens"] = server.get("predicted_n")
 
     else:
         reply = deterministic_reply
@@ -807,6 +828,13 @@ def process_turn(
             result["error"] = "Web source presentation failed; no automatic retry."
             return result
         result.update(citation_counts)
+    if mvp_prepared is not None:
+        result["web_timings_ms"] = {
+            **(getattr(mvp_prepared, "timings", None) or {}),
+            **stage_ms,
+            # Until the reply is ready, before the canonical commit.
+            "answer_ready_ms": round((perf_counter() - turn_started) * 1000, 1),
+        }
     result["model_status"] = "OK" if deterministic_reply is None else "NOT_CALLED"
     result["reply"] = reply
 

@@ -590,7 +590,7 @@ def build_chat_response(
     return {
         **({key: result[key] for key in (
             "web_presentation_outcome", "web_acceptance_status", "web_coverage_missing",
-            "web_discovery_status", "web_sources", "web_answer_basis",
+            "web_discovery_status", "web_sources", "web_answer_basis", "web_timings_ms",
         )} if result.get("web_presentation_outcome") else {}),
         "reply": result["reply"],
         "session_id": result["session_id"],

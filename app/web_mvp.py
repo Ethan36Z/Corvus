@@ -2,7 +2,8 @@
 
 No persistence, personal recall, model calls, event emission, or new pipeline.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from time import perf_counter
 import re
 from urllib.parse import quote
 
@@ -33,6 +34,7 @@ class MVPPreparation:
     deterministic_reply: str | None = None
     retrieval_status: str = "NOT_RUN"
     answer_basis: str | None = None
+    timings: dict | None = None  # diagnostics only (W2-a); never persisted
 
 
 def _chinese(text):
@@ -92,8 +94,52 @@ def failed_preparation(query, code='WEB_PREPARATION_FAILED'):
                           retrieval_status=code)
 
 
+def _timed(fn, bucket):
+    def wrapper(*args, **kwargs):
+        started = perf_counter()
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            bucket.append(round((perf_counter() - started) * 1000, 1))
+    return wrapper
+
+
 def prepare_web_mvp(query, *, provider_builder, requirements=None,
                     source_facts=lambda page: None, **collector_options):
+    """Run the bounded Web MVP retrieval and record stage timings (W2-a).
+
+    Timing wraps existing injection points only; behaviour is unchanged.
+    """
+    from app.web_extract import extract_web_page
+    from app.web_search_fetch import fetch_search_result
+
+    timings = {"search_ms": [], "fetch_ms": [], "extract_ms": []}
+
+    def timed_builder(attempt):
+        provider = provider_builder(attempt)
+        if callable(getattr(provider, "search", None)):
+            provider.search = _timed(provider.search, timings["search_ms"])
+        return provider
+
+    options = dict(collector_options)
+    options["fetch_search_result_fn"] = _timed(
+        options.get("fetch_search_result_fn", fetch_search_result), timings["fetch_ms"])
+    options["extract_web_page_fn"] = _timed(
+        options.get("extract_web_page_fn", extract_web_page), timings["extract_ms"])
+    started = perf_counter()
+    prepared = _prepare_web_mvp(
+        query, provider_builder=timed_builder, requirements=requirements,
+        source_facts=source_facts, **options,
+    )
+    total = round((perf_counter() - started) * 1000, 1)
+    timings["retrieval_ms"] = total
+    timings["evidence_ms"] = round(max(0.0, total - sum(
+        sum(timings[k]) for k in ("search_ms", "fetch_ms", "extract_ms"))), 1)
+    return replace(prepared, timings=timings)
+
+
+def _prepare_web_mvp(query, *, provider_builder, requirements=None,
+                     source_facts=lambda page: None, **collector_options):
     """Explicit constraints establish sufficiency; otherwise use selected evidence.
 
     SourceFacts is server-supplied; clients cannot assert trusted page metadata.
