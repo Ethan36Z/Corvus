@@ -259,7 +259,24 @@ def _external_subject_zh(query):
     )
 
 
+# Requests to create, write or design something ("给组件加个新功能",
+# "Write release notes for v1.4") share the release/feature vocabulary but are
+# not lookups. Only concrete authoring phrasing counts; possessives such as
+# "我的" / "my" do not, so "我的设备能否升级到最新版本" still goes to Web.
+# A match only withdraws this rule: the model classifier still decides.
+_AUTHORING_REQUEST = re.compile(
+    r"(?:加|添加|增加|新增)(?:一个|个|一些|几个|点)|给.{0,24}(?:加|添加|增加)|"
+    r"写(?:了|个|一个|一份|一篇|篇)|帮我写|编写|起草|撰写|"
+    r"实现(?:一个|个|这个|那个)|设计(?:一下|一个|个)|构思|想法|点子|头脑风暴|"
+    r"\b(?:add|adding|implement(?:ing)?|write|writing|draft(?:ing)?|"
+    r"create|creating|design(?:ing)?|brainstorm(?:ing)?|ideas?)\b",
+    re.IGNORECASE,
+)
+
+
 def _release_feature_signal(query):
+    if _AUTHORING_REQUEST.search(query):
+        return None
     anchored = _VERSION.search(query) or _RECENCY.search(query)
     if _RELEASE_TERMS_ZH.search(query) and (anchored or _external_subject_zh(query)):
         return "release_feature_zh"

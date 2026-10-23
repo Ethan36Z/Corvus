@@ -184,6 +184,12 @@ release_feature_web = [
     "When is the release date of Kubernetes 1.32?",
     "iOS 18 有哪些新功能",
     "What's new in TypeScript?",
+    # Mixed: first person / ownership, but still a lookup.
+    "我的设备能否升级到最新版本",
+    "Can my laptop be upgraded to the latest macOS version?",
+    "我们公司用的 Java 21 有哪些新特性？",
+    "Python 3.14 实现了哪些新特性",
+    "What do the release notes of Python 3.14 say?",
 ]
 
 for query in release_feature_web:
@@ -207,11 +213,41 @@ release_feature_not_web = [
     "Corvus 有什么新功能",
     "最近怎么样？",
     "Release me from this stress, I need a break",
+    # Authoring / coding / design requests that reuse release vocabulary.
+    "帮我给这个 React 组件加个新功能",
+    "我用 VS Code 写了个新功能，帮我看看",
+    "给我的 Python 脚本增加一个新功能：导出 CSV",
+    "我有 2 个新功能想法想跟你聊聊",
+    "帮我起草 v3.0 的发布公告",
+    "给 Corvus 设计一个新功能",
+    "Add a new feature to my Flask app",
+    "How do I implement a new feature flag in Django?",
+    "I released my app v2 yesterday, can you write a tweet?",
+    "Write release notes for my project v1.4",
+    "Brainstorm new features for my React 18 app",
 ]
 
 for query in release_feature_not_web:
     result = detect_deterministic_web_intent(query)
     assert result is None or result.decision == "NO_WEB", query
+
+# The authoring guard only withdraws the deterministic rule: the existing
+# model classifier still decides and may still choose Web.
+model_calls = []
+
+
+def classify_web(messages):
+    model_calls.append(messages)
+    return "WEB"
+
+
+result = decide_web_intent(
+    "Add a new feature to my Flask app",
+    generate_fn=classify_web,
+)
+assert result.source == "MODEL"
+assert result.decision == "WEB"
+assert len(model_calls) == 1
 
 # Explicit no-web still wins over the new rules.
 result = decide_web_intent(
