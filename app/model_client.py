@@ -226,3 +226,93 @@ def generate_chat_completion(
         )
 
     return content.strip()
+
+
+# Additive stateless API transport. Existing callers above retain their contract.
+class _NoModelRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def _bounded_model_opener(request, timeout):
+    """Fixed loopback endpoint, no proxies/redirects; never read an error body."""
+    from time import monotonic
+    from urllib.parse import urlsplit
+    parsed = urlsplit(MODEL_BASE_URL)
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1'
+            or parsed.username or parsed.password or parsed.query or parsed.fragment
+            or parsed.path or parsed.port is None
+            or request.full_url not in (CHAT_COMPLETIONS_URL, INPUT_TOKENS_URL)
+            or request.method != 'POST'):
+        raise ModelClientError('MODEL_UNAVAILABLE', 'invalid inference endpoint')
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoModelRedirect())
+    started = monotonic()
+    try:
+        response = opener.open(request, timeout=timeout)
+    except urllib.error.HTTPError as exc:
+        code = exc.code
+        exc.close()
+        raise ModelClientError('MODEL_UNAVAILABLE' if code in (429, 503) else
+                               'MODEL_HTTP_ERROR', 'inference request failed') from None
+    if (response.status != 200 or response.geturl() != request.full_url
+            or response.headers.get_content_type() != 'application/json'
+            or response.headers.get('Content-Encoding', 'identity').lower() != 'identity'):
+        response.close()
+        raise ModelClientError('MODEL_RESPONSE_INVALID', 'invalid inference response')
+
+    class BoundedResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *unused):
+            response.close()
+
+        def read(self):
+            chunks, size = [], 0
+            while True:
+                if monotonic() >= deadline:
+                    raise TimeoutError()
+                chunk = response.read1(min(4096, 262145 - size))
+                if not chunk:
+                    return b''.join(chunks)
+                chunks.append(chunk)
+                size += len(chunk)
+                if size > 262144:
+                    raise ModelClientError('MODEL_RESPONSE_INVALID', 'inference response too large')
+
+    # Include response-header waiting in the supplied budget.
+    deadline = started + timeout
+    return BoundedResponse()
+
+
+# Keep the budget start around opener.open as well as its bounded body reader.
+# Defined separately for testing without any real model endpoint.
+def stateless_chat_completion(payload, *, timeout=90, opener=None):
+    """One count POST then at most one generation POST; no persistence or retries.
+
+    The caller owns a wall-clock response deadline and retains its slot while this
+    synchronous worker settles. Socket waits are finite but cannot prove remote
+    inference was cancelled when a connection is closed.
+    """
+    from time import monotonic
+    deadline = monotonic() + timeout
+    if opener is None:
+        opener = _bounded_model_opener
+    request_body = dict(payload, stream=False, cache_prompt=False,
+                        chat_template_kwargs={'enable_thinking': False})
+    try:
+        counts = _post_json(INPUT_TOKENS_URL, request_body,
+                            max(0.001, deadline-monotonic()), opener=opener)
+        tokens = counts.get('input_tokens') if isinstance(counts, dict) else None
+        if type(tokens) is not int or tokens < 0:
+            raise ModelClientError('MODEL_RESPONSE_INVALID', 'invalid token count')
+        if tokens > 4096:
+            raise ModelClientError('INPUT_TOO_LONG', 'input token limit exceeded')
+        remaining = deadline-monotonic()
+        if remaining <= 0:
+            raise ModelClientError('MODEL_TIMEOUT', 'inference timed out')
+        return _post_json(CHAT_COMPLETIONS_URL, request_body, remaining, opener=opener)
+    except (ModelClientError, KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
+        raise ModelClientError('MODEL_RESPONSE_INVALID', 'inference failed') from None
