@@ -1,0 +1,14 @@
+{
+  "note": "INSERT these entries before the existing final catch-all; preserve all existing rules. Not a complete Tunnel configuration.",
+  "ingress_additions": [
+    {
+      "hostname": "api-corvus.foxluma.com",
+      "path": "^/v1/(models|chat/completions)$",
+      "service": "http://127.0.0.1:18120"
+    },
+    {
+      "hostname": "api-corvus.foxluma.com",
+      "service": "http_status:404"
+    }
+  ]
+}

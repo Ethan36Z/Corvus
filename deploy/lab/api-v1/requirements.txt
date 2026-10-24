@@ -1,0 +1,7 @@
+# Existing host versions; no install/deployment performed by API-1.
+fastapi==0.141.1
+pydantic==2.13.5
+starlette==1.6.0
+uvicorn==0.52.4
+# Client/test dependency; inference reuses the standard-library model transport.
+httpx==0.28.1

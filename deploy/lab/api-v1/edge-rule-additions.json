@@ -1,0 +1,24 @@
+{
+  "note": "Rule fragments only; add through the authorized operator workflow, never overwrite an entire existing ruleset.",
+  "rules_to_add": {
+    "http_request_firewall_custom": [
+      {
+        "description": "Corvus API HTTPS only",
+        "expression": "(http.host eq \"api-corvus.foxluma.com\" and not ssl)",
+        "action": "block",
+        "enabled": true
+      }
+    ],
+    "http_request_cache_settings": [
+      {
+        "description": "Corvus API never cache",
+        "expression": "(http.host eq \"api-corvus.foxluma.com\")",
+        "action": "set_cache_settings",
+        "action_parameters": {
+          "cache": false
+        },
+        "enabled": true
+      }
+    ]
+  }
+}
