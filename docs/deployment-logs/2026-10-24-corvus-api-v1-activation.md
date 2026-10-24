@@ -1,8 +1,11 @@
 # Corvus API v1 activation (API-3D) — 2026-10-24
 
-**Verdict: `API_3D_REMOTE_PENDING`.** Live and verified end to end through the
-public Cloudflare edge from the origin host. Not yet verified from a separate
-off-host client (the only other device was offline), so the unit is **not enabled**.
+**Verdict: `API_3D_ACCEPTED`.** Live and verified end to end through the public
+Cloudflare edge, first from the origin host and then from a separate off-host
+client (MacBook). The unit is now **enabled** for automatic startup.
+
+(Earlier verdict the same day: `API_3D_REMOTE_PENDING`, while the off-host
+device was offline.)
 
 Endpoint `https://api-corvus.foxluma.com/v1`, model `corvus`, Bearer key,
 text-only, non-streaming, stateless. Release pinned to `3dd7619` (implementation
@@ -10,7 +13,8 @@ text-only, non-streaming, stateless. Release pinned to `3dd7619` (implementation
 
 ## Deployed state
 
-- `corvus-text-api.service`: active, **disabled** (no start at boot), Restart=no.
+- `corvus-text-api.service`: active, **enabled** (starts at boot) after off-host
+  acceptance, Restart=no.
   Dedicated system user `corvus-text-api`, CapEff 0, NoNewPrivs, seccomp on,
   RootDirectory minimal root; `/usr`, app, venv and key directory mounted
   read-only; no home, `/srv`, Lab, private memory or Docker paths visible.
@@ -51,6 +55,32 @@ protection is unchanged.
   - Text: 35+10 tokens, 0.4 s.
   - `json_object`: 46+20 tokens, 0.6 s, valid JSON.
 
+## Off-host acceptance (MacBook, 2026-10-24)
+
+A separate client on the public internet (macOS, Python 3.14), reaching the
+public hostname through Cloudflare (resolved to Cloudflare anycast addresses; not
+through the Tailscale path). Official OpenAI Python SDK 2.26.0, `max_retries=0`,
+`timeout=110`, `stream=False`, no Cookie or extra Cloudflare headers.
+
+- TLS 1.3, certificate and hostname verified against the system trust store
+  (CN `foxluma.com`, valid until 2027-01-14). Plain HTTP → 403.
+- `GET /v1/models`: no key → 401 JSON; invalid key → 401; valid key → 200
+  `["corvus"]`, `cf-cache-status: DYNAMIC`, `cache-control: no-store`.
+- One real `chat.completions` call (developer-instructed text, `max_tokens=32`):
+  `finish_reason=stop`, 32+9 tokens, 0.45 s, `retries_taken=0`, `DYNAMIC`.
+- Key handling: a temporary key was not practical (installing a digest needs
+  interactive sudo). The existing operator key was streamed from its 0600 file over
+  SSH directly into the client process's stdin; it never appeared in shell
+  arguments, files, logs or output. No disposable key was created, so none needed revoking.
+- After the test: API PID unchanged (no restart), NRestarts 0; Production, Demo,
+  Lab and cloudflared unchanged (same PIDs, NRestarts 0).
+
+Enablement: `sudo systemctl enable corvus-text-api.service` (operator-run) →
+`enabled`. Re-verified afterwards: `active (running)`, `enabled`, same PID,
+NRestarts 0, listening on `127.0.0.1:18120` only; an off-host authenticated
+`GET /v1/models` still returned `["corvus"]`. Enabling did not restart the service.
+No other unit was enabled or restarted.
+
 ## Resource impact and preservation
 
 - API process RSS about 45 MB, 2 tasks. Host about 6.7 GiB available, memory PSI 0.
@@ -59,9 +89,9 @@ protection is unchanged.
 
 ## Remaining limitations
 
-- **Off-host client acceptance pending.** Then run
-  `sudo systemctl enable corvus-text-api.service`. Until then a reboot leaves the
-  API down (edge returns an error and fails closed).
+- Boot start is enabled but has not yet been exercised by a real reboot; the unit
+  keeps `Restart=no`, so a crash leaves the API down until started by hand
+  (the edge fails closed).
 - TLS ends at Cloudflare. Requests share the single Qwen slot. No replay
   deduplication. Browser Integrity Check is unchanged; record a Ray ID if a client is challenged.
 
