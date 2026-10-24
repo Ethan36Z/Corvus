@@ -1,0 +1,4 @@
+[Service]
+Environment=CORVUS_PERSONALITY_ENABLED=TRUE
+Environment=CORVUS_PERSONALITY_PROFILE=corvus-companion
+Environment=CORVUS_PERSONALITY_VERSION=0.1.1

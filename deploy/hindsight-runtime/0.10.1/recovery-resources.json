@@ -1,0 +1,28 @@
+{
+  "observed_date": "2026-10-23 America/Los_Angeles",
+  "purpose": "non-secret persistent local recovery references; no database or secret snapshot",
+  "containers": [
+    {
+      "name": "hindsight-lab",
+      "id": "271da9e5744daf97b14005294dc384fb139054daae310ec095b4fe391006c1b9",
+      "image": "sha256:36a59577d7bdabe7525a114f8baa9bd26bac195df99e1999c807a3301be284f8",
+      "running": true
+    },
+    {
+      "name": "hindsight-lab-h17d3c-rollback-d10028ca1b99",
+      "id": "d10028ca1b99d0ae02d4bd43cd2a81b8bdd65248600948481bd58a8485949f99",
+      "image": "sha256:344abefa75512314309102e9d0391a0a346a6258d538bbbd881620cc5da69689",
+      "running": false
+    },
+    {
+      "name": "hindsight-lab-h17d3c-rollback-336680f1d0a7",
+      "id": "336680f1d0a7a4dfb531f818976e969b6e1c7e55861fec4b605401df295a8bfe",
+      "image": "sha256:b4d3b76f363aa40cf348450e7f8f52a50653008731b99824b14623a196182e73",
+      "running": false
+    }
+  ],
+  "historical_snapshot_files_available": false,
+  "private_data_backups_verified_by_this_closeout": false,
+  "runtime_recipe": "deploy/hindsight-runtime/0.10.1/runtime.py",
+  "future_operations_require_fresh_private_preflight": true
+}

@@ -1,5 +1,9 @@
 # Guarded Hindsight 0.10.1 runtime recipe
 
+**Current recovery availability:** see [RECOVERY.md](RECOVERY.md). The historical
+`/tmp` snapshots referenced below are missing; those rollback examples are not
+currently executable. Retained containers/images are recorded separately.
+
 H1.7d-3c-r1 **passed live rollout and one durable BUSY/defer/grace/resume acceptance** after the first attempt safely rolled back. The exact cached derived image is now live with readonly registry admission and unchanged 30-second grace. See the [rollout record](../../../docs/project-logs/2026-10-10-h1-7d-3c-live-foreground-admission-rollout.md) for the full timeline, single operation identity and residual race limitation.
 
 ## Offline derived image
