@@ -1,0 +1,57 @@
+# Prepared only: install/start requires separate authorization.
+[Unit]
+Description=Corvus stateless text API (independent of companion services)
+After=network.target
+
+[Service]
+Type=exec
+User=corvus-text-api
+Group=corvus-text-api
+RootDirectory=/opt/corvus-text-api/root
+MountAPIVFS=yes
+BindReadOnlyPaths=/usr
+BindReadOnlyPaths=/etc/ld.so.cache
+BindReadOnlyPaths=/opt/corvus-text-api/release/app:/opt/corvus/app
+BindReadOnlyPaths=/opt/corvus-text-api/release/deploy/lab/api-v1:/opt/deployment
+BindReadOnlyPaths=/opt/corvus-text-api/venv:/opt/venv
+BindReadOnlyPaths=/var/lib/corvus-text-api/keys:/run/corvus-api-keys
+WorkingDirectory=/opt/corvus
+Environment=CORVUS_API_ENABLED=TRUE
+Environment=CORVUS_API_KEY_DIGEST_FILE=/run/corvus-api-keys/keys.sha256
+Environment=CORVUS_MODEL_BASE_URL=http://127.0.0.1:8095
+Environment=CORVUS_API_FOREGROUND_REGISTRY_DIR=
+Environment=LANG=C.UTF-8 HOME=/tmp
+ExecStart=/opt/venv/bin/python -I -B /opt/deployment/serve.py
+Restart=no
+KillSignal=SIGTERM
+KillMode=control-group
+SendSIGKILL=no
+TimeoutStopSec=infinity
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectProc=invisible
+ProcSubset=pid
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_UNIX
+TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=16M /run:ro,nosuid,nodev,noexec,size=1M
+ReadWritePaths=/tmp
+UMask=0077
+LimitCORE=0
+LimitNOFILE=128
+LimitAS=536870912
+MemoryMax=512M
+TasksMax=32
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target
