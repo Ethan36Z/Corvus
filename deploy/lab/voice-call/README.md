@@ -1,8 +1,11 @@
 # Voice V1 — opt-in half-duplex Call overlay
 
-Status: **READY_FOR_LAB_ACTIVATION; not deployed**.
-Full Vite/static build and independent candidate image passed offline checks.
-See [Lab activation plan](LAB_ACTIVATION.md) and [build evidence](build-readiness.json).
+Status: **VOICE_V1_LAB_ACCEPTED_WITH_CONSTRAINTS**; engineering closeout **VOICE_V1_SEALED_LAB**.
+The user confirmed basic text chat, editable/manual Dictation, Kokoro Read Aloud
+and half-duplex Call on Lab. Production release and full memory reliability are
+outside this acceptance. See the [final engineering log](../../../docs/project-logs/2026-10-23-voice-v1-lab-seal.md)
+for evidence, unverified live details and Corvus v1 handoff.
+Build/rollout history: [Lab activation plan](LAB_ACTIVATION.md), [build evidence](build-readiness.json).
 Base: `93315415cf9efb541108e6f4fbcd3eb5967c9823`.
 
 Reliability and Memory Integrity First. Latency Optimization Second.
